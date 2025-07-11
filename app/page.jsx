@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
+import { useVideo } from "@/contexts/VideoContext";
 
 const LandingPage = () => {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { data: session } = useSession();
+  const { addVideo } = useVideo();
+
 
   const handleSubmit = async (e) => {
     if (!session) {
@@ -33,6 +36,7 @@ const LandingPage = () => {
     console.log(response);
 
     if (response.ok) {
+      addVideo(data.video);
       router.push(`/main/${data.video.publicId}`);
 
       console.log(data);

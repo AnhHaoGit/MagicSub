@@ -15,7 +15,7 @@ async function connectDB() {
   return db;
 }
 
-const handler = NextAuth({
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -55,6 +55,25 @@ const handler = NextAuth({
     signIn: "/login",
   },
   callbacks: {
+    async signIn({ user, account }) {
+      if (account.provider === "google") {
+        const db = await connectDB();
+        const existingUser = await db
+          .collection("users")
+          .findOne({ email: user.email });
+
+        if (!existingUser) {
+          await db.collection("users").insertOne({
+            email: user.email,
+            image: user.image,
+            name: user.name,
+          });
+        }
+      }
+
+      return true;
+    },
+
     // Save user data into token
     async jwt({ token, user }) {
       if (user) token.id = user.id;
@@ -67,6 +86,8 @@ const handler = NextAuth({
       return session;
     },
   },
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

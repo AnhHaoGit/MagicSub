@@ -7,7 +7,6 @@ import { useSession } from "next-auth/react";
 
 const LandingPageNavbar = () => {
   const { data: session } = useSession();
-
   return (
     <>
       <nav className="fixed top-0 left-0 w-full">

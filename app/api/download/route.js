@@ -7,6 +7,8 @@ import { exec } from "child_process";
 import fs from "fs";
 import path from "path";
 import util from "util";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 const execPromise = util.promisify(exec);
 
@@ -15,7 +17,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
 
 const client = new MongoClient(process.env.MONGODB_URI);
 let db;
@@ -29,6 +30,18 @@ async function connectDB() {
 }
 
 export async function POST(req) {
+  const session = await getServerSession(authOptions);
+  console.log(session);
+
+  if (!session) {
+    return NextResponse.json(
+      { message: "Unauthorized" },
+      {
+        status: 401,
+      }
+    );
+  }
+
   try {
     const { url } = await req.json();
     if (!url) {
@@ -61,10 +74,8 @@ export async function POST(req) {
       createdAt: new Date(),
     };
 
-
     const db = await connectDB();
     await db.collection("videos").insertOne(videoData);
-
 
     return NextResponse.json({
       message: "Uploaded successfully",

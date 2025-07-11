@@ -3,39 +3,20 @@
 import React, { useEffect, useState } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import { useParams } from "next/navigation";
+import { useVideo } from "@/contexts/VideoContext";
 
 export default function VideoPage() {
-  const [videoLink, setVideoLink] = useState(null);
+  const [currentVideo, setCurrentVideo] = useState(null);
   const { videoPath } = useParams();
+  const { video } = useVideo();
+
+  console.log(video);
+
 
   useEffect(() => {
-
-    const getVideoLink = async () => {
-      try {
-        console.log("Fetching for:", videoPath);
-        const response = await fetch("/api/fetch", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ videoPath }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          setVideoLink(data);
-        } else {
-          console.error("Fetch failed:", data);
-          alert(data.message || "Get video link failed");
-        }
-      } catch (error) {
-        console.error("Error fetching video:", error);
-      }
-    };
-
-    getVideoLink();
-  }, [videoPath]);
+    const currentVideo = video.find((video) => video.publicId === videoPath);
+    setCurrentVideo(currentVideo);
+  }, [video, videoPath]);
 
   return (
     <>
@@ -44,9 +25,9 @@ export default function VideoPage() {
         <div className="p-10">
           <h1 className="text-2xl font-bold mb-4">Video Preview</h1>
 
-          {videoLink?.cloudUrl ? (
+          {currentVideo?.cloudUrl ? (
             <video
-              src={videoLink.cloudUrl}
+              src={currentVideo.cloudUrl}
               controls
               className="w-[1000px] rounded shadow-lg"
             />
