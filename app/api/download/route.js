@@ -63,6 +63,8 @@ export async function POST(req) {
       public_id: `yt_${Date.now()}`,
     });
 
+    console.log("Upload result:", result);
+
     fs.unlinkSync(filePath);
 
     const videoData = {
@@ -88,7 +90,7 @@ export async function POST(req) {
       },
     });
   } catch (error) {
-    console.error("Upload or save failed:", error);
+    // console.error("Upload or save failed:", error);
     return NextResponse.json(
       { message: "Upload or save failed" },
       { status: 500 }

@@ -5,7 +5,7 @@ import logo from "@/assets/logo.png";
 
 const MainNavbar = () => {
   return (
-    <nav className=" fixed top-0 left-0 w-full">
+    <nav className=" fixed top-0 left-0 w-full rounded-b-2xl shadow-[0_0_30px_rgba(76,59,207,0.3)] bg-white z-50">
       <div className="flex justify-between items-center p-4">
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center">
