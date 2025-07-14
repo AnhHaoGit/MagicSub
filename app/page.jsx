@@ -2,7 +2,7 @@
 
 import LandingPageNavbar from "@/components/LandingPageNavbar";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 import { useVideo } from "@/contexts/VideoContext";
@@ -11,9 +11,15 @@ const LandingPage = () => {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { addVideo } = useVideo();
 
+  useEffect(() => {
+    if (status === "loading") return; // Đang lấy session => đợi
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e) => {
     if (!session) {
@@ -37,7 +43,7 @@ const LandingPage = () => {
 
     if (response.ok) {
       addVideo(data.video);
-      router.push(`/main/${data.video.publicId}`);
+      router.push(`/main/${data.video._id}`);
 
       console.log(data);
     } else {

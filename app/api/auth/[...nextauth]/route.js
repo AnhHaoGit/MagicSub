@@ -75,8 +75,23 @@ export const authOptions = {
     },
 
     // Save user data into token
-    async jwt({ token, user }) {
-      if (user) token.id = user.id;
+    async jwt({ token, user, account }) {
+      if (user) {
+        if (account?.provider === "google") {
+          const db = await connectDB();
+          const existingUser = await db.collection("users").findOne({
+            email: user.email,
+          });
+
+          if (existingUser) {
+            token.id = existingUser._id.toString();
+          }
+        } else {
+          // For Credentials login, id is already available
+          token.id = user.id;
+        }
+      }
+
       return token;
     },
 

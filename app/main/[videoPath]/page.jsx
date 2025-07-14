@@ -21,13 +21,11 @@ export default function VideoPage() {
     setTargetLanguage(value);
   };
 
-  console.log("Source Language:", sourceLanguage);
-  console.log("Target Language:", targetLanguage);
-
   const videoUrl =
-    "https://res.cloudinary.com/dtmt08iwk/video/upload/v1752377192/youtube_downloads/yt_1752377185910.mp4";
+    "https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/youtube_uploads/yt_1752492130407.mp4";
   const STEP = 0.1;
-  const duration = 344.444807;
+  const duration = 772;
+  const videoId = "yt_1752492130407";
 
   const videoRef = useRef(null);
 
@@ -48,11 +46,19 @@ export default function VideoPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         videoUrl: videoUrl,
-        targetLanguage: 'vi'
+        targetLanguage: "vi",
+        videoId: videoId,
       }),
     });
 
     const data = await res.json();
+    console.log("Response:", res);
+    console.log("Data:", data);
+    if (!res.ok) {
+      console.error("Error processing video:", data);
+      setIsProcessing(false);
+      return;
+    }
     console.log(data.originalSrt);
     console.log(data.translatedSrt);
     setIsProcessing(false);

@@ -34,7 +34,7 @@ const LoginPage = () => {
     });
 
     if (result.ok) {
-      toast.success("Login successful");
+      toast.success("Login successful!");
       router.push("/");
     } else {
       toast.error("Invalid credentials");

@@ -34,6 +34,7 @@ const SignupPage = () => {
 
         if (result.ok) {
           router.push("/");
+          toast.success("Signup successful!");
         } else {
           toast.error("Login failed");
         }

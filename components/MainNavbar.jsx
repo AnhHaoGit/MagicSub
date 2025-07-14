@@ -23,9 +23,9 @@ const MainNavbar = () => {
           </Link>
         </div>
         <div className="flex items-center justify-center gap-2">
-          <div className="px-5 py-2 bg-iris text-white rounded-full hover:bg-violet transition-colors cursor-pointer">
+          <Link href='/main' className="px-5 py-2 bg-iris text-white rounded-full hover:bg-violet transition-colors cursor-pointer">
             + New video
-          </div>
+          </Link>
           <p className="border-2 border-iris rounded-full px-4 py-2">
             Gems: 100 💎
           </p>

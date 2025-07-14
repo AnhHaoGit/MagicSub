@@ -9,18 +9,20 @@ import { useVideo } from "@/contexts/VideoContext";
 import Link from "next/link";
 
 const MainPage = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { addVideo } = useVideo();
 
+
   useEffect(() => {
-    if (!session) {
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
       router.push("/login");
     }
-  }, [session, router]);
+  }, [status, router]);
 
   const handleSubmit = async (e) => {
     if (!session) {
@@ -64,8 +66,11 @@ const MainPage = () => {
           <div className="text-center">
             <p className="font-bold text-2xl">Upload your media</p>
             <p>
-              (or check your <Link href="/history" className="iris">history</Link> to see your
-              uploaded videos)
+              (or check your{" "}
+              <Link href="/history" className="iris">
+                history
+              </Link>{" "}
+              to see your uploaded videos)
             </p>
           </div>
 
