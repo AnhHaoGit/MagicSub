@@ -28,7 +28,6 @@ const LandingPage = () => {
     }
     e.preventDefault();
     setLoading(true);
-    console.log(url);
     const response = await fetch("/api/download", {
       method: "POST",
       headers: {
@@ -39,13 +38,10 @@ const LandingPage = () => {
 
     const data = await response.json();
 
-    console.log(response);
 
     if (response.ok) {
       addVideo(data.video);
       router.push(`/main/${data.video._id}`);
-
-      console.log(data);
     } else {
       toast.error(data.message || "Download failed"); //handle sau
     }

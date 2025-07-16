@@ -41,13 +41,11 @@ const MainPage = () => {
 
     const data = await response.json();
 
-    console.log(response);
 
     if (response.ok) {
       addVideo(data.video);
-      router.push(`/main/${data.video.publicId}`);
+      router.push(`/main/${data.video._id}`);
 
-      console.log(data);
     } else {
       toast.error(data.message || "Download failed"); //handle sau
     }

@@ -2,25 +2,9 @@
 
 import { NextResponse } from "next/server";
 import { MongoClient, ObjectId } from "mongodb";
-import { exec } from "child_process";
-import fs from "fs";
-import path from "path";
-import util from "util";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-
-const execPromise = util.promisify(exec);
-
-const s3 = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
-
-const BUCKET_NAME = process.env.AWS_S3_BUCKET;
+import { spawn } from "child_process";
 
 const client = new MongoClient(process.env.MONGODB_URI);
 let db;
@@ -33,9 +17,34 @@ async function connectDB() {
   return db;
 }
 
+async function getYoutubeMetadataAndDirectUrl(url) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn("yt-dlp", ["--dump-json", "-f", "18", url]);
+    let data = "";
+
+    proc.stdout.on("data", (chunk) => {
+      data += chunk.toString();
+    });
+
+    proc.on("close", (code) => {
+      if (code === 0) {
+        try {
+          const metadata = JSON.parse(data);
+          resolve(metadata);
+        } catch (e) {
+          reject(new Error("Failed to parse metadata"));
+        }
+      } else {
+        reject(new Error("yt-dlp process failed"));
+      }
+    });
+
+    proc.on("error", reject);
+  });
+}
+
 export async function POST(req) {
   const session = await getServerSession(authOptions);
-
   if (!session) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
@@ -46,69 +55,40 @@ export async function POST(req) {
       return NextResponse.json({ message: "Missing URL" }, { status: 400 });
     }
 
-    const outputDir = path.join(process.cwd(), "downloads");
-    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
+    const metadata = await getYoutubeMetadataAndDirectUrl(url);
+    const directUrl =
+      metadata.url || metadata.direct_url || metadata.url_list?.[0] || null;
 
-    // Download video using yt-dlp
-    const command = `yt-dlp -o "${outputDir}/yt_video.%(ext)s" --print-json "${url}"`;
-    const { stdout } = await execPromise(command);
-    const videoInfo = JSON.parse(stdout.split("\n")[0]);
-
-    const downloadedPath = path.join(outputDir, `yt_video.${videoInfo.ext}`);
-    const convertedPath = path.join(outputDir, `converted_${Date.now()}.mp4`);
-
-    // Convert video to MP4 using ffmpeg
-    const ffmpegCommand = `ffmpeg -i "${downloadedPath}" -c:v libx264 -c:a aac -strict experimental "${convertedPath}"`;
-    await execPromise(ffmpegCommand);
-
-    // Upload to S3
-    const s3Key = `youtube_uploads/yt_${Date.now()}.mp4`;
-    const fileStream = fs.createReadStream(convertedPath);
-
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: s3Key,
-        Body: fileStream,
-        ContentType: "video/mp4",
-      })
-    );
-
-    // Cleanup temp files
-    fs.unlinkSync(downloadedPath);
-    fs.unlinkSync(convertedPath);
-
-    // Save to MongoDB
-    const cloudUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
-    const videoData = {
-      _id: s3Key.split("/")[1],
-      user_id: new ObjectId(session.user.id),
-      title: videoInfo.title,
-      cloudUrl,
-      duration: videoInfo.duration,
-      originalUrl: url,
-      createdAt: new Date(),
-    };
+    const createdAt = new Date()
 
     const db = await connectDB();
-    await db.collection("videos").insertOne(videoData);
+    const result = await db.collection("videos").insertOne({
+      user_id: new ObjectId(session.user.id),
+      title: metadata.title,
+      duration: metadata.duration,
+      thumbnail: metadata.thumbnail,
+      originalUrl: url,
+      directUrl: directUrl,
+      createdAt: createdAt,
+    });
 
     return NextResponse.json({
-      message: "Uploaded successfully",
+      message: "Metadata saved",
       video: {
-        _id: videoData._id,
-        user_id: videoData.user_id,
-        title: videoData.title,
-        cloudUrl: videoData.cloudUrl,
-        duration: videoData.duration,
-        originalUrl: videoData.originalUrl,
-        createdAt: videoData.createdAt.toISOString(),
+        _id: result.insertedId,
+        userId: session.user.id,
+        title: metadata.title,
+        duration: metadata.duration,
+        thumbnail: metadata.thumbnail,
+        originalUrl: url,
+        directUrl: directUrl,
+        createdAt: createdAt.toISOString(),
       },
     });
   } catch (error) {
-    console.error("Upload or save failed:", error);
+    console.error("Metadata fetch failed:", error);
     return NextResponse.json(
-      { message: "Upload or save failed" },
+      { message: "Metadata fetch failed" },
       { status: 500 }
     );
   }

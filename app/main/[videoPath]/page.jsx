@@ -1,17 +1,38 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, use } from "react";
 import MainNavbar from "@/components/MainNavbar";
-// import { useParams } from "next/navigation";
-// import { useVideo } from "@/contexts/VideoContext";
+import { useParams } from "next/navigation";
+import { useVideo } from "@/contexts/VideoContext";
 import VideoTrimmer from "@/components/VideoTrimmer";
 import { formatTime } from "@/lib/format_time";
 import LanguageSelect from "@/components/LanguageSelect";
+import { toast } from "react-toastify";
+import { useSession } from "next-auth/react";
+
+const STEP = 0.1;
 
 export default function VideoPage() {
+  const { videoPath } = useParams();
+  const { updateVideo } = useVideo();
+  const { data: session } = useSession();
+
+  const [videoData, setVideoData] = useState(null);
   const [sourceLanguage, setSourceLanguage] = useState("en");
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isProccessing, setIsProcessing] = useState(false);
+  const [isGettingNewUrl, setIsGettingNewUrl] = useState(false);
+
+  const [values, setValues] = useState([0, 0]);
+  const trimmedDuration = formatTime(values[1] - values[0]);
+
+  useEffect(() => {
+    const video = JSON.parse(localStorage.getItem("videos")) || [];
+    const found = video.find((v) => v._id === videoPath);
+    setVideoData(found);
+    setValues([0, found?.duration]);
+  }, [videoPath]);
+
 
   const handleSourceLanguageChange = (value) => {
     setSourceLanguage(value);
@@ -21,17 +42,37 @@ export default function VideoPage() {
     setTargetLanguage(value);
   };
 
-  const videoUrl =
-    "https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/youtube_uploads/yt_1752492130407.mp4";
-  const STEP = 0.1;
-  const duration = 772;
-  const videoId = "yt_1752492130407";
+  const getNewUrl = async () => {
+    if (!session) {
+      toast.error("Please login to continue the process.");
+      return;
+    }
+    setIsGettingNewUrl(true);
+    const response = await fetch("/api/refresh_direct_url", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        originalUrl: videoData.originalUrl,
+        _id: videoData._id,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      toast.success("New URL fetched successfully!");
+      setVideoData({ ...videoData, directUrl: data.directUrl });
+      updateVideo(videoData._id, data.directUrl);
+    } else {
+      toast.error(data.message);
+    }
+
+    setIsGettingNewUrl(false);
+  };
 
   const videoRef = useRef(null);
-
-  const [values, setValues] = useState([0, duration]);
-
-  let trimmedDuration = formatTime(values[1] - values[0]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -64,40 +105,35 @@ export default function VideoPage() {
     setIsProcessing(false);
   };
 
-  // const [currentVideo, setCurrentVideo] = useState(null);
-  // const { videoPath } = useParams();
-  // const { video } = useVideo();
-
-  // useEffect(() => {
-  //   const currentVideo = video.find((video) => video.publicId === videoPath);
-  //   setCurrentVideo(currentVideo);
-  // }, [video, videoPath]);
-
   return (
     <>
       <MainNavbar />
       <main className="flex flex-col items-center justify-items-start h-screen w-full p-10">
-        <div className="flex items-center justify-items-start w-full">
-          <h1 className="mt-20 font-bold text-2xl">Video Preview</h1>
+        <div className="flex flex-col mt-20 items-start justify-center w-full">
+          <h1 className="font-bold text-2xl">Video Preview</h1>
+          <div className="flex items-center justify-items-start w-full gap-1">
+            <p className="gray">if the video is not playing, please click</p>
+            <button
+              className="iris underline cursor-pointer"
+              onClick={getNewUrl}
+            >
+              Get new url
+            </button>
+            <p className="gray">{isGettingNewUrl ? "processing..." : ""}</p>
+          </div>
         </div>
         <div className="flex w-full mt-5 items-center justify-between gap-5">
           <div className="w-2/3">
-            {/* {currentVideo?.cloudUrl ? (
-            <video
-              src={currentVideo.cloudUrl}
-              controls
-              className="w-[1000px] rounded shadow-lg"
-            />
-          ) : (
-            <p>Loading video...</p>
-          )} */}
-
-            <video
-              ref={videoRef}
-              src={videoUrl}
-              controls
-              className="rounded-xl shadow-xl w-full"
-            />
+            {videoData?.directUrl ? (
+              <video
+                ref={videoRef}
+                src={videoData.directUrl}
+                controls
+                className="rounded-xl shadow-xl w-full"
+              />
+            ) : (
+              <p>Loading video...</p>
+            )}
           </div>
           <div className="w-1/3 h-full flex flex-col items-center justify-items-first px-5 bg-smoke rounded-4xl shadow-lg">
             <h1 className="font-bold text-[clamp(1rem, 2vw, 1.5rem)] mt-5">
@@ -111,7 +147,7 @@ export default function VideoPage() {
             />
 
             <button
-              className="flex items-center gap-2 bg-iris text-white rounded-full py-4 px-20 shadow-2xl mt-30 font-bold justify-center hover:bg-violet transition-colors cursor-pointer"
+              className="flex items-center gap-2 bg-iris text-white rounded-full py-4 px-20 shadow-2xl mt-20 font-bold justify-center hover:bg-violet transition-colors cursor-pointer"
               onClick={handleProcess}
             >
               {isProccessing ? (
@@ -167,7 +203,7 @@ export default function VideoPage() {
         <div className="flex flex-col bg-smoke p-6 rounded-4xl shadow-lg w-full mt-3">
           <VideoTrimmer
             STEP={STEP}
-            duration={duration}
+            videoData={videoData}
             values={values}
             setValues={setValues}
           />
