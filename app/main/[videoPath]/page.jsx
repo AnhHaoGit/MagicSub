@@ -1,22 +1,20 @@
 "use client";
 
-import React, { useRef, useEffect, useState, use } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import { useParams } from "next/navigation";
-import { useVideo } from "@/contexts/VideoContext";
 import VideoTrimmer from "@/components/VideoTrimmer";
 import { formatTime } from "@/lib/format_time";
 import LanguageSelect from "@/components/LanguageSelect";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
+import { update_video_in_local_storage } from "@/lib/local_storage_handlers";
 
 const STEP = 0.1;
 
 export default function VideoPage() {
   const { videoPath } = useParams();
-  const { updateVideo } = useVideo();
   const { data: session } = useSession();
-
   const [videoData, setVideoData] = useState(null);
   const [sourceLanguage, setSourceLanguage] = useState("en");
   const [targetLanguage, setTargetLanguage] = useState("en");
@@ -32,7 +30,6 @@ export default function VideoPage() {
     setVideoData(found);
     setValues([0, found?.duration]);
   }, [videoPath]);
-
 
   const handleSourceLanguageChange = (value) => {
     setSourceLanguage(value);
@@ -63,8 +60,9 @@ export default function VideoPage() {
 
     if (response.ok) {
       toast.success("New URL fetched successfully!");
-      setVideoData({ ...videoData, directUrl: data.directUrl });
-      updateVideo(videoData._id, data.directUrl);
+      let updatedVideoData = { ...videoData, directUrl: data.directUrl };
+      setVideoData(updatedVideoData);
+      update_video_in_local_storage(updatedVideoData);
     } else {
       toast.error(data.message);
     }
@@ -86,9 +84,9 @@ export default function VideoPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        videoUrl: videoUrl,
-        targetLanguage: "vi",
-        videoId: videoId,
+        directUrl: videoData.directUrl,
+        _id: videoData._id,
+        targetLanguage: "en",
       }),
     });
 

@@ -5,17 +5,14 @@ import MainNavbar from "@/components/MainNavbar";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { useVideo } from "@/contexts/VideoContext";
 import Link from "next/link";
+import { add_video_to_local_storage } from "@/lib/local_storage_handlers";
 
 const MainPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const { addVideo } = useVideo();
-
 
   useEffect(() => {
     if (status === "loading") return;
@@ -41,11 +38,9 @@ const MainPage = () => {
 
     const data = await response.json();
 
-
     if (response.ok) {
-      addVideo(data.video);
+      add_video_to_local_storage(data.video);
       router.push(`/main/${data.video._id}`);
-
     } else {
       toast.error(data.message || "Download failed"); //handle sau
     }

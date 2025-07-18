@@ -5,14 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
-import { useVideo } from "@/contexts/VideoContext";
+import { add_video_to_local_storage } from "@/lib/local_storage_handlers";
 
 const LandingPage = () => {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { addVideo } = useVideo();
 
   useEffect(() => {
     if (status === "loading") return; // Đang lấy session => đợi
@@ -40,7 +39,7 @@ const LandingPage = () => {
 
 
     if (response.ok) {
-      addVideo(data.video);
+      add_video_to_local_storage(data.video);
       router.push(`/main/${data.video._id}`);
     } else {
       toast.error(data.message || "Download failed"); //handle sau
