@@ -4,11 +4,14 @@ import React, { useRef, useEffect, useState } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import { useParams } from "next/navigation";
 import VideoTrimmer from "@/components/VideoTrimmer";
-import { formatTime } from "@/lib/format_time";
+import { formatTime } from "@/lib/srt_to_second";
 import LanguageSelect from "@/components/LanguageSelect";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
-import { add_subtitle_to_local_storage_by_video_id, update_video_in_local_storage } from "@/lib/local_storage_handlers";
+import {
+  add_subtitle_to_local_storage_by_video_id,
+  update_video_in_local_storage,
+} from "@/lib/local_storage_handlers";
 import { useRouter } from "next/navigation";
 
 const STEP = 0.1;
@@ -76,6 +79,10 @@ export default function VideoPage() {
   }, [values[0]]);
 
   const handleProcess = async () => {
+    if (!session) {
+      toast.error("Please login to continue the process.");
+      return;
+    }
     setIsProcessing(true);
     const res = await fetch("/api/subtitle", {
       method: "POST",

@@ -1,10 +1,9 @@
 "use client";
 
 import { Range } from "react-range";
-import { formatTime } from "@/lib/format_time";
+import { formatTime } from "@/lib/srt_to_second";
 
 const VideoTrimmer = ({ STEP, videoData, values, setValues }) => {
-
   return (
     <>
       {videoData?.duration ? (
@@ -34,7 +33,9 @@ const VideoTrimmer = ({ STEP, videoData, values, setValues }) => {
                     backgroundColor: "#4C3BCF",
                     borderRadius: "4px",
                     left: `${(values[0] / videoData.duration) * 100}%`,
-                    width: `${((values[1] - values[0]) / videoData.duration) * 100}%`,
+                    width: `${
+                      ((values[1] - values[0]) / videoData.duration) * 100
+                    }%`,
                   }}
                 />
                 {children}

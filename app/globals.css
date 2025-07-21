@@ -83,3 +83,7 @@ body {
 .group:focus-within .icon {
   color: #4C3BCF;
 }
+
+.border-iris {
+  border: #4C3BCF 1px solid;
+}
