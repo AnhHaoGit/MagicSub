@@ -8,15 +8,16 @@ import { formatTime } from "@/lib/format_time";
 import LanguageSelect from "@/components/LanguageSelect";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
-import { update_video_in_local_storage } from "@/lib/local_storage_handlers";
+import { add_subtitle_to_local_storage_by_video_id, update_video_in_local_storage } from "@/lib/local_storage_handlers";
+import { useRouter } from "next/navigation";
 
 const STEP = 0.1;
 
 export default function VideoPage() {
+  const router = useRouter();
   const { videoPath } = useParams();
   const { data: session } = useSession();
   const [videoData, setVideoData] = useState(null);
-  const [sourceLanguage, setSourceLanguage] = useState("en");
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isProccessing, setIsProcessing] = useState(false);
   const [isGettingNewUrl, setIsGettingNewUrl] = useState(false);
@@ -30,10 +31,6 @@ export default function VideoPage() {
     setVideoData(found);
     setValues([0, found?.duration]);
   }, [videoPath]);
-
-  const handleSourceLanguageChange = (value) => {
-    setSourceLanguage(value);
-  };
 
   const handleTargetLanguageChange = (value) => {
     setTargetLanguage(value);
@@ -86,20 +83,20 @@ export default function VideoPage() {
       body: JSON.stringify({
         directUrl: videoData.directUrl,
         _id: videoData._id,
-        targetLanguage: "en",
+        targetLanguage: targetLanguage,
       }),
     });
 
     const data = await res.json();
-    console.log("Response:", res);
-    console.log("Data:", data);
     if (!res.ok) {
       console.error("Error processing video:", data);
       setIsProcessing(false);
       return;
+    } else {
+      add_subtitle_to_local_storage_by_video_id(videoData._id, data.subtitle);
+      toast.success("Subtitle successfully generated!");
+      router.push(`/main/custom_subtitle/${videoData._id}`);
     }
-    console.log(data.originalSrt);
-    console.log(data.translatedSrt);
     setIsProcessing(false);
   };
 
@@ -133,19 +130,19 @@ export default function VideoPage() {
               <p>Loading video...</p>
             )}
           </div>
-          <div className="w-1/3 h-full flex flex-col items-center justify-items-first px-5 bg-smoke rounded-4xl shadow-lg">
-            <h1 className="font-bold text-[clamp(1rem, 2vw, 1.5rem)] mt-5">
-              Add your Subtitle here!
-            </h1>
-            <LanguageSelect
-              sourceLanguage={sourceLanguage}
-              targetLanguage={targetLanguage}
-              handleSourceLanguageChange={handleSourceLanguageChange}
-              handleTargetLanguageChange={handleTargetLanguageChange}
-            />
+          <div className="w-1/3 h-full flex flex-col items-center justify-between p-5 bg-smoke rounded-4xl shadow-lg">
+            <div className="flex flex-col w-full items-center gap-4">
+              <h1 className="font-bold text-[clamp(1rem, 2vw, 1.5rem)] mt-5">
+                Add your Subtitle here!
+              </h1>
+              <LanguageSelect
+                targetLanguage={targetLanguage}
+                handleTargetLanguageChange={handleTargetLanguageChange}
+              />
+            </div>
 
             <button
-              className="flex items-center gap-2 bg-iris text-white rounded-full py-4 px-20 shadow-2xl mt-20 font-bold justify-center hover:bg-violet transition-colors cursor-pointer"
+              className="flex items-center gap-2 bg-iris text-white rounded-full py-4 px-20 shadow-2xl font-bold justify-center hover:bg-violet transition-colors cursor-pointer"
               onClick={handleProcess}
             >
               {isProccessing ? (

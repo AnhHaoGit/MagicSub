@@ -11,10 +11,56 @@ import os from "os";
 import fs from "fs/promises";
 import { randomUUID } from "crypto";
 import FormData from "form-data";
+import { MongoClient, ObjectId } from "mongodb";
+import { start } from "repl";
 
-// Whisper API endpoint
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+const client = new MongoClient(process.env.MONGODB_URI);
+let db;
+
+async function connectDB() {
+  if (!db) {
+    await client.connect();
+    db = client.db(process.env.MONGODB_DB_NAME || "magicsub_db");
+  }
+  return db;
+}
+
+function convertSRTTimeToSeconds(srtTime) {
+  const [hours, minutes, rest] = srtTime.split(":");
+  const [seconds, milliseconds] = rest.split(",");
+
+  return (
+    parseInt(hours) * 3600 +
+    parseInt(minutes) * 60 +
+    parseInt(seconds) +
+    parseInt(milliseconds) / 1000
+  );
+}
+
+const formatSrtFile = (data, lastIndex, lastSecond) => {
+  const array = data.split("\n\n");
+  const formattedData = [];
+  for (let i = 0; i < array.length - 1; i++) {
+    const items = array[i].split("\n");
+
+    const segment = {
+      index: Number(items[0]) + lastIndex,
+      start: convertSRTTimeToSeconds(items[1].split(" --> ")[0]) + lastSecond,
+      end: convertSRTTimeToSeconds(items[1].split(" --> ")[1]) + lastSecond,
+      text: items[2],
+    };
+    formattedData.push(segment);
+  }
+
+  return {
+    formattedData,
+    lastIndex: formattedData[formattedData.length - 1].index,
+    lastSecond: formattedData[formattedData.length - 1].end,
+  };
+};
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
@@ -31,16 +77,14 @@ export async function POST(req) {
       );
     }
 
-    // Step 1: Download audio
     const response = await axios.get(directUrl, {
       responseType: "arraybuffer",
     });
     const audioBuffer = Buffer.from(response.data);
 
-    // Step 2: Pipe audioBuffer into ffmpeg and collect chunks as buffers
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "chunks-"));
-    const chunks = [];
 
+    // Tách file bằng ffmpeg
     await new Promise((resolve, reject) => {
       const ffmpeg = spawn("ffmpeg", [
         "-i",
@@ -58,10 +102,6 @@ export async function POST(req) {
         path.join(tempDir, "chunk_%03d.mp3"),
       ]);
 
-      ffmpeg.stderr.on("data", (data) => {
-        console.log("ffmpeg stderr:", data.toString());
-      });
-
       ffmpeg.on("error", (err) => reject(err));
       ffmpeg.on("close", (code) => {
         if (code === 0) resolve();
@@ -72,10 +112,12 @@ export async function POST(req) {
       readable.pipe(ffmpeg.stdin);
     });
 
-    // Step 3: Read all chunk files and send to Whisper
+    // Đọc các file nhỏ và gửi lên Whisper (định dạng srt)
     const files = await fs.readdir(tempDir);
-    files.sort(); // Ensure chunks are in order
-    let fullText = "";
+    files.sort();
+    const segments = [];
+    let lastIndex = 0;
+    let lastSecond = 0;
 
     for (const fileName of files) {
       const filePath = path.join(tempDir, fileName);
@@ -87,8 +129,8 @@ export async function POST(req) {
         contentType: "audio/mp3",
       });
       form.append("model", "whisper-1");
-      form.append("response_format", "text");
-      form.append("language", targetLanguage); // optional
+      form.append("response_format", "srt"); // <-- chuyển về srt
+      form.append("language", targetLanguage);
 
       const whisperRes = await axios.post(WHISPER_API_URL, form, {
         headers: {
@@ -97,19 +139,35 @@ export async function POST(req) {
         },
       });
 
-      fullText += whisperRes.data + "\n";
+      console.log("Whisper response:", whisperRes);
+
+      const formattedSrt = formatSrtFile(
+        whisperRes.data,
+        lastIndex,
+        lastSecond
+      );
+
+      lastIndex = formattedSrt.lastIndex;
+      lastSecond = formattedSrt.lastSecond;
+      const { formattedData } = formattedSrt;
+      segments.push(...formattedData);
     }
 
-    // Clean up temp files
     await fs.rm(tempDir, { recursive: true, force: true });
 
-    // Return final result
+    const db = await connectDB();
+    await db.collection("subtitle").insertOne({
+      userId: new ObjectId(session.user.id),
+      videoId: new ObjectId(_id),
+      subtitle: segments,
+    });
+
     return NextResponse.json({
-      message: "Transcript generated",
-      text: fullText.trim(),
+      message: "Transcript segments saved (SRT format)",
+      subtitle: segments,
     });
   } catch (err) {
-    console.error("Error processing audio:", err);
+    console.error("Error processing video:", err);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
