@@ -63,6 +63,10 @@ body {
   border-color: #4C3BCF;
 }
 
+.hover\:iris:hover {
+  color: #4C3BCF;
+}
+
 .hover\:bg-violet:hover {
   background-color: #836fff;
 }
@@ -86,4 +90,20 @@ body {
 
 .border-iris {
   border: #4C3BCF 1px solid;
+}
+
+.border-b-light-gray {
+  border-bottom: #bfbdbd 1px solid;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE & Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari */
 }

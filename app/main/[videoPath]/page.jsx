@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import { useParams } from "next/navigation";
 import VideoTrimmer from "@/components/VideoTrimmer";
-import { formatTime } from "@/lib/srt_to_second";
+import { formatTime } from "@/lib/format_time";
 import LanguageSelect from "@/components/LanguageSelect";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";

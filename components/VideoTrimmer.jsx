@@ -1,7 +1,7 @@
 "use client";
 
 import { Range } from "react-range";
-import { formatTime } from "@/lib/srt_to_second";
+import { formatTime } from "@/lib/format_time";
 
 const VideoTrimmer = ({ STEP, videoData, values, setValues }) => {
   return (

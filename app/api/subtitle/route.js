@@ -9,10 +9,11 @@ import { spawn } from "child_process";
 import path from "path";
 import os from "os";
 import fs from "fs/promises";
-import { randomUUID } from "crypto";
 import FormData from "form-data";
 import { MongoClient, ObjectId } from "mongodb";
-import { start } from "repl";
+import { v4 as uuidv4 } from "uuid";
+import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
+import { secondsToSrtTimestamp } from "@/lib/second_to_srt";
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -28,28 +29,22 @@ async function connectDB() {
   return db;
 }
 
-function convertSRTTimeToSeconds(srtTime) {
-  const [hours, minutes, rest] = srtTime.split(":");
-  const [seconds, milliseconds] = rest.split(",");
-
-  return (
-    parseInt(hours) * 3600 +
-    parseInt(minutes) * 60 +
-    parseInt(seconds) +
-    parseInt(milliseconds) / 1000
-  );
-}
-
-const formatSrtFile = (data, lastIndex, lastSecond) => {
+const formatSrtFile = (data, lastSecond) => {
   const array = data.split("\n\n");
   const formattedData = [];
   for (let i = 0; i < array.length - 1; i++) {
     const items = array[i].split("\n");
 
+    const updatedStart =
+      srtToSecondsTimestamp(items[1].split(" --> ")[0]) + lastSecond;
+
+    const updatedEnd =
+      srtToSecondsTimestamp(items[1].split(" --> ")[1]) + lastSecond;
+    
     const segment = {
-      index: Number(items[0]) + lastIndex,
-      start: convertSRTTimeToSeconds(items[1].split(" --> ")[0]) + lastSecond,
-      end: convertSRTTimeToSeconds(items[1].split(" --> ")[1]) + lastSecond,
+      index: uuidv4(),
+      start: secondsToSrtTimestamp(updatedStart),
+      end: secondsToSrtTimestamp(updatedEnd),
       text: items[2],
     };
     formattedData.push(segment);
@@ -57,8 +52,7 @@ const formatSrtFile = (data, lastIndex, lastSecond) => {
 
   return {
     formattedData,
-    lastIndex: formattedData[formattedData.length - 1].index,
-    lastSecond: formattedData[formattedData.length - 1].end,
+    lastSecond: srtToSecondsTimestamp(formattedData[formattedData.length - 1].end),
   };
 };
 
@@ -116,7 +110,6 @@ export async function POST(req) {
     const files = await fs.readdir(tempDir);
     files.sort();
     const segments = [];
-    let lastIndex = 0;
     let lastSecond = 0;
 
     for (const fileName of files) {
@@ -139,15 +132,8 @@ export async function POST(req) {
         },
       });
 
-      console.log("Whisper response:", whisperRes);
+      const formattedSrt = formatSrtFile(whisperRes.data, lastSecond);
 
-      const formattedSrt = formatSrtFile(
-        whisperRes.data,
-        lastIndex,
-        lastSecond
-      );
-
-      lastIndex = formattedSrt.lastIndex;
       lastSecond = formattedSrt.lastSecond;
       const { formattedData } = formattedSrt;
       segments.push(...formattedData);

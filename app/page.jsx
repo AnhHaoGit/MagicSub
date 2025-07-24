@@ -11,14 +11,7 @@ const LandingPage = () => {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { data: session, status } = useSession();
-
-  useEffect(() => {
-    if (status === "loading") return; // Đang lấy session => đợi
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
+  const { data: session} = useSession();
 
   const handleSubmit = async (e) => {
     if (!session) {
