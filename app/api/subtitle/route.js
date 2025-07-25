@@ -40,7 +40,7 @@ const formatSrtFile = (data, lastSecond) => {
 
     const updatedEnd =
       srtToSecondsTimestamp(items[1].split(" --> ")[1]) + lastSecond;
-    
+
     const segment = {
       index: uuidv4(),
       start: secondsToSrtTimestamp(updatedStart),
@@ -52,7 +52,9 @@ const formatSrtFile = (data, lastSecond) => {
 
   return {
     formattedData,
-    lastSecond: srtToSecondsTimestamp(formattedData[formattedData.length - 1].end),
+    lastSecond: srtToSecondsTimestamp(
+      formattedData[formattedData.length - 1].end
+    ),
   };
 };
 
@@ -142,7 +144,7 @@ export async function POST(req) {
     await fs.rm(tempDir, { recursive: true, force: true });
 
     const db = await connectDB();
-    await db.collection("subtitle").insertOne({
+    const result = await db.collection("subtitle").insertOne({
       userId: new ObjectId(session.user.id),
       videoId: new ObjectId(_id),
       subtitle: segments,
@@ -151,6 +153,7 @@ export async function POST(req) {
     return NextResponse.json({
       message: "Transcript segments saved (SRT format)",
       subtitle: segments,
+      subtitleId: result.insertedId,
     });
   } catch (err) {
     console.error("Error processing video:", err);

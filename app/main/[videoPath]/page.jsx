@@ -100,7 +100,7 @@ export default function VideoPage() {
       setIsProcessing(false);
       return;
     } else {
-      add_subtitle_to_local_storage_by_video_id(videoData._id, data.subtitle);
+      add_subtitle_to_local_storage_by_video_id(videoData._id, data.subtitle, data.subtitleId);
       toast.success("Subtitle successfully generated!");
       router.push(`/main/custom_subtitle/${videoData._id}`);
     }

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useEffect } from "react";
 
-const SubtitleScrollBox = ({ subtitle, setSubtitle }) => {
+const SubtitleScrollBox = ({ subtitle, setSubtitle, activeSubtitleIndex }) => {
+  const itemRefs = useRef([]);
+
   const updateSubtitle = (indexToUpdate, newData) => {
     setSubtitle((prev) =>
       prev.map((item, index) =>
@@ -28,43 +30,63 @@ const SubtitleScrollBox = ({ subtitle, setSubtitle }) => {
     setSubtitle((prev) => prev.filter((_, index) => index !== indexToDelete));
   };
 
+  useEffect(() => {
+    const domIndex = subtitle.findIndex(
+      (item) => item.index === activeSubtitleIndex
+    );
+
+    if (domIndex !== -1 && itemRefs.current[domIndex]) {
+      itemRefs.current[domIndex].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [activeSubtitleIndex, subtitle]);
+
   return (
-    <div className="flex flex-col gap-3 shadow-xl max-h-full overflow-y-auto hide-scrollbar p-3 bg-violet rounded-2xl">
+    <div className="flex flex-col gap-3 bg-light-gray max-h-full overflow-y-auto hide-scrollbar p-3 rounded-2xl">
       {subtitle.map((item, index) => (
-        <div key={index}>
-          <div className="flex flex-col items-start justify-items-start w-full p-3 gap-2 bg-white rounded-lg shadow-md border-iris">
+        <div key={index} ref={(el) => (itemRefs.current[index] = el)}>
+          <div
+            className={`flex bg-white gray flex-col items-start justify-items-start w-full p-3 gap-2 rounded-lg shadow-md transition-colors ${
+              item.index === activeSubtitleIndex ? "border-iris" : ""
+            }`}
+          >
             <div className="flex items-center justify-between w-full border-b-1 pb-1 border-b-light-gray">
-              <div className="flex items-center justify-between gap-2 gray text-xs">
-                <input
-                  type="text"
-                  value={item.start}
-                  onChange={(e) =>
-                    updateSubtitle(index, { start: e.target.value })
-                  }
-                  className="bg-gray white rounded-sm text-center w-22"
-                />
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="size-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3"
+              <div className="flex items-center justify-between gap-3 gray text-xs">
+                <p>{index + 1}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <input
+                    type="text"
+                    value={item.start}
+                    onChange={(e) =>
+                      updateSubtitle(index, { start: e.target.value })
+                    }
+                    className="rounded-sm text-center w-22 bg-gray white"
                   />
-                </svg>
-                <input
-                  type="text"
-                  value={item.end}
-                  onChange={(e) =>
-                    updateSubtitle(index, { end: e.target.value })
-                  }
-                  className="bg-gray white rounded-sm text-center w-22"
-                />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3"
+                    />
+                  </svg>
+                  <input
+                    type="text"
+                    value={item.end}
+                    onChange={(e) =>
+                      updateSubtitle(index, { end: e.target.value })
+                    }
+                    className="rounded-sm text-center w-22 bg-gray white"
+                  />
+                </div>
               </div>
               <div className="flex items-center justify-between gap-2 text-xs">
                 <button

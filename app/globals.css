@@ -59,9 +59,6 @@ body {
   background-color: #836fff;
 }
 
-.border-iris {
-  border-color: #4C3BCF;
-}
 
 .hover\:iris:hover {
   color: #4C3BCF;
@@ -89,7 +86,15 @@ body {
 }
 
 .border-iris {
-  border: #4C3BCF 1px solid;
+  border: #4C3BCF 2px solid;
+}
+
+.border-white {
+  border: #eeeeee 1px solid;
+}
+
+.border-light-gray {
+  border: #bfbdbd 1px solid;
 }
 
 .border-b-light-gray {
