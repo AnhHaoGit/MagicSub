@@ -7,6 +7,7 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 
 import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
+import SubtitleStylingBox from "@/components/SubtitleStylingBox";
 
 const Page = () => {
   const { videoPath } = useParams();
@@ -14,7 +15,7 @@ const Page = () => {
   const [subtitle, setSubtitle] = useState([]);
   const [originalSubtitle, setOriginalSubtitle] = useState([]);
   const [currentSubtitle, setCurrentSubtitle] = useState(null);
-  const [isTranscript, setIsTranscript] = useState(true);
+  const [isTranscript, setIsTranscript] = useState(false);
   const videoRef = useRef(null);
   const animationFrameId = useRef(null);
 
@@ -196,8 +197,8 @@ const Page = () => {
               )}
             </div>
           </div>
-          <div className="w-2/5 h-full flex flex-col justify-evenly items-center gap-4 bg-smoke rounded-2xl p-5">
-            <div className="flex items-center justify-center gap-5">
+          <div className="w-2/5 h-full flex flex-col relative justify-evenly items-center gap-4 bg-smoke rounded-2xl p-5">
+            <div className="flex items-center justify-center absolute top-3 shadow-lg gap-5 bg-white p-2 rounded-4xl">
               <button
                 onClick={handleTranscriptButton}
                 className={`w-30 py-2 rounded-4xl font-semibold transition-colors ${
@@ -232,9 +233,9 @@ const Page = () => {
                 />
 
                 <button
-                  className={`flex items-center gap-2 px-10 py-1 text-white rounded-full shadow-2xl font-bold justify-center transition-colors cursor-pointer ${
+                  className={`flex items-center gap-2 px-10 py-1 text-white rounded-full shadow-2xl font-bold justify-center transition-colors ${
                     isSubtitleChanged
-                      ? "bg-iris hover:bg-violet"
+                      ? "bg-iris hover:bg-violet cursor-pointer"
                       : "bg-gray cursor-not-allowed"
                   }`}
                   onClick={saveHandler}
@@ -244,7 +245,17 @@ const Page = () => {
                 </button>
               </>
             ) : (
-              <p>Subtitle Styling</p>
+              <>
+                <SubtitleStylingBox></SubtitleStylingBox>
+                <div className="flex items-center justify-center gap-5">
+                  <button className="px-5 py-2 rounded-4xl font-semibold transition-colors bg-gray white hover:bg-light-gray">
+                    Reset to Default
+                  </button>
+                  <button className="px-5 py-2 rounded-4xl font-semibold transition-colors bg-gray white hover:bg-light-gray">
+                    Save as Default
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>

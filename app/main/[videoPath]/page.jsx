@@ -3,8 +3,8 @@
 import React, { useRef, useEffect, useState } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import { useParams } from "next/navigation";
-import VideoTrimmer from "@/components/VideoTrimmer";
-import { formatTime } from "@/lib/format_time";
+// import VideoTrimmer from "@/components/VideoTrimmer";
+// import { formatTime } from "@/lib/format_time";
 import LanguageSelect from "@/components/LanguageSelect";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
@@ -25,14 +25,14 @@ export default function VideoPage() {
   const [isProccessing, setIsProcessing] = useState(false);
   const [isGettingNewUrl, setIsGettingNewUrl] = useState(false);
 
-  const [values, setValues] = useState([0, 0]);
-  const trimmedDuration = formatTime(values[1] - values[0]);
+  // const [values, setValues] = useState([0, 0]);
+  // const trimmedDuration = formatTime(values[1] - values[0]);
 
   useEffect(() => {
     const video = JSON.parse(localStorage.getItem("videos")) || [];
     const found = video.find((v) => v._id === videoPath);
     setVideoData(found);
-    setValues([0, found?.duration]);
+    // setValues([0, found?.duration]);
   }, [videoPath]);
 
   const handleTargetLanguageChange = (value) => {
@@ -72,11 +72,11 @@ export default function VideoPage() {
 
   const videoRef = useRef(null);
 
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = values[0];
-    }
-  }, [values[0]]);
+  // useEffect(() => {
+  //   if (videoRef.current) {
+  //     videoRef.current.currentTime = values[0];
+  //   }
+  // }, [values[0]]);
 
   const handleProcess = async () => {
     if (!session) {
@@ -111,7 +111,7 @@ export default function VideoPage() {
     <>
       <MainNavbar />
       <main className="flex flex-col items-center justify-items-start h-screen w-full p-10">
-        <div className="flex flex-col mt-20 items-start justify-center w-full">
+        <div className="flex flex-col mt-30 items-start justify-center w-full">
           <h1 className="font-bold text-2xl">Video Preview</h1>
           <div className="flex items-center justify-items-start w-full gap-1">
             <p className="gray">if the video is not playing, please click</p>
@@ -176,7 +176,7 @@ export default function VideoPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between w-full mt-10 px-5">
+        {/* <div className="flex items-center justify-between w-full mt-10 px-5">
           <div className="flex items-center gap-3">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -201,15 +201,15 @@ export default function VideoPage() {
             <p>Duration: </p>
             <p>{trimmedDuration}</p>
           </div>
-        </div>
-        <div className="flex flex-col bg-smoke p-6 rounded-4xl shadow-lg w-full mt-3">
+        </div> */}
+        {/* <div className="flex flex-col bg-smoke p-6 rounded-4xl shadow-lg w-full mt-3">
           <VideoTrimmer
             STEP={STEP}
             videoData={videoData}
             values={values}
             setValues={setValues}
           />
-        </div>
+        </div> */}
       </main>
     </>
   );
