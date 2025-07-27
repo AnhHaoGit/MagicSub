@@ -37,7 +37,7 @@ const SelectBox = ({ label, value, onValueChange, options, placeholder }) => {
           >
             <Select.Viewport className="p-1">
               {options.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
+                <SelectItem key={opt.label} value={opt.value}>
                   {opt.label}
                 </SelectItem>
               ))}

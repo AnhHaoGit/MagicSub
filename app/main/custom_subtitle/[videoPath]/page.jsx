@@ -5,15 +5,17 @@ import SubtitleScrollBox from "@/components/SubtitleScrollBox";
 import { useParams } from "next/navigation";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
-
+import { useSession } from "next-auth/react";
 import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import SubtitleStylingBox from "@/components/SubtitleStylingBox";
 
 const Page = () => {
   const { videoPath } = useParams();
+  const { data: session } = useSession();
   const [videoData, setVideoData] = useState(null);
   const [subtitle, setSubtitle] = useState([]);
   const [originalSubtitle, setOriginalSubtitle] = useState([]);
+  const [style, setStyle] = useState({});
   const [currentSubtitle, setCurrentSubtitle] = useState(null);
   const [isTranscript, setIsTranscript] = useState(false);
   const videoRef = useRef(null);
@@ -161,11 +163,18 @@ const Page = () => {
       setSubtitle(clonedSubtitle);
       setOriginalSubtitle(clonedSubtitle);
     } else {
-      toast.error('Cannot find video data!')
+      toast.error("Cannot find video data!");
     }
   }, [videoPath]);
 
-  if (!videoData) {
+  useEffect(() => {
+    if (!session) return;
+
+    setStyle(session.user.style);
+  }, [session]);
+
+
+  if (!videoData && !session) {
     return (
       <>
         <MainNavbar />
@@ -246,15 +255,10 @@ const Page = () => {
               </>
             ) : (
               <>
-                <SubtitleStylingBox></SubtitleStylingBox>
-                <div className="flex items-center justify-center gap-5">
-                  <button className="px-5 py-2 rounded-4xl font-semibold transition-colors bg-gray white hover:bg-light-gray">
-                    Reset to Default
-                  </button>
-                  <button className="px-5 py-2 rounded-4xl font-semibold transition-colors bg-gray white hover:bg-light-gray">
-                    Save as Default
-                  </button>
-                </div>
+                <SubtitleStylingBox style={style} setStyle={setStyle}></SubtitleStylingBox>
+                <button className="flex items-center gap-2 px-10 py-1 text-white rounded-full shadow-2xl font-bold justify-center transition-colors bg-iris hover:bg-violet cursor-pointer">
+                  Save
+                </button>
               </>
             )}
           </div>

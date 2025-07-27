@@ -2,7 +2,7 @@
 
 import LandingPageNavbar from "@/components/LandingPageNavbar";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 import { add_video_to_local_storage } from "@/lib/local_storage_handlers";

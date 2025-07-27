@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import bcrypt from "bcryptjs";
 
 const client = new MongoClient(process.env.MONGODB_URI);
@@ -67,6 +67,21 @@ export const authOptions = {
             email: user.email,
             image: user.image,
             name: user.name,
+            style: {
+              font_family: "Roboto",
+              font_size: 18,
+              is_bold: false,
+              is_italic: false,
+              is_underline: false,
+              font_color: "#FFFFFF",
+              outline_color: "#000000",
+              outline_width: 2,
+              border_style: "boxed",
+              text_shadow: 4,
+              background_color: "#000000",
+              background_opacity: 55,
+              margin_bottom: 15,
+            },
           });
         }
       }
@@ -97,7 +112,33 @@ export const authOptions = {
 
     // Save token into session for client use
     async session({ session, token }) {
+      const db = await connectDB();
+      const user = await db.collection("users").findOne({
+        _id: new ObjectId(token.id),
+      });
+
       session.user.id = token.id;
+
+      if (user?.style) {
+        session.user.style = user.style;
+      } else {
+        session.user.style = {
+          font_family: "Roboto",
+          font_size: 18,
+          is_bold: false,
+          is_italic: false,
+          is_underline: false,
+          font_color: "#FFFFFF",
+          outline_color: "#000000",
+          outline_width: 2,
+          border_style: "boxed",
+          text_shadow: 4,
+          background_color: "#000000",
+          background_opacity: 55,
+          margin_bottom: 15,
+        };
+      }
+
       return session;
     },
   },

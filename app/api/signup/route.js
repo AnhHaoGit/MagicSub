@@ -40,6 +40,21 @@ export async function POST(req) {
   await usersCollection.insertOne({
     email,
     password: hashedPassword,
+    style: {
+      font_family: "Roboto",
+      font_size: 18,
+      is_bold: false,
+      is_italic: false,
+      is_underline: false,
+      font_color: "#FFFFFF",
+      outline_color: "#000000",
+      outline_width: 2,
+      border_style: "boxed",
+      text_shadow: 4,
+      background_color: "#000000",
+      background_opacity: 55,
+      margin_bottom: 15,
+    },
   });
 
   return NextResponse.json({ message: "User created" });

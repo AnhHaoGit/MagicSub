@@ -4,15 +4,11 @@ import { useState } from "react";
 import SelectBox from "@/components/SelectBox";
 import { font_family } from "@/lib/font_family";
 import { font_size } from "@/lib/font_size";
+import { border_style } from "@/lib/border_style";
 import ColorPickerBox from "./ColorPickerBox";
 import GenericSlider from "@/components/GenericSlider";
 
-const border_style = [
-  {label: 'boxed', value: 'boxed'},
-    {label: 'dropshadow', value: 'dropshadow'},
-]
-
-const SubtitleStylingBox = () => {
+const SubtitleStylingBox = ({ style, setStyle }) => {
   const [fontFamily, setFontFamily] = useState("Touche Semibold");
   const [fontSize, setFontSize] = useState(18);
   const [isBold, setIsBold] = useState(false);
@@ -22,19 +18,27 @@ const SubtitleStylingBox = () => {
   const [outlineColor, setOutlineColor] = useState("#000000");
   const [outlineWidth, setOutlineWidth] = useState(2);
   const [borderStyle, setBorderStyle] = useState("boxed");
-  const [textShadow, setTextShadow] = useState(1)
+  const [textShadow, setTextShadow] = useState(1);
   const [backgroundColor, setBackgroundColor] = useState("#000000");
-  const [backgroundOpacity, setBackgroundOpacity] = useState(90)
+  const [backgroundOpacity, setBackgroundOpacity] = useState(90);
+  const [marginBottom, setMarginBottom] = useState(15);
 
+  const updateStyleObject = (change) => {
+    setStyle((prev) => {
+      return { ...prev, ...change };
+    });
+  };
+
+  console.log(style)
 
   return (
-    <div className="flex flex-col w-full gap-3 bg-light-gray h-full overflow-y-auto hide-scrollbar p-5 rounded-2xl mt-15 items-start">
+    <div className="flex flex-col w-full gap-3 bg-white shadow-lg h-full overflow-y-auto hide-scrollbar p-5 rounded-2xl mt-15 items-start">
       <div className="flex items-end justify-between w-full">
         <div className="w-1/3">
           <SelectBox
             label="Font Family"
-            value={fontFamily}
-            onValueChange={setFontFamily}
+            value={style.font_family}
+            onValueChange={(value) => updateStyleObject({ font_family: value })}
             options={font_family}
             placeholder="Font"
           />
@@ -194,6 +198,27 @@ const SubtitleStylingBox = () => {
           />
           <p className="w-10 text-center text-xs">{backgroundOpacity}%</p>
         </div>
+      </div>
+      <div className="flex flex-col w-full mt-5">
+        <p className="text-[10px]">Position</p>
+        <div className="flex items-center justify-between gap-4">
+          <GenericSlider
+            min={0}
+            max={240}
+            step={1}
+            value={marginBottom}
+            onValueChange={setMarginBottom}
+          />
+          <p className="w-10 text-center text-xs">{marginBottom}px</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-center w-full gap-5">
+        <button className="px-5 py-1 rounded-4xl text-xs transition-colors bg-gray white hover:bg-light-gray">
+          Reset to Default
+        </button>
+        <button className="px-5 py-1 rounded-4xl text-xs transition-colors bg-gray white hover:bg-light-gray">
+          Save as Default
+        </button>
       </div>
     </div>
   );
