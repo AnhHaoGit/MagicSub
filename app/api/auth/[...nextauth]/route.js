@@ -128,7 +128,7 @@ export const authOptions = {
           is_bold: false,
           is_italic: false,
           is_underline: false,
-          font_color: "#FFFFFF",
+          font_color: "#ffffff",
           outline_color: "#000000",
           outline_width: 2,
           border_style: "boxed",

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import SelectBox from "@/components/SelectBox";
 import { font_family } from "@/lib/font_family";
 import { font_size } from "@/lib/font_size";
@@ -8,37 +7,20 @@ import { border_style } from "@/lib/border_style";
 import ColorPickerBox from "./ColorPickerBox";
 import GenericSlider from "@/components/GenericSlider";
 
-const SubtitleStylingBox = ({ style, setStyle }) => {
-  const [fontFamily, setFontFamily] = useState("Touche Semibold");
-  const [fontSize, setFontSize] = useState(18);
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [isUnderline, setIsUnderline] = useState(false);
-  const [fontColor, setFontColor] = useState("#FFFFFF");
-  const [outlineColor, setOutlineColor] = useState("#000000");
-  const [outlineWidth, setOutlineWidth] = useState(2);
-  const [borderStyle, setBorderStyle] = useState("boxed");
-  const [textShadow, setTextShadow] = useState(1);
-  const [backgroundColor, setBackgroundColor] = useState("#000000");
-  const [backgroundOpacity, setBackgroundOpacity] = useState(90);
-  const [marginBottom, setMarginBottom] = useState(15);
-
-  const updateStyleObject = (change) => {
-    setStyle((prev) => {
-      return { ...prev, ...change };
-    });
+const SubtitleStylingBox = ({ customize, setCustomize }) => {
+  const updateCustomizeObject = (change) => {
+    setCustomize((prev) => ({ ...prev, ...change }));
   };
-
-  console.log(style)
-
   return (
     <div className="flex flex-col w-full gap-3 bg-white shadow-lg h-full overflow-y-auto hide-scrollbar p-5 rounded-2xl mt-15 items-start">
       <div className="flex items-end justify-between w-full">
         <div className="w-1/3">
           <SelectBox
             label="Font Family"
-            value={style.font_family}
-            onValueChange={(value) => updateStyleObject({ font_family: value })}
+            value={customize.font_family}
+            onValueChange={(value) =>
+              updateCustomizeObject({ font_family: value })
+            }
             options={font_family}
             placeholder="Font"
           />
@@ -47,8 +29,10 @@ const SubtitleStylingBox = ({ style, setStyle }) => {
         <div className="w-1/3">
           <SelectBox
             label="Font Size"
-            value={fontSize}
-            onValueChange={setFontSize}
+            value={customize.font_size}
+            onValueChange={(value) =>
+              updateCustomizeObject({ font_size: value })
+            }
             options={font_size}
             placeholder="Size"
           />
@@ -56,9 +40,11 @@ const SubtitleStylingBox = ({ style, setStyle }) => {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsBold(!isBold)}
+            onClick={() =>
+              updateCustomizeObject({ is_bold: !customize.is_bold })
+            }
             className={`border rounded-lg p-1 text-sm font-medium ${
-              isBold ? "bg-iris white" : "border-gray"
+              customize.is_bold ? "bg-iris white" : "border-gray"
             }`}
           >
             <svg
@@ -76,9 +62,11 @@ const SubtitleStylingBox = ({ style, setStyle }) => {
             </svg>
           </button>
           <button
-            onClick={() => setIsItalic(!isItalic)}
+            onClick={() =>
+              updateCustomizeObject({ is_italic: !customize.is_italic })
+            }
             className={`border rounded-lg p-1 text-sm font-medium ${
-              isItalic ? "bg-iris white" : "border-gray"
+              customize.is_italic ? "bg-iris white" : "border-gray"
             }`}
           >
             <svg
@@ -97,9 +85,11 @@ const SubtitleStylingBox = ({ style, setStyle }) => {
             </svg>
           </button>
           <button
-            onClick={() => setIsUnderline(!isUnderline)}
+            onClick={() =>
+              updateCustomizeObject({ is_underline: !customize.is_underline })
+            }
             className={`border rounded-lg p-1 text-sm font-medium ${
-              isUnderline ? "bg-iris white" : "border-gray"
+              customize.is_underline ? "bg-iris white" : "border-gray"
             }`}
           >
             <svg
@@ -119,50 +109,72 @@ const SubtitleStylingBox = ({ style, setStyle }) => {
           </button>
         </div>
       </div>
+
       <div className="flex justify-between w-full mt-5">
         <div className="flex items-center gap-2">
           <p className="text-[10px]">Font Color</p>
-          <ColorPickerBox color={fontColor} onChange={setFontColor} />
+          <ColorPickerBox
+            color={customize.font_color}
+            onChange={(value) => updateCustomizeObject({ font_color: value })}
+          />
           <input
-            value={fontColor.toUpperCase()}
+            value={customize.font_color.toUpperCase()}
             type="text"
-            onChange={(e) => setFontColor(e.target.value)}
+            onChange={(e) =>
+              updateCustomizeObject({ font_color: e.target.value })
+            }
             className="w-25 py-1 pl-1 bg-gray white text-xs rounded-sm"
           />
         </div>
 
         <div className="flex items-center gap-2">
           <p className="text-[10px]">Outline Color</p>
-          <ColorPickerBox color={outlineColor} onChange={setOutlineColor} />
+          <ColorPickerBox
+            color={customize.outline_color}
+            onChange={(value) =>
+              updateCustomizeObject({ outline_color: value })
+            }
+          />
           <input
-            value={outlineColor.toUpperCase()}
+            value={customize.outline_color.toUpperCase()}
             type="text"
-            onChange={(e) => setOutlineColor(e.target.value)}
+            onChange={(e) =>
+              updateCustomizeObject({ outline_color: e.target.value })
+            }
             className="w-25 py-1 pl-1 bg-gray white text-xs rounded-sm"
           />
         </div>
       </div>
+
       <div className="flex flex-col w-full mt-5">
         <p className="text-[10px]">Outline Width</p>
         <div className="flex items-center justify-between gap-4">
           <GenericSlider
             min={0}
-            max={6}
+            max={4}
             step={1}
-            value={outlineWidth}
-            onValueChange={setOutlineWidth}
+            value={customize.outline_width}
+            onValueChange={(value) =>
+              updateCustomizeObject({ outline_width: value })
+            }
           />
-          <p className="w-10 text-center text-xs">{outlineWidth}px</p>
+          <p className="w-10 text-center text-xs">
+            {customize.outline_width}px
+          </p>
         </div>
       </div>
+
       <div className="w-full mt-5">
         <SelectBox
           label="Border Style"
-          value={borderStyle}
-          onValueChange={setBorderStyle}
+          value={customize.border_style}
+          onValueChange={(value) =>
+            updateCustomizeObject({ border_style: value })
+          }
           options={border_style}
         />
       </div>
+
       <div className="flex flex-col w-full mt-5">
         <p className="text-[10px]">Text Shadow</p>
         <div className="flex items-center justify-between gap-4">
@@ -170,22 +182,33 @@ const SubtitleStylingBox = ({ style, setStyle }) => {
             min={0}
             max={4}
             step={1}
-            value={textShadow}
-            onValueChange={setTextShadow}
+            value={customize.text_shadow}
+            onValueChange={(value) =>
+              updateCustomizeObject({ text_shadow: value })
+            }
           />
-          <p className="w-10 text-center text-xs">{textShadow}px</p>
+          <p className="w-10 text-center text-xs">{customize.text_shadow}px</p>
         </div>
       </div>
+
       <div className="flex items-center gap-2 mt-5 w-full">
         <p className="text-[10px]">Background Color</p>
-        <ColorPickerBox color={backgroundColor} onChange={setBackgroundColor} />
+        <ColorPickerBox
+          color={customize.background_color}
+          onChange={(value) =>
+            updateCustomizeObject({ background_color: value })
+          }
+        />
         <input
-          value={backgroundColor.toUpperCase()}
+          value={customize.background_color.toUpperCase()}
           type="text"
-          onChange={(e) => setBackgroundColor(e.target.value)}
+          onChange={(e) =>
+            updateCustomizeObject({ background_color: e.target.value })
+          }
           className="w-40 py-1 pl-1 bg-gray white text-xs rounded-sm"
         />
       </div>
+
       <div className="flex flex-col w-full mt-5">
         <p className="text-[10px]">Background Opacity</p>
         <div className="flex items-center justify-between gap-4">
@@ -193,12 +216,17 @@ const SubtitleStylingBox = ({ style, setStyle }) => {
             min={0}
             max={100}
             step={1}
-            value={backgroundOpacity}
-            onValueChange={setBackgroundOpacity}
+            value={customize.background_opacity}
+            onValueChange={(value) =>
+              updateCustomizeObject({ background_opacity: value })
+            }
           />
-          <p className="w-10 text-center text-xs">{backgroundOpacity}%</p>
+          <p className="w-10 text-center text-xs">
+            {customize.background_opacity}%
+          </p>
         </div>
       </div>
+
       <div className="flex flex-col w-full mt-5">
         <p className="text-[10px]">Position</p>
         <div className="flex items-center justify-between gap-4">
@@ -206,12 +234,17 @@ const SubtitleStylingBox = ({ style, setStyle }) => {
             min={0}
             max={240}
             step={1}
-            value={marginBottom}
-            onValueChange={setMarginBottom}
+            value={customize.margin_bottom}
+            onValueChange={(value) =>
+              updateCustomizeObject({ margin_bottom: value })
+            }
           />
-          <p className="w-10 text-center text-xs">{marginBottom}px</p>
+          <p className="w-10 text-center text-xs">
+            {customize.margin_bottom}px
+          </p>
         </div>
       </div>
+
       <div className="flex items-center justify-center w-full gap-5">
         <button className="px-5 py-1 rounded-4xl text-xs transition-colors bg-gray white hover:bg-light-gray">
           Reset to Default

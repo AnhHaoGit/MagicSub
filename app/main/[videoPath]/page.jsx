@@ -14,7 +14,7 @@ import {
 } from "@/lib/local_storage_handlers";
 import { useRouter } from "next/navigation";
 
-const STEP = 0.1;
+// const STEP = 0.1;
 
 export default function VideoPage() {
   const router = useRouter();
@@ -91,6 +91,7 @@ export default function VideoPage() {
         directUrl: videoData.directUrl,
         _id: videoData._id,
         targetLanguage: targetLanguage,
+        style: session.user.style
       }),
     });
 
@@ -100,7 +101,7 @@ export default function VideoPage() {
       setIsProcessing(false);
       return;
     } else {
-      add_subtitle_to_local_storage_by_video_id(videoData._id, data.subtitle, data.subtitleId);
+      add_subtitle_to_local_storage_by_video_id(videoData._id, data.subtitle, data.subtitleId, data.customize);
       toast.success("Subtitle successfully generated!");
       router.push(`/main/custom_subtitle/${videoData._id}`);
     }
@@ -119,7 +120,7 @@ export default function VideoPage() {
               className="iris underline cursor-pointer"
               onClick={getNewUrl}
             >
-              Get new url
+              get new url
             </button>
             <p className="gray">{isGettingNewUrl ? "processing..." : ""}</p>
           </div>

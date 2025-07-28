@@ -65,7 +65,7 @@ export async function POST(req) {
   }
 
   try {
-    const { directUrl, _id, targetLanguage } = await req.json();
+    const { directUrl, _id, targetLanguage, style } = await req.json();
     if (!directUrl || !_id || !targetLanguage) {
       return NextResponse.json(
         { message: "Missing parameters" },
@@ -148,12 +148,14 @@ export async function POST(req) {
       userId: new ObjectId(session.user.id),
       videoId: new ObjectId(_id),
       subtitle: segments,
+      customize: style,
     });
 
     return NextResponse.json({
       message: "Transcript segments saved (SRT format)",
       subtitle: segments,
       subtitleId: result.insertedId,
+      customize: style,
     });
   } catch (err) {
     console.error("Error processing video:", err);

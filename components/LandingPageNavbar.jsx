@@ -7,6 +7,12 @@ import { useSession } from "next-auth/react";
 
 const LandingPageNavbar = () => {
   const { data: session } = useSession();
+
+  const handleSignout = () => {
+    localStorage.removeItem("videos");
+    localStorage.removeItem("user");
+    signOut();
+  };
   return (
     <>
       <nav className="fixed top-0 left-0 w-full">
@@ -26,10 +32,7 @@ const LandingPageNavbar = () => {
               FAQ
             </Link>
             {session && (
-              <button
-                onClick={() => signOut()}
-                className="hover:light-gray"
-              >
+              <button onClick={handleSignout} className="hover:light-gray">
                 Logout
               </button>
             )}

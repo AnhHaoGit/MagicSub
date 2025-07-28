@@ -63,7 +63,7 @@ export async function POST(req) {
 
     const db = await connectDB();
     const result = await db.collection("videos").insertOne({
-      user_id: new ObjectId(session.user.id),
+      userId: new ObjectId(session.user.id),
       title: metadata.title,
       duration: metadata.duration,
       thumbnail: metadata.thumbnail,

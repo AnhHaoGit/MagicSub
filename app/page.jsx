@@ -2,7 +2,7 @@
 
 import LandingPageNavbar from "@/components/LandingPageNavbar";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 import { add_video_to_local_storage } from "@/lib/local_storage_handlers";
@@ -11,7 +11,35 @@ const LandingPage = () => {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { data: session} = useSession();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (session && status === "authenticated") {
+      fetchData();
+    }
+  }, [session, status]);
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch("/api/fetch_data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: session.user.id }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      localStorage.setItem("videos", JSON.stringify(data));
+      localStorage.setItem('user', JSON.stringify(session.user))
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     if (!session) {
@@ -29,7 +57,6 @@ const LandingPage = () => {
     });
 
     const data = await response.json();
-
 
     if (response.ok) {
       add_video_to_local_storage(data.video);

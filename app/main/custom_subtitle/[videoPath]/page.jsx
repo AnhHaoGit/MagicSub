@@ -5,19 +5,18 @@ import SubtitleScrollBox from "@/components/SubtitleScrollBox";
 import { useParams } from "next/navigation";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
-import { useSession } from "next-auth/react";
 import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import SubtitleStylingBox from "@/components/SubtitleStylingBox";
 
 const Page = () => {
   const { videoPath } = useParams();
-  const { data: session } = useSession();
   const [videoData, setVideoData] = useState(null);
   const [subtitle, setSubtitle] = useState([]);
   const [originalSubtitle, setOriginalSubtitle] = useState([]);
-  const [style, setStyle] = useState({});
+  const [customize, setCustomize] = useState({});
+  const [originalCustomize, setOriginalCustomize] = useState({});
   const [currentSubtitle, setCurrentSubtitle] = useState(null);
-  const [isTranscript, setIsTranscript] = useState(false);
+  const [isTranscript, setIsTranscript] = useState(true);
   const videoRef = useRef(null);
   const animationFrameId = useRef(null);
 
@@ -72,6 +71,9 @@ const Page = () => {
   const isSubtitleChanged =
     JSON.stringify(subtitle) !== JSON.stringify(originalSubtitle);
 
+  const isCustomizeChanged =
+    JSON.stringify(customize) !== JSON.stringify(originalCustomize);
+
   const validateSubtitles = () => {
     for (let i = 0; i < subtitle.length; i++) {
       const current = subtitle[i];
@@ -110,7 +112,40 @@ const Page = () => {
     return true;
   };
 
-  const saveHandler = async () => {
+  const saveCustomizeHandler = async () => {
+    if (!videoData || !isCustomizeChanged) return;
+    const updatedVideos = JSON.parse(localStorage.getItem("videos")) || [];
+    const index = updatedVideos.findIndex((v) => v._id === videoPath);
+
+    if (index !== -1) {
+      const subtitleId = updatedVideos[index].subtitleId;
+      try {
+        const response = await fetch(`/api/save_customization`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ subtitleId, customize }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          toast.error(`Failed to save customization: ${errorData.message}`);
+        }
+      } catch (error) {
+        toast.error("An error occurred while saving to database.");
+        return;
+      }
+
+      updatedVideos[index].customize = customize;
+      localStorage.setItem("videos", JSON.stringify(updatedVideos));
+      setVideoData(updatedVideos[index]);
+      setOriginalCustomize(JSON.parse(JSON.stringify(customize)));
+      toast.success("Customization saved to database!");
+    }
+  };
+
+  const saveSubtitleHandler = async () => {
     if (!videoData || !isSubtitleChanged) return;
 
     const isValid = validateSubtitles();
@@ -121,7 +156,7 @@ const Page = () => {
     if (index !== -1) {
       const subtitleId = updatedVideos[index].subtitleId;
       try {
-        const response = await fetch(`/api/save`, {
+        const response = await fetch(`/api/save_subtitle`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -161,20 +196,65 @@ const Page = () => {
       setVideoData(found);
       const clonedSubtitle = JSON.parse(JSON.stringify(found.subtitle));
       setSubtitle(clonedSubtitle);
+      setCustomize(found.customize);
       setOriginalSubtitle(clonedSubtitle);
+      setOriginalCustomize(found.customize);
     } else {
       toast.error("Cannot find video data!");
     }
   }, [videoPath]);
 
-  useEffect(() => {
-    if (!session) return;
+  let subtitleClasses = `text-[${customize.font_size}px] ${
+    customize.is_bold ? "font-bold" : ""
+  } ${customize.is_italic ? "italic" : ""} ${
+    customize.is_underline ? "underline" : ""
+  } text-[${
+    customize.font_color
+  }] absolute left-1/2 transform -translate-x-1/2 p-1 text-center leading-tight break-words inline-block max-w-full 
+bg-[${customize.background_color}]`;
 
-    setStyle(session.user.style);
-  }, [session]);
+  // // Border Style
+  // if (customize.border_style === "boxed") {
+  //   subtitleClasses += " rounded-md";
+  // } else if (customize.border_style === "dropshadow") {
+  //   subtitleClasses += " shadow-md";
+  // }
 
+  // // Background Opacity — Tailwind chỉ có opacity-0, opacity-5, opacity-10,... nên t làm tròn về số gần nhất chia hết cho 5
+  // const roundedOpacity = Math.round(customize.background_opacity / 5) * 5;
+  // subtitleClasses += ` opacity-${roundedOpacity}`;
 
-  if (!videoData && !session) {
+  // // Outline (stroke)
+  // if (customize.outline_width > 0) {
+  //   subtitleClasses += ` stroke-[${customize.outline_width}px] stroke-[${customize.outline_color}]`;
+  // }
+
+  // // Text Shadow
+  // if (customize.text_shadow > 0) {
+  //   subtitleClasses += ` drop-shadow-[0_0_${customize.text_shadow}px_black]`;
+  // } else {
+  //   subtitleClasses += " drop-shadow-none";
+  // }
+
+  const strokeLayers = [];
+  const strokeWidth = customize.outline_width;
+
+  for (let i = 1; i <= strokeWidth; i++) {
+    strokeLayers.push(
+      `${i}px 0 0 ${customize.outline_color}`,
+      `-${i}px 0 0 ${customize.outline_color}`,
+      `0 ${i}px 0 ${customize.outline_color}`,
+      `0 -${i}px 0 ${customize.outline_color}`,
+      `${i}px ${i}px 0 ${customize.outline_color}`,
+      `-${i}px -${i}px 0 ${customize.outline_color}`,
+      `${i}px -${i}px 0 ${customize.outline_color}`,
+      `-${i}px ${i}px 0 ${customize.outline_color}`
+    );
+  }
+
+  const textShadow = strokeLayers.join(", ");
+
+  if (!videoData) {
     return (
       <>
         <MainNavbar />
@@ -200,7 +280,15 @@ const Page = () => {
                 className="shadow-xl w-full m-auto"
               ></video>
               {currentSubtitle && (
-                <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-70 text-white p-1 text-sm text-center leading-tight break-words inline-block max-w-full">
+                <div
+                  className={subtitleClasses}
+                  style={{
+                    color: customize.font_color,
+                    bottom: `${customize.margin_bottom}px`,
+                    backgroundColor: customize.background_color,
+                    textShadow: textShadow,
+                  }}
+                >
                   {currentSubtitle.text}
                 </div>
               )}
@@ -247,7 +335,7 @@ const Page = () => {
                       ? "bg-iris hover:bg-violet cursor-pointer"
                       : "bg-gray cursor-not-allowed"
                   }`}
-                  onClick={saveHandler}
+                  onClick={saveSubtitleHandler}
                   disabled={!isSubtitleChanged}
                 >
                   Save
@@ -255,8 +343,19 @@ const Page = () => {
               </>
             ) : (
               <>
-                <SubtitleStylingBox style={style} setStyle={setStyle}></SubtitleStylingBox>
-                <button className="flex items-center gap-2 px-10 py-1 text-white rounded-full shadow-2xl font-bold justify-center transition-colors bg-iris hover:bg-violet cursor-pointer">
+                <SubtitleStylingBox
+                  customize={customize}
+                  setCustomize={setCustomize}
+                ></SubtitleStylingBox>
+                <button
+                  className={`flex items-center gap-2 px-10 py-1 text-white rounded-full shadow-2xl font-bold justify-center transition-colors ${
+                    isCustomizeChanged
+                      ? "bg-iris hover:bg-violet cursor-pointer"
+                      : "bg-gray cursor-not-allowed"
+                  }`}
+                  onClick={saveCustomizeHandler}
+                  disabled={!isCustomizeChanged}
+                >
                   Save
                 </button>
               </>
