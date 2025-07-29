@@ -6,11 +6,54 @@ import { font_size } from "@/lib/font_size";
 import { border_style } from "@/lib/border_style";
 import ColorPickerBox from "./ColorPickerBox";
 import GenericSlider from "@/components/GenericSlider";
+import { toast } from "react-toastify";
 
 const SubtitleStylingBox = ({ customize, setCustomize }) => {
   const updateCustomizeObject = (change) => {
     setCustomize((prev) => ({ ...prev, ...change }));
   };
+
+  const resetToDefault = () => {
+    const defaultStyle = JSON.parse(localStorage.getItem("user")).style;
+    setCustomize(defaultStyle);
+  };
+
+  const saveAsDefault = async () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!user || !user.id) {
+      toast.error("User not found in localStorage");
+      return;
+    }
+
+    user.style = customize;
+    localStorage.setItem("user", JSON.stringify(user));
+
+    // Call API to update style in MongoDB
+    try {
+      const response = await fetch("/api/set_default_style", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          customize: customize,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(`Failed to update style: ${data.message}`);
+      } else {
+        toast.success("Style updated successfully as default!");
+      }
+    } catch (error) {
+      toast.error("An error occurred while updating style.");
+    }
+  };
+
   return (
     <div className="flex flex-col w-full gap-3 bg-white shadow-lg h-full overflow-y-auto hide-scrollbar p-5 rounded-2xl mt-15 items-start">
       <div className="flex items-end justify-between w-full">
@@ -176,18 +219,16 @@ const SubtitleStylingBox = ({ customize, setCustomize }) => {
       </div>
 
       <div className="flex flex-col w-full mt-5">
-        <p className="text-[10px]">Text Shadow</p>
+        <p className="text-[10px]">Padding</p>
         <div className="flex items-center justify-between gap-4">
           <GenericSlider
             min={0}
-            max={4}
+            max={8}
             step={1}
-            value={customize.text_shadow}
-            onValueChange={(value) =>
-              updateCustomizeObject({ text_shadow: value })
-            }
+            value={customize.padding}
+            onValueChange={(value) => updateCustomizeObject({ padding: value })}
           />
-          <p className="w-10 text-center text-xs">{customize.text_shadow}px</p>
+          <p className="w-10 text-center text-xs">{customize.padding}px</p>
         </div>
       </div>
 
@@ -246,10 +287,16 @@ const SubtitleStylingBox = ({ customize, setCustomize }) => {
       </div>
 
       <div className="flex items-center justify-center w-full gap-5">
-        <button className="px-5 py-1 rounded-4xl text-xs transition-colors bg-gray white hover:bg-light-gray">
+        <button
+          className="px-5 py-1 rounded-4xl text-xs transition-colors bg-gray white hover:bg-light-gray"
+          onClick={resetToDefault}
+        >
           Reset to Default
         </button>
-        <button className="px-5 py-1 rounded-4xl text-xs transition-colors bg-gray white hover:bg-light-gray">
+        <button
+          className="px-5 py-1 rounded-4xl text-xs transition-colors bg-gray white hover:bg-light-gray"
+          onClick={saveAsDefault}
+        >
           Save as Default
         </button>
       </div>

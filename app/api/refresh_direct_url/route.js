@@ -66,7 +66,7 @@ export async function POST(req) {
     const result = await db
       .collection("videos")
       .updateOne(
-        { _id: new ObjectId(_id), user_id: new ObjectId(session.user.id) },
+        { _id: new ObjectId(_id), userId: new ObjectId(session.user.id) },
         { $set: { directUrl } }
       );
 

@@ -208,17 +208,10 @@ const Page = () => {
     customize.is_bold ? "font-bold" : ""
   } ${customize.is_italic ? "italic" : ""} ${
     customize.is_underline ? "underline" : ""
-  } text-[${
+  }  text-[${
     customize.font_color
-  }] absolute left-1/2 transform -translate-x-1/2 p-1 text-center leading-tight break-words inline-block max-w-full 
+  }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block max-w-full 
 bg-[${customize.background_color}]`;
-
-  // // Border Style
-  // if (customize.border_style === "boxed") {
-  //   subtitleClasses += " rounded-md";
-  // } else if (customize.border_style === "dropshadow") {
-  //   subtitleClasses += " shadow-md";
-  // }
 
   // // Background Opacity — Tailwind chỉ có opacity-0, opacity-5, opacity-10,... nên t làm tròn về số gần nhất chia hết cho 5
   // const roundedOpacity = Math.round(customize.background_opacity / 5) * 5;
@@ -237,22 +230,27 @@ bg-[${customize.background_color}]`;
   // }
 
   const strokeLayers = [];
-  const strokeWidth = customize.outline_width;
+  const steps = 64; // 128 hướng
+  const radius = customize.outline_width; // độ dày viền
 
-  for (let i = 1; i <= strokeWidth; i++) {
-    strokeLayers.push(
-      `${i}px 0 0 ${customize.outline_color}`,
-      `-${i}px 0 0 ${customize.outline_color}`,
-      `0 ${i}px 0 ${customize.outline_color}`,
-      `0 -${i}px 0 ${customize.outline_color}`,
-      `${i}px ${i}px 0 ${customize.outline_color}`,
-      `-${i}px -${i}px 0 ${customize.outline_color}`,
-      `${i}px -${i}px 0 ${customize.outline_color}`,
-      `-${i}px ${i}px 0 ${customize.outline_color}`
-    );
+  for (let i = 0; i < steps; i++) {
+    const angle = (i * 360) / steps;
+    const rad = (angle * Math.PI) / 180; // Đổi sang radian
+
+    const x = (Math.cos(rad) * radius).toFixed(2);
+    const y = (Math.sin(rad) * radius).toFixed(2);
+
+    strokeLayers.push(`${x}px ${y}px 0 ${customize.outline_color}`);
   }
 
   const textShadow = strokeLayers.join(", ");
+
+  function hexToRGBA(hex, opacity) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
+  }
 
   if (!videoData) {
     return (
@@ -285,8 +283,21 @@ bg-[${customize.background_color}]`;
                   style={{
                     color: customize.font_color,
                     bottom: `${customize.margin_bottom}px`,
-                    backgroundColor: customize.background_color,
+                    backgroundColor: `${
+                      customize.border_style === "dropshadow"
+                        ? "transparent"
+                        : hexToRGBA(
+                            customize.background_color,
+                            customize.background_opacity
+                          )
+                    }`,
+                    padding: `${
+                      customize.border_style === "dropshadow"
+                        ? 0
+                        : customize.padding
+                    }px`,
                     textShadow: textShadow,
+                    fontFamily: customize.font_family,
                   }}
                 >
                   {currentSubtitle.text}
