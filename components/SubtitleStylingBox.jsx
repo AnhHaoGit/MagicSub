@@ -218,20 +218,6 @@ const SubtitleStylingBox = ({ customize, setCustomize }) => {
         />
       </div>
 
-      <div className="flex flex-col w-full mt-5">
-        <p className="text-[10px]">Padding</p>
-        <div className="flex items-center justify-between gap-4">
-          <GenericSlider
-            min={0}
-            max={8}
-            step={1}
-            value={customize.padding}
-            onValueChange={(value) => updateCustomizeObject({ padding: value })}
-          />
-          <p className="w-10 text-center text-xs">{customize.padding}px</p>
-        </div>
-      </div>
-
       <div className="flex items-center gap-2 mt-5 w-full">
         <p className="text-[10px]">Background Color</p>
         <ColorPickerBox

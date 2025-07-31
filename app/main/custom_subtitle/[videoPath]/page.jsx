@@ -213,21 +213,6 @@ const Page = () => {
   }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block max-w-full 
 bg-[${customize.background_color}]`;
 
-  // // Background Opacity — Tailwind chỉ có opacity-0, opacity-5, opacity-10,... nên t làm tròn về số gần nhất chia hết cho 5
-  // const roundedOpacity = Math.round(customize.background_opacity / 5) * 5;
-  // subtitleClasses += ` opacity-${roundedOpacity}`;
-
-  // // Outline (stroke)
-  // if (customize.outline_width > 0) {
-  //   subtitleClasses += ` stroke-[${customize.outline_width}px] stroke-[${customize.outline_color}]`;
-  // }
-
-  // // Text Shadow
-  // if (customize.text_shadow > 0) {
-  //   subtitleClasses += ` drop-shadow-[0_0_${customize.text_shadow}px_black]`;
-  // } else {
-  //   subtitleClasses += " drop-shadow-none";
-  // }
 
   const strokeLayers = [];
   const steps = 64; // 128 hướng
@@ -263,46 +248,101 @@ bg-[${customize.background_color}]`;
     );
   }
 
+  const handleGenerateVideo = async () => {
+    try {
+      const response = await fetch("/api/generate_video", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subtitle,
+          customize,
+          directUrl: videoData.directUrl,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error("Failed to generate ASS file:", errorData.message);
+        return;
+      }
+
+      const data = await response.json();
+      console.log(data);
+    } catch (error) {
+      toast.error("Error:", error);
+    }
+  };
+
   return (
     <>
       <MainNavbar />
 
       <main className="flex flex-col items-center h-screen p-5">
         <div className="flex justify-between items-center w-full flex-1 gap-5 mt-20 overflow-hidden">
-          <div className="flex items-center justify-center w-3/5 bg-black rounded-2xl h-full">
-            <div className="relative w-full">
-              <video
-                ref={videoRef}
-                controls
-                src={videoData.directUrl}
-                className="shadow-xl w-full m-auto"
-              ></video>
-              {currentSubtitle && (
-                <div
-                  className={subtitleClasses}
-                  style={{
-                    color: customize.font_color,
-                    bottom: `${customize.margin_bottom}px`,
-                    backgroundColor: `${
-                      customize.border_style === "dropshadow"
-                        ? "transparent"
-                        : hexToRGBA(
-                            customize.background_color,
-                            customize.background_opacity
-                          )
-                    }`,
-                    padding: `${
-                      customize.border_style === "dropshadow"
-                        ? 0
-                        : customize.padding
-                    }px`,
-                    textShadow: textShadow,
-                    fontFamily: customize.font_family,
-                  }}
+          <div className="flex flex-col h-full w-3/5 gap-5">
+            <div className="flex items-center justify-center w-full bg-black rounded-2xl h-4/5">
+              <div className="relative w-full">
+                <video
+                  ref={videoRef}
+                  controls
+                  src={videoData.directUrl}
+                  className="shadow-xl w-full m-auto"
+                ></video>
+                {currentSubtitle && (
+                  <div
+                    className={subtitleClasses}
+                    style={{
+                      color: customize.font_color,
+                      bottom: `${customize.margin_bottom}px`,
+                      backgroundColor: `${
+                        customize.border_style === "dropshadow"
+                          ? "transparent"
+                          : hexToRGBA(
+                              customize.background_color,
+                              customize.background_opacity
+                            )
+                      }`,
+                      textShadow: textShadow,
+                      fontFamily: customize.font_family,
+                    }}
+                  >
+                    {currentSubtitle.text}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="h-1/5 w-full bg-smoke rounded-2xl flex items-center justify-center gap-3">
+              <button className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray">
+                Download .srt
+              </button>
+              <button className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray">
+                Download .ass
+              </button>
+              <button className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray">
+                Download .txt
+              </button>
+              <button
+                onClick={handleGenerateVideo}
+                className="flex items-center gap-2 py-2 px-3 font-semibold rounded-4xl text-sm transition-colors bg-iris text-white hover:bg-violet"
+              >
+                Generate Video
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="size-5"
                 >
-                  {currentSubtitle.text}
-                </div>
-              )}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
           <div className="w-2/5 h-full flex flex-col relative justify-evenly items-center gap-4 bg-smoke rounded-2xl p-5">
