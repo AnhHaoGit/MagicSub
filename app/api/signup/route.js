@@ -49,7 +49,7 @@ export async function POST(req) {
       font_color: "#FFFFFF",
       outline_color: "#000000",
       outline_width: 2,
-      border_style: "boxed",
+      border_style: "opaque_box",
       background_color: "#000000",
       background_opacity: 55,
       margin_bottom: 15,

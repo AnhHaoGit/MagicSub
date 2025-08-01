@@ -269,7 +269,7 @@ bg-[${customize.background_color}]`;
       }
 
       const data = await response.json();
-      console.log(data);
+      console.log(data.ass);
     } catch (error) {
       toast.error("Error:", error);
     }
@@ -297,14 +297,14 @@ bg-[${customize.background_color}]`;
                       color: customize.font_color,
                       bottom: `${customize.margin_bottom}px`,
                       backgroundColor: `${
-                        customize.border_style === "dropshadow"
+                        customize.border_style === "text_outline"
                           ? "transparent"
                           : hexToRGBA(
                               customize.background_color,
                               customize.background_opacity
                             )
                       }`,
-                      textShadow: textShadow,
+                      textShadow: `${customize.border_style === 'text_outline' ? textShadow : 'none'}`,
                       fontFamily: customize.font_family,
                     }}
                   >
