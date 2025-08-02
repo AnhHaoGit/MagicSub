@@ -1,7 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { spawn } from "child_process";
+import { v2 as cloudinary } from "cloudinary";
+import stream from "stream";
+import { Buffer } from "buffer";
 import fs from "fs";
 import path from "path";
+
+// Config Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req) {
   try {
@@ -16,58 +26,80 @@ export async function POST(req) {
 
     const assContent = generateASS(subtitle, customize);
 
-    // Lưu vào thư mục download (cùng cấp app/)
-    const downloadDir = path.join(process.cwd(), "download");
-    if (!fs.existsSync(downloadDir)) {
-      fs.mkdirSync(downloadDir, { recursive: true });
-    }
-
-    const assFilePath = path.join(downloadDir, `subtitles_${Date.now()}.ass`);
-    const outputFilePath = path.join(downloadDir, `output_${Date.now()}.mp4`);
-
-    // Write ASS content to file
+    // Tạo file ASS tạm trong RAM (ffmpeg yêu cầu file path)
+    const assFilePath = `/tmp/subtitles_${Date.now()}.ass`;
     fs.writeFileSync(assFilePath, assContent);
 
-    // Run ffmpeg để chèn sub vào video
-    await new Promise((resolve, reject) => {
-      const ffmpeg = spawn("ffmpeg", [
-        "-i",
-        directUrl,
-        "-vf",
-        `ass=${assFilePath}`,
-        "-c:v",
-        "libx264",
-        "-preset",
-        "fast",
-        "-crf",
-        "23",
-        "-pix_fmt",
-        "yuv420p",
-        "-c:a",
-        "copy",
-        outputFilePath,
-      ]);
+    // Spawn ffmpeg để xuất ra stdout (pipe:1)
+    const ffmpeg = spawn("ffmpeg", [
+      "-i",
+      directUrl,
+      "-vf",
+      `ass=${assFilePath}`,
+      "-c:v",
+      "libx264",
+      "-preset",
+      "fast",
+      "-crf",
+      "23",
+      "-pix_fmt",
+      "yuv420p",
+      "-c:a",
+      "copy",
+      "-f",
+      "mp4",
+      "pipe:1",
+    ]);
 
-      ffmpeg.stderr.on("data", (data) => {
-        console.error(`stderr: ${data}`);
-      });
+    let videoBuffers = [];
 
-      ffmpeg.on("close", (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(new Error(`FFmpeg exited with code ${code}`));
+    ffmpeg.stdout.on("data", (chunk) => {
+      videoBuffers.push(chunk);
+    });
+
+    ffmpeg.stderr.on("data", (data) => {
+      console.error(`stderr: ${data}`);
+    });
+
+    const ffmpegExitCode = await new Promise((resolve) => {
+      ffmpeg.on("close", resolve);
+    });
+
+    // Xóa file ASS tạm sau khi xong
+    fs.unlinkSync(assFilePath);
+
+    if (ffmpegExitCode !== 0) {
+      throw new Error(`FFmpeg exited with code ${ffmpegExitCode}`);
+    }
+
+    // Combine all chunks into one buffer
+    const finalVideoBuffer = Buffer.concat(videoBuffers);
+
+    // Upload buffer to Cloudinary using upload_stream with a PassThrough stream
+    const uploadResult = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { resource_type: "video", folder: "generated_videos" },
+        (error, result) => {
+          if (error) {
+            console.error("Cloudinary Upload Error:", error);
+            reject(error);
+          } else {
+            resolve(result);
+          }
         }
-      });
+      );
+
+      const passthrough = new stream.PassThrough();
+      passthrough.end(finalVideoBuffer);
+      passthrough.pipe(uploadStream);
     });
 
     return NextResponse.json({
-      message: "Video generated successfully.",
-      downloadPath: `/download/${path.basename(outputFilePath)}`,
-      ass: assContent
+      message: "Video uploaded successfully.",
+      videoUrl: uploadResult.secure_url,
     });
   } catch (error) {
-    console.error(error);
+    console.error("API Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

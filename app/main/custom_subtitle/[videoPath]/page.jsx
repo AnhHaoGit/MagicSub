@@ -269,6 +269,7 @@ bg-[${customize.background_color}]`;
       }
 
       const data = await response.json();
+      toast.success("ASS video generated successfully!");
       console.log(data.ass);
     } catch (error) {
       toast.error("Error:", error);
