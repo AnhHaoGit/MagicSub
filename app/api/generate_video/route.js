@@ -1,107 +1,118 @@
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
-import { v2 as cloudinary } from "cloudinary";
-import stream from "stream";
-import { Buffer } from "buffer";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import fs from "fs";
-import path from "path";
+import { MongoClient, ObjectId } from "mongodb";
 
-// Config Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+
+// AWS S3 config
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
+
+const client = new MongoClient(process.env.MONGODB_URI);
+let db;
+
+async function connectDB() {
+  if (!db) {
+    await client.connect();
+    db = client.db(process.env.MONGODB_DB_NAME || "magicsub_db");
+  }
+  return db;
+}
 
 export async function POST(req) {
   try {
-    const { subtitle, customize, directUrl } = await req.json();
+    const { subtitle, customize, directUrl, videoId, userId } = await req.json();
 
-    if (!subtitle || !customize || !directUrl) {
+    if (!subtitle || !customize || !directUrl || !videoId || !userId) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
+    const now = Date.now()
+
+    // 🔹 Generate ASS content
     const assContent = generateASS(subtitle, customize);
+    const assPath = `/tmp/subtitles_${Date.now()}.ass`;
+    await fs.promises.writeFile(assPath, assContent);
 
-    // Tạo file ASS tạm trong RAM (ffmpeg yêu cầu file path)
-    const assFilePath = `/tmp/subtitles_${Date.now()}.ass`;
-    fs.writeFileSync(assFilePath, assContent);
+    // 🔹 Output file path
+    const outputPath = `/tmp/output_${Date.now()}.mp4`;
 
-    // Spawn ffmpeg để xuất ra stdout (pipe:1)
-    const ffmpeg = spawn("ffmpeg", [
-      "-i",
-      directUrl,
-      "-vf",
-      `ass=${assFilePath}`,
-      "-c:v",
-      "libx264",
-      "-preset",
-      "fast",
-      "-crf",
-      "23",
-      "-pix_fmt",
-      "yuv420p",
-      "-c:a",
-      "copy",
-      "-f",
-      "mp4",
-      "pipe:1",
-    ]);
+    // 🔹 Run ffmpeg và lưu vào local file
+    await new Promise((resolve, reject) => {
+      const ffmpeg = spawn("ffmpeg", [
+        "-i",
+        directUrl,
+        "-vf",
+        `ass=${assPath}`,
+        "-c:v",
+        "libx264",
+        "-preset",
+        "fast",
+        "-crf",
+        "23",
+        "-pix_fmt",
+        "yuv420p",
+        "-c:a",
+        "aac",
+        outputPath,
+      ]);
 
-    let videoBuffers = [];
-
-    ffmpeg.stdout.on("data", (chunk) => {
-      videoBuffers.push(chunk);
-    });
-
-    ffmpeg.stderr.on("data", (data) => {
-      console.error(`stderr: ${data}`);
-    });
-
-    const ffmpegExitCode = await new Promise((resolve) => {
-      ffmpeg.on("close", resolve);
-    });
-
-    // Xóa file ASS tạm sau khi xong
-    fs.unlinkSync(assFilePath);
-
-    if (ffmpegExitCode !== 0) {
-      throw new Error(`FFmpeg exited with code ${ffmpegExitCode}`);
-    }
-
-    // Combine all chunks into one buffer
-    const finalVideoBuffer = Buffer.concat(videoBuffers);
-
-    // Upload buffer to Cloudinary using upload_stream with a PassThrough stream
-    const uploadResult = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        { resource_type: "video", folder: "generated_videos" },
-        (error, result) => {
-          if (error) {
-            console.error("Cloudinary Upload Error:", error);
-            reject(error);
-          } else {
-            resolve(result);
-          }
+      ffmpeg.on("close", (code) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`FFmpeg exited with code ${code}`));
         }
-      );
-
-      const passthrough = new stream.PassThrough();
-      passthrough.end(finalVideoBuffer);
-      passthrough.pipe(uploadStream);
+      });
     });
+
+    // 🔹 Upload file local lên S3
+    const Key = `generated_videos/video_${now}.mp4`;
+    const fileStream = fs.createReadStream(outputPath);
+
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key,
+        Body: fileStream,
+        ContentType: "video/mp4",
+      })
+    );
+
+    // 🔹 Tạo URL
+    const videoUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${Key}`;
+
+    // (optional) Xóa file local sau khi upload xong
+    await fs.promises.unlink(outputPath);
+    await fs.promises.unlink(assPath);
+
+    const db = await connectDB();
+    const collection = db.collection("videos");
+
+    const newEntry = { id: now, url: videoUrl };
+
+    await collection.updateOne(
+     { _id: new ObjectId(videoId), userId: new ObjectId(userId) },
+     { $push: { cloudUrls: newEntry } }, // thêm vào mảng
+     { upsert: true } // nếu chưa có document thì tạo mới
+    );
 
     return NextResponse.json({
-      message: "Video uploaded successfully.",
-      videoUrl: uploadResult.secure_url,
+      message: "Video uploaded successfully",
+      cloudUrl: newEntry,
     });
   } catch (error) {
-    console.error("API Error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: error.message || "Internal Server Error" },
       { status: 500 }
     );
   }

@@ -3,10 +3,12 @@
 import MainNavbar from "@/components/MainNavbar";
 import SubtitleScrollBox from "@/components/SubtitleScrollBox";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import SubtitleStylingBox from "@/components/SubtitleStylingBox";
+import { update_cloud_urls_to_local_storage_by_video_id } from "@/lib/local_storage_handlers";
 
 const Page = () => {
   const { videoPath } = useParams();
@@ -19,6 +21,7 @@ const Page = () => {
   const [isTranscript, setIsTranscript] = useState(true);
   const videoRef = useRef(null);
   const animationFrameId = useRef(null);
+  const router = useRouter();
 
   // can not use useEffect right here because we need to save reference whenever we run requestAnimationFrame.
   // if we use useEffect, the syncLoop will be recreated when calling requestAnimationFrame, resulting in bugs.
@@ -259,6 +262,8 @@ bg-[${customize.background_color}]`;
           subtitle,
           customize,
           directUrl: videoData.directUrl,
+          videoId: videoData._id,
+          userId: videoData.userId
         }),
       });
 
@@ -269,8 +274,10 @@ bg-[${customize.background_color}]`;
       }
 
       const data = await response.json();
+      console.log(data)
+      update_cloud_urls_to_local_storage_by_video_id(videoData._id, data.cloudUrl)
       toast.success("ASS video generated successfully!");
-      console.log(data.ass);
+      router.push(`/main/result/${videoData._id}`);
     } catch (error) {
       toast.error("Error:", error);
     }
