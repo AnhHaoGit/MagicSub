@@ -21,6 +21,7 @@ const Page = () => {
   const [isTranscript, setIsTranscript] = useState(true);
   const videoRef = useRef(null);
   const animationFrameId = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   // can not use useEffect right here because we need to save reference whenever we run requestAnimationFrame.
@@ -252,6 +253,7 @@ bg-[${customize.background_color}]`;
   }
 
   const handleGenerateVideo = async () => {
+    setIsLoading(true)
     try {
       const response = await fetch("/api/generate_video", {
         method: "POST",
@@ -274,13 +276,13 @@ bg-[${customize.background_color}]`;
       }
 
       const data = await response.json();
-      console.log(data)
       update_cloud_urls_to_local_storage_by_video_id(videoData._id, data.cloudUrl)
       toast.success("ASS video generated successfully!");
       router.push(`/main/result/${videoData._id}`);
     } catch (error) {
       toast.error("Error:", error);
     }
+    setIsLoading(false);
   };
 
   return (
@@ -334,8 +336,9 @@ bg-[${customize.background_color}]`;
               <button
                 onClick={handleGenerateVideo}
                 className="flex items-center gap-2 py-2 px-3 font-semibold rounded-4xl text-sm transition-colors bg-iris text-white hover:bg-violet"
+                disabled={isLoading}
               >
-                Generate Video
+                {isLoading ? "Generating..." : "Generate Video"}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
