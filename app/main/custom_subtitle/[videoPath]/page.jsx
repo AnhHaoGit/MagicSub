@@ -22,6 +22,10 @@ const Page = () => {
   const videoRef = useRef(null);
   const animationFrameId = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDownloadingSrt, setIsDownloadingSrt] = useState(false);
+  const [isDownloadingAss, setIsDownloadingAss] = useState(false);
+  const [isDownloadingTxt, setIsDownloadingTxt] = useState(false);
+
   const router = useRouter();
 
   // can not use useEffect right here because we need to save reference whenever we run requestAnimationFrame.
@@ -217,7 +221,6 @@ const Page = () => {
   }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block max-w-full 
 bg-[${customize.background_color}]`;
 
-
   const strokeLayers = [];
   const steps = 64; // 128 hướng
   const radius = customize.outline_width; // độ dày viền
@@ -253,7 +256,7 @@ bg-[${customize.background_color}]`;
   }
 
   const handleGenerateVideo = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch("/api/generate_video", {
         method: "POST",
@@ -265,7 +268,7 @@ bg-[${customize.background_color}]`;
           customize,
           directUrl: videoData.directUrl,
           videoId: videoData._id,
-          userId: videoData.userId
+          userId: videoData.userId,
         }),
       });
 
@@ -276,13 +279,95 @@ bg-[${customize.background_color}]`;
       }
 
       const data = await response.json();
-      update_cloud_urls_to_local_storage_by_video_id(videoData._id, data.cloudUrl)
+      update_cloud_urls_to_local_storage_by_video_id(
+        videoData._id,
+        data.cloudUrl
+      );
       toast.success("ASS video generated successfully!");
       router.push(`/main/result/${videoData._id}`);
     } catch (error) {
       toast.error("Error:", error);
     }
     setIsLoading(false);
+  };
+
+  const handleDownloadSrt = async () => {
+    setIsDownloadingSrt(true);
+
+    const res = await fetch("/api/download_srt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subtitle }),
+    });
+
+    if (!res.ok) {
+      alert("Download failed");
+      setIsDownloadingSrt(false);
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "subtitles.srt";
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    setIsDownloadingSrt(false);
+  };
+
+  const handleDownloadAss = async () => {
+    setIsDownloadingAss(true);
+
+    const res = await fetch("/api/download_ass", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subtitle, customize }),
+    });
+
+    if (!res.ok) {
+      alert("Download failed");
+      setIsDownloadingAss(false);
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "subtitles.ass";
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    setIsDownloadingAss(false);
+  };
+
+  const handleDownloadTxt = async () => {
+    setIsDownloadingTxt(true);
+
+    const res = await fetch("/api/download_txt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subtitle }),
+    });
+
+    if (!res.ok) {
+      console.error("Failed to generate txt");
+      setIsDownloadingTxt(false);
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "subtitles.txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setIsDownloadingTxt(false);
   };
 
   return (
@@ -314,7 +399,11 @@ bg-[${customize.background_color}]`;
                               customize.background_opacity
                             )
                       }`,
-                      textShadow: `${customize.border_style === 'text_outline' ? textShadow : 'none'}`,
+                      textShadow: `${
+                        customize.border_style === "text_outline"
+                          ? textShadow
+                          : "none"
+                      }`,
                       fontFamily: customize.font_family,
                     }}
                   >
@@ -324,14 +413,26 @@ bg-[${customize.background_color}]`;
               </div>
             </div>
             <div className="h-1/5 w-full bg-smoke rounded-2xl flex items-center justify-center gap-3">
-              <button className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray">
-                Download .srt
+              <button
+                className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray"
+                onClick={handleDownloadSrt}
+                disabled={isDownloadingSrt}
+              >
+                {isDownloadingSrt ? "Downloading..." : "Download .srt"}
               </button>
-              <button className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray">
-                Download .ass
+              <button
+                className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray"
+                onClick={handleDownloadAss}
+                disabled={isDownloadingAss}
+              >
+                {isDownloadingAss ? "Downloading..." : "Download .ass"}
               </button>
-              <button className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray">
-                Download .txt
+              <button
+                className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray"
+                onClick={handleDownloadTxt}
+                disabled={isDownloadingTxt}
+              >
+                {isDownloadingTxt ? "Downloading..." : "Download .txt"}
               </button>
               <button
                 onClick={handleGenerateVideo}

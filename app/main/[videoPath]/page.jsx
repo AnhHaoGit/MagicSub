@@ -112,7 +112,7 @@ export default function VideoPage() {
     <>
       <MainNavbar />
       <main className="flex flex-col items-center justify-items-start h-screen w-full p-10">
-        <div className="flex flex-col mt-30 items-start justify-center w-full">
+        <div className="flex flex-col mt-15 items-start justify-center w-full">
           <h1 className="font-bold text-2xl">Video Preview</h1>
           <div className="flex items-center justify-items-start w-full gap-1">
             <p className="gray">if the video is not playing, please click</p>
@@ -125,14 +125,14 @@ export default function VideoPage() {
             <p className="gray">{isGettingNewUrl ? "processing..." : ""}</p>
           </div>
         </div>
-        <div className="flex w-full mt-5 items-center justify-between gap-5">
-          <div className="w-2/3">
+        <div className="flex w-full items-center justify-between gap-5 h-full">
+          <div className="w-2/3 h-full bg-black rounded-2xl flex items-center justify-center">
             {videoData?.directUrl ? (
               <video
                 ref={videoRef}
                 src={videoData.directUrl}
                 controls
-                className="rounded-xl shadow-xl w-full"
+                className="rounded-xl shadow-xl w-90% h-full"
               />
             ) : (
               <p>Loading video...</p>

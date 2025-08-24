@@ -40,6 +40,7 @@ export async function POST(req) {
 
     // 🔹 Generate ASS content
     const assContent = generateASS(subtitle, customize);
+    console.log(assContent);
     const assPath = `/tmp/subtitles_${Date.now()}.ass`;
     await fs.promises.writeFile(assPath, assContent);
 
