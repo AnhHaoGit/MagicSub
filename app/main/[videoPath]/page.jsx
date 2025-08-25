@@ -125,7 +125,7 @@ export default function VideoPage() {
             <p className="gray">{isGettingNewUrl ? "processing..." : ""}</p>
           </div>
         </div>
-        <div className="flex w-full items-center justify-between gap-5 h-full">
+        <div className="flex w-full items-center justify-between gap-5 h-full mt-10">
           <div className="w-2/3 h-full bg-black rounded-2xl flex items-center justify-center">
             {videoData?.directUrl ? (
               <video

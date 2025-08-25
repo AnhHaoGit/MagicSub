@@ -43,6 +43,9 @@ export async function POST(req) {
         (sub) => sub.videoId.toString() === video._id.toString()
       );
 
+      if (!matchingSubtitle) {
+        return video;
+      }
       return {
         ...video,
         subtitle: matchingSubtitle.subtitle,

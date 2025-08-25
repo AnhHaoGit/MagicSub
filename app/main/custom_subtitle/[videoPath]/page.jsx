@@ -8,7 +8,11 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import SubtitleStylingBox from "@/components/SubtitleStylingBox";
-import { update_cloud_urls_to_local_storage_by_video_id } from "@/lib/local_storage_handlers";
+import {
+  update_cloud_urls_to_local_storage_by_video_id,
+  update_video_in_local_storage,
+} from "@/lib/local_storage_handlers";
+import { useSession } from "next-auth/react";
 
 const Page = () => {
   const { videoPath } = useParams();
@@ -25,6 +29,8 @@ const Page = () => {
   const [isDownloadingSrt, setIsDownloadingSrt] = useState(false);
   const [isDownloadingAss, setIsDownloadingAss] = useState(false);
   const [isDownloadingTxt, setIsDownloadingTxt] = useState(false);
+  const [isGettingNewUrl, setIsGettingNewUrl] = useState(false);
+  const { data: session } = useSession();
 
   const router = useRouter();
 
@@ -284,7 +290,7 @@ bg-[${customize.background_color}]`;
         data.cloudUrl
       );
       toast.success("ASS video generated successfully!");
-      router.push(`/main/result/${videoData._id}`);
+      router.push(`/main/result/${videoData._id}/${data.cloudUrl.id}`);
     } catch (error) {
       toast.error("Error:", error);
     }
@@ -370,6 +376,37 @@ bg-[${customize.background_color}]`;
     setIsDownloadingTxt(false);
   };
 
+  const getNewUrl = async () => {
+    if (!session) {
+      toast.error("Please login to continue the process.");
+      return;
+    }
+    setIsGettingNewUrl(true);
+    const response = await fetch("/api/refresh_direct_url", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        originalUrl: videoData.originalUrl,
+        _id: videoData._id,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      toast.success("New URL fetched successfully!");
+      let updatedVideoData = { ...videoData, directUrl: data.directUrl };
+      setVideoData(updatedVideoData);
+      update_video_in_local_storage(updatedVideoData);
+    } else {
+      toast.error(data.message);
+    }
+
+    setIsGettingNewUrl(false);
+  };
+
   return (
     <>
       <MainNavbar />
@@ -411,6 +448,16 @@ bg-[${customize.background_color}]`;
                   </div>
                 )}
               </div>
+            </div>
+            <div className="flex items-center justify-items-start w-full gap-1 text-sm">
+              <p className="gray">if the video is not playing, please click</p>
+              <button
+                className="iris underline cursor-pointer"
+                onClick={getNewUrl}
+              >
+                get new url
+              </button>
+              <p className="gray">{isGettingNewUrl ? "processing..." : ""}</p>
             </div>
             <div className="h-1/5 w-full bg-smoke rounded-2xl flex items-center justify-center gap-3">
               <button

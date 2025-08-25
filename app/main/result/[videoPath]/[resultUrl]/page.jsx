@@ -5,17 +5,20 @@ import MainNavbar from "@/components/MainNavbar";
 
 const Page = () => {
   const [videoData, setVideoData] = useState(null);
-  const { videoPath } = useParams();
+  const [cloudUrl, setCloudUrl] = useState(null);
+  const {videoPath, resultUrl} = useParams();
 
   useEffect(() => {
     const video = JSON.parse(localStorage.getItem("videos")) || [];
     const found = video.find((v) => v._id === videoPath);
+    const url = found.cloudUrls.find((u) => u.id === resultUrl);
     if (found) {
       setVideoData(found);
+      setCloudUrl(url);
     } else {
       toast.error("Cannot find video data!");
     }
-  }, [videoPath]);
+  }, [videoPath, resultUrl]);
 
   console.log(videoData);
 
