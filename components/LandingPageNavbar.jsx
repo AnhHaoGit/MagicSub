@@ -25,11 +25,8 @@ const LandingPageNavbar = () => {
             <Link href="/feedback" className="hover:light-gray">
               Feedback
             </Link>
-            <Link href="/" className="hover:light-gray">
+            <Link href="/pricing" className="hover:light-gray">
               Pricing
-            </Link>
-            <Link href="/" className="hover:light-gray">
-              FAQ
             </Link>
             {session && (
               <button onClick={handleSignout} className="hover:light-gray">
