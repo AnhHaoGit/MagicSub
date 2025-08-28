@@ -6,61 +6,55 @@ import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const Page = () => {
-  const [products, setProducts] = useState([]);
-  const [checkoutUrls, setCheckoutUrls] = useState([]);
+  const [productsData, setProductsData] = useState([]);
+
+  function sortProducts(products) {
+    const order = ["Starter Plan", "Plus Plan", "Pro Plan"]; // thứ tự mong muốn
+
+    return products.sort((a, b) => {
+      const indexA = order.indexOf(a.name);
+      const indexB = order.indexOf(b.name);
+      return indexA - indexB;
+    });
+  }
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchProductsData = async () => {
       try {
-        const res = await fetch("/api/fetch_products"); // gọi API route
-        const data = await res.json();
-        setProducts(data);
-      } catch (err) {
-        console.error("Failed to load products:", err);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  console.log(products);
-
-  useEffect(() => {
-    const fetchCheckoutUrls = async () => {
-      try {
-        const res = await fetch("/api/fetch_checkout_url", {
+        const res = await fetch("/api/fetch_products_data", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            variantId: 971516,
             userEmail: "nguyenanhhao090708@gmail.com",
             userId: "688c8e8abd2be107868180dd",
             embed: false,
           }),
-        }); // gọi API route
+        });
         const data = await res.json();
-        setCheckoutUrls(data);
+        const sorted = sortProducts(data);
+
+        setProductsData(sorted);
       } catch (err) {
         console.error("Failed to load checkout URLs:", err);
       }
     };
 
-    fetchCheckoutUrls();
+    fetchProductsData();
   }, []);
 
-  console.log(checkoutUrls);
+  console.log(productsData);
 
   return (
     <>
       <LandingPageNavbar />
-      <main className="p-10 h-screen flex flex-col items-center justify-items-start">
-        <p className="font-bold text-4xl mt-15">
+      <main className="p-10 h-screen w-full flex flex-col items-center justify-items-start">
+        <p className="font-bold text-3xl mt-15">
           Pay only for <span className="inline iris">what you need</span>
         </p>
-        <div className="flex w-full p-3 items-center justify-evenly mt-4 h-full">
-          <div className="border-light-gray rounded-xl p-5 flex flex-col gap-5 shadow-xl h-4/5">
+        <div className="flex w-full p-3 items-center gap-5 mt-4 h-full">
+          <div className="border-light-gray rounded-xl w-2/5 p-5 flex flex-col gap-5 shadow-xl h-full">
             <p className="font-bold text-2xl">Applied to all plans</p>
             <div className="flex items-center gap-3">
               <svg
@@ -184,102 +178,136 @@ const Page = () => {
               <p className="text-sm">7-day secure video storage</p>
             </div>
           </div>
-          <div className="border-iris flex flex-col items-center justify-between p-6 rounded-xl w-1/4 h-6/7 shadow-[0_0_30px_rgba(76,59,207,0.3)]">
-            <div className="flex flex-col gap-3 w-full">
-              <div className="flex w-full items-center justify-between">
-                <h3 className="text-xl font-semibold flex gap-2">Plus Plan</h3>
-                <p className="text-[10px] bg-smoke black rounded-sm py-1 px-2">
-                  Most Popular
-                </p>
-              </div>
+          <div className="flex flex-col h-full gap-5 w-3/5">
+            {productsData.map((product) => {
+              if (product.name === "Plus Plan") {
+                return (
+                  <div
+                    key={product.id}
+                    className="border-iris flex items-center w-full justify-between rounded-xl h-full shadow-[0_0_30px_rgba(76,59,207,0.3)] "
+                  >
+                    <div className="border-r-[1px] border-r-gray-300 h-full w-3/10 rounded-l-2xl p-3">
+                      <div className="flex justify-between w-full">
+                        <p className="font-semibold">{product.name}</p>
+                        <p className="bg-smoke text-[10px] flex justify-center items-center px-2 rounded-lg">
+                          Most Popular
+                        </p>
+                      </div>
 
-              <div className="flex mt-3 gap-3 items-center">
-                <p className="gray line-through text-xs">$16</p>
-                <p className="text-5xl font-bold">$15</p>
-                <div className="text-xs gray">
-                  <p>per user</p>
-                  <p>per month</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 mt-6 text-xs gray">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="iris size-6 ml-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                  />
-                </svg>
-                <p className="text-sm">Get 500 💎 per month</p>
-              </div>
-              <div className="flex items-center gap-3 mt-2 text-xs gray">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="iris size-6 ml-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                  />
-                </svg>
-                <p className="text-sm">5% off</p>
-              </div>
-            </div>
-
-            <button className="bg-iris hover:bg-violet text-sm text-white py-2 transition px-4 rounded-xl w-full">
-              Select Plan
-            </button>
-          </div>
-          <div className="flex flex-col items-center justify-between h-4/5 w-1/4">
-            <div className="border-light-gray p-5 rounded-xl w-full shadow-xl">
-              <h3 className="text-lg font-semibold flex gap-2">Starter Plan</h3>
-              <div className="flex mt-3 gap-3 items-center">
-                <p className="text-2xl font-bold">$8</p>
-                <div className="text-[10px] gray">for</div>
-                <p className="text-2xl font-bold">250 💎</p>
-                <div className="text-[10px] gray">
-                  <p>per user</p>
-                  <p>per month</p>
-                </div>
-              </div>
-
-              <Link
-                href="https://magicsub.lemonsqueezy.com/buy/24a358c9-f04f-4138-9635-e38bff3b5a08"
-                className="mt-10 bg-black white hover:bg-gray transition text-xs py-2 px-4 rounded-xl w-full"
-              >
-                Select Plan
-              </Link>
-            </div>
-            <div className="border-light-gray p-5 rounded-xl w-full shadow-xl">
-              <h3 className="text-lg font-semibold flex gap-2">Pro Plan</h3>
-              <div className="flex mt-3 gap-3 items-center">
-                <p className="text-2xl font-bold">$32</p>
-                <div className="text-[10px] gray">for</div>
-                <p className="text-2xl font-bold">1000 💎</p>
-                <div className="text-[10px] gray">
-                  <p>per user</p>
-                  <p>per month</p>
-                </div>
-              </div>
-
-              <Link
-                href="https://magicsub.lemonsqueezy.com/buy/24a358c9-f04f-4138-9635-e38bff3b5a08"
-                className="mt-10 bg-black white hover:bg-gray transition text-xs py-2 px-4 rounded-xl w-full"
-              >
-                Select Plan
-              </Link>
-            </div>
+                      <div className="flex items-center gap-2 mt-6 ml-3">
+                        <p className="line-through text-[10px] gray">$16</p>
+                        <p className="font-bold text-5xl">
+                          ${product.price / 100}
+                        </p>
+                        <div className="text-[10px] gray">
+                          <p>per user</p>
+                          <p>per month</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-7/10 flex h-full">
+                      <div className="w-7/10 flex justify-center gap-2 flex-col">
+                        <div className="flex text-xs gray items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="1.5"
+                            stroke="currentColor"
+                            className="iris size-5 ml-4"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                            />
+                          </svg>
+                          <p>Get 500 💎 per month</p>
+                        </div>
+                        <div className="flex text-xs gray items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="1.5"
+                            stroke="currentColor"
+                            className="iris size-5 ml-4"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                            />
+                          </svg>
+                          <p>5% off</p>
+                        </div>
+                      </div>
+                      <div className="w-3/10 flex items-center h-full">
+                        <Link
+                          href={product.checkoutUrl}
+                          className="bg-iris hover:bg-violet transition white text-xs px-6 py-2 rounded-lg"
+                        >
+                          Select Plan
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              } else {
+                return (
+                  <div
+                    key={product.id}
+                    className="border-light-gray flex items-center w-full justify-between rounded-xl h-full shadow-lg "
+                  >
+                    <div className="border-r-[1px] border-r-gray-300 h-full w-3/10 rounded-l-2xl p-3">
+                      <p className="font-semibold">{product.name}</p>
+                      <div className="flex items-center gap-2 mt-6 ml-3">
+                        <p className="font-bold text-5xl">
+                          ${product.price / 100}
+                        </p>
+                        <div className="text-[10px] gray">
+                          <p>per user</p>
+                          <p>per month</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="w-7/10 flex h-full">
+                      <div className="w-7/10 flex items-center">
+                        <div className="flex text-xs gray items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="1.5"
+                            stroke="currentColor"
+                            className="iris size-5 ml-4"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                            />
+                          </svg>
+                          <p>
+                            Get{" "}
+                            {product.name === "Starter Plan" ? "250" : "1000"}{" "}
+                            💎 per month
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-3/10 flex items-center h-full">
+                        <Link
+                          href={product.checkoutUrl}
+                          className="bg-black hover:bg-gray transition white text-xs px-6 py-2 rounded-lg"
+                        >
+                          Select Plan
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+            })}
           </div>
         </div>
       </main>
