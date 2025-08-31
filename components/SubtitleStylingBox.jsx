@@ -274,13 +274,13 @@ const SubtitleStylingBox = ({ customize, setCustomize }) => {
 
       <div className="flex items-center justify-center w-full gap-5 mt-10">
         <button
-          className="px-5 py-1 rounded-4xl text-xs transition-colors bg-gray white hover:bg-light-gray"
+          className="px-5 py-1 rounded-4xl text-xs transition-colors bg-black white hover:bg-gray"
           onClick={resetToDefault}
         >
           Reset to Default
         </button>
         <button
-          className="px-5 py-1 rounded-4xl text-xs transition-colors bg-gray white hover:bg-light-gray"
+          className="px-5 py-1 rounded-4xl text-xs transition-colors bg-black white hover:bg-gray"
           onClick={saveAsDefault}
         >
           Save as Default

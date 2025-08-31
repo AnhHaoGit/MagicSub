@@ -27,9 +27,9 @@ async function connectDB() {
 
 export async function POST(req) {
   try {
-    const { subtitle, customize, directUrl, videoId, userId } = await req.json();
+    const { subtitle, customize, cloudUrl, videoId, userId } = await req.json();
 
-    if (!subtitle || !customize || !directUrl || !videoId || !userId) {
+    if (!subtitle || !customize || !cloudUrl || !videoId || !userId) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -40,7 +40,6 @@ export async function POST(req) {
 
     // 🔹 Generate ASS content
     const assContent = generateASS(subtitle, customize);
-    console.log(assContent);
     const assPath = `/tmp/subtitles_${Date.now()}.ass`;
     await fs.promises.writeFile(assPath, assContent);
 
@@ -51,7 +50,7 @@ export async function POST(req) {
     await new Promise((resolve, reject) => {
       const ffmpeg = spawn("ffmpeg", [
         "-i",
-        directUrl,
+        cloudUrl,
         "-vf",
         `ass=${assPath}`,
         "-c:v",

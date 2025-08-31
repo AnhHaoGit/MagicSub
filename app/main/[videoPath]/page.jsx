@@ -13,6 +13,7 @@ import {
   update_video_in_local_storage,
 } from "@/lib/local_storage_handlers";
 import { useRouter } from "next/navigation";
+import SuggestAFeature from "@/components/SuggestAFeature";
 
 // const STEP = 0.1;
 
@@ -23,7 +24,6 @@ export default function VideoPage() {
   const [videoData, setVideoData] = useState(null);
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isProccessing, setIsProcessing] = useState(false);
-  const [isGettingNewUrl, setIsGettingNewUrl] = useState(false);
 
   // const [values, setValues] = useState([0, 0]);
   // const trimmedDuration = formatTime(values[1] - values[0]);
@@ -39,36 +39,6 @@ export default function VideoPage() {
     setTargetLanguage(value);
   };
 
-  const getNewUrl = async () => {
-    if (!session) {
-      toast.error("Please login to continue the process.");
-      return;
-    }
-    setIsGettingNewUrl(true);
-    const response = await fetch("/api/refresh_direct_url", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        originalUrl: videoData.originalUrl,
-        _id: videoData._id,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      toast.success("New URL fetched successfully!");
-      let updatedVideoData = { ...videoData, directUrl: data.directUrl };
-      setVideoData(updatedVideoData);
-      update_video_in_local_storage(updatedVideoData);
-    } else {
-      toast.error(data.message);
-    }
-
-    setIsGettingNewUrl(false);
-  };
 
   const videoRef = useRef(null);
 
@@ -88,7 +58,7 @@ export default function VideoPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        directUrl: videoData.directUrl,
+        cloudUrl: videoData.cloudUrl,
         _id: videoData._id,
         targetLanguage: targetLanguage,
         style: session.user.style
@@ -112,31 +82,16 @@ export default function VideoPage() {
     <>
       <MainNavbar />
       <main className="flex flex-col items-center justify-items-start h-screen w-full p-10">
-        <div className="flex flex-col mt-15 items-start justify-center w-full">
-          <h1 className="font-bold text-2xl">Video Preview</h1>
-          <div className="flex items-center justify-items-start w-full gap-1">
-            <p className="gray">if the video is not playing, please click</p>
-            <button
-              className="iris underline cursor-pointer"
-              onClick={getNewUrl}
-            >
-              get new url
-            </button>
-            <p className="gray">{isGettingNewUrl ? "processing..." : ""}</p>
-          </div>
-        </div>
-        <div className="flex w-full items-center justify-between gap-5 h-full mt-10">
+        <div className="flex w-full items-center justify-between gap-5 h-8/10 mt-20">
           <div className="w-2/3 h-full bg-black rounded-2xl flex items-center justify-center">
-            {videoData?.directUrl ? (
               <video
                 ref={videoRef}
-                src={videoData.directUrl}
+                src={videoData?.cloudUrl}
                 controls
                 className="rounded-xl shadow-xl w-90% h-full"
+                allowFullScreen
               />
-            ) : (
-              <p>Loading video...</p>
-            )}
+
           </div>
           <div className="w-1/3 h-full flex flex-col items-center justify-between p-5 bg-smoke rounded-4xl shadow-lg">
             <div className="flex flex-col w-full items-center gap-4">
@@ -211,6 +166,7 @@ export default function VideoPage() {
             setValues={setValues}
           />
         </div> */}
+        <SuggestAFeature />
       </main>
     </>
   );

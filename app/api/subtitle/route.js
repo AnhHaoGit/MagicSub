@@ -65,15 +65,15 @@ export async function POST(req) {
   }
 
   try {
-    const { directUrl, _id, targetLanguage, style } = await req.json();
-    if (!directUrl || !_id || !targetLanguage) {
+    const { cloudUrl, _id, targetLanguage, style } = await req.json();
+    if (!cloudUrl || !_id || !targetLanguage) {
       return NextResponse.json(
         { message: "Missing parameters" },
         { status: 400 }
       );
     }
 
-    const response = await axios.get(directUrl, {
+    const response = await axios.get(cloudUrl, {
       responseType: "arraybuffer",
     });
     const audioBuffer = Buffer.from(response.data);

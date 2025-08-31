@@ -2,11 +2,11 @@
 
 import LandingPageNavbar from "@/components/LandingPageNavbar";
 import Link from "next/link";
-import { useState, useTransition, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 const Page = () => {
   const [productsData, setProductsData] = useState([]);
+  const [customerPortalUrl, setCustomerPortalUrl] = useState("");
 
   function sortProducts(products) {
     const order = ["Starter Plan", "Plus Plan", "Pro Plan"]; // thứ tự mong muốn
@@ -27,8 +27,8 @@ const Page = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            userEmail: "nguyenanhhao090708@gmail.com",
-            userId: "688c8e8abd2be107868180dd",
+            userEmail: JSON.parse(localStorage.getItem("user")).email,
+            userId: JSON.parse(localStorage.getItem("user")).id,
             embed: false,
           }),
         });
@@ -44,7 +44,29 @@ const Page = () => {
     fetchProductsData();
   }, []);
 
-  console.log(productsData);
+
+  useEffect(() => {
+    const fetchCustomerPortal = async () => {
+      try {
+        const res = await fetch("/api/create_customer_portal", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            subscription_id: 1448037,
+          }),
+        });
+        const data = await res.json();
+
+        setCustomerPortalUrl(data.portal_url);
+      } catch (err) {
+        console.error("Failed to load checkout URLs:", err);
+      }
+    };
+
+    fetchCustomerPortal();
+  }, []);
 
   return (
     <>

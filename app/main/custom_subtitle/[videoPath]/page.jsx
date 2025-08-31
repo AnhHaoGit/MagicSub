@@ -228,8 +228,8 @@ const Page = () => {
 bg-[${customize.background_color}]`;
 
   const strokeLayers = [];
-  const steps = 64; // 128 hướng
-  const radius = customize.outline_width; // độ dày viền
+  const steps = 64;
+  const radius = customize.outline_width;
 
   for (let i = 0; i < steps; i++) {
     const angle = (i * 360) / steps;
@@ -272,7 +272,7 @@ bg-[${customize.background_color}]`;
         body: JSON.stringify({
           subtitle,
           customize,
-          directUrl: videoData.directUrl,
+          cloudUrl: videoData.cloudUrl,
           videoId: videoData._id,
           userId: videoData.userId,
         }),
@@ -376,36 +376,6 @@ bg-[${customize.background_color}]`;
     setIsDownloadingTxt(false);
   };
 
-  const getNewUrl = async () => {
-    if (!session) {
-      toast.error("Please login to continue the process.");
-      return;
-    }
-    setIsGettingNewUrl(true);
-    const response = await fetch("/api/refresh_direct_url", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        originalUrl: videoData.originalUrl,
-        _id: videoData._id,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      toast.success("New URL fetched successfully!");
-      let updatedVideoData = { ...videoData, directUrl: data.directUrl };
-      setVideoData(updatedVideoData);
-      update_video_in_local_storage(updatedVideoData);
-    } else {
-      toast.error(data.message);
-    }
-
-    setIsGettingNewUrl(false);
-  };
 
   return (
     <>
@@ -419,7 +389,7 @@ bg-[${customize.background_color}]`;
                 <video
                   ref={videoRef}
                   controls
-                  src={videoData.directUrl}
+                  src={videoData.cloudUrl}
                   className="shadow-xl w-full m-auto"
                 ></video>
                 {currentSubtitle && (
@@ -449,33 +419,24 @@ bg-[${customize.background_color}]`;
                 )}
               </div>
             </div>
-            <div className="flex items-center justify-items-start w-full gap-1 text-sm">
-              <p className="gray">if the video is not playing, please click</p>
-              <button
-                className="iris underline cursor-pointer"
-                onClick={getNewUrl}
-              >
-                get new url
-              </button>
-              <p className="gray">{isGettingNewUrl ? "processing..." : ""}</p>
-            </div>
+            
             <div className="h-1/5 w-full bg-smoke rounded-2xl flex items-center justify-center gap-3">
               <button
-                className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray"
+                className="py-2 px-3 rounded-4xl text-sm transition-colors bg-black white hover:bg-gray"
                 onClick={handleDownloadSrt}
                 disabled={isDownloadingSrt}
               >
                 {isDownloadingSrt ? "Downloading..." : "Download .srt"}
               </button>
               <button
-                className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray"
+                className="py-2 px-3 rounded-4xl text-sm transition-colors bg-black white hover:bg-gray"
                 onClick={handleDownloadAss}
                 disabled={isDownloadingAss}
               >
                 {isDownloadingAss ? "Downloading..." : "Download .ass"}
               </button>
               <button
-                className="py-2 px-3 rounded-4xl text-sm transition-colors bg-gray white hover:bg-light-gray"
+                className="py-2 px-3 rounded-4xl text-sm transition-colors bg-black white hover:bg-gray"
                 onClick={handleDownloadTxt}
                 disabled={isDownloadingTxt}
               >
@@ -511,7 +472,7 @@ bg-[${customize.background_color}]`;
                 className={`w-30 py-2 rounded-4xl font-semibold transition-colors ${
                   isTranscript
                     ? "bg-iris text-white hover:bg-violet"
-                    : "bg-gray white hover:bg-light-gray"
+                    : "bg-black white hover:bg-gray"
                 }`}
               >
                 Transcript
@@ -522,7 +483,7 @@ bg-[${customize.background_color}]`;
                 className={`w-30 py-2 rounded-4xl font-semibold transition-colors ${
                   !isTranscript
                     ? "bg-iris text-white hover:bg-violet"
-                    : "bg-gray white hover:bg-light-gray"
+                    : "bg-black white hover:bg-gray"
                 }`}
               >
                 Style

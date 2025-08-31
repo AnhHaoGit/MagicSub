@@ -1,94 +1,117 @@
 "use server";
-import { getProductVariant } from "@/lib/lemon-squeezy/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { upsertProduct } from "@/lib/supabase/database/products";
-import { insertSubscription } from "@/lib/supabase/database/subscriptions";
-import { updateCustomerId } from "@/lib/supabase/database/users";
 import crypto from "node:crypto";
+import { MongoClient, ObjectId } from "mongodb";
+import { NextResponse } from "next/server";
 
-const subscriptionEvents = [
-  "subscription_created",
-  "subscription_updated",
-  "subscription_resumed",
-  "subscription_paused",
-  "subscription_cancelled",
-  "subscription_unpaused",
-  "subscription_expired",
-];
+const client = new MongoClient(process.env.MONGODB_URI);
+let db;
+
+async function connectDB() {
+  if (!db) {
+    await client.connect();
+    db = client.db(process.env.MONGODB_DB_NAME || "magicsub_db");
+  }
+  return db;
+}
+
+function getGemsByPlan(planName) {
+  if (!planName) return 0;
+  const normalized = planName.toLowerCase();
+  if (normalized.includes("starter")) return 250;
+  if (normalized.includes("plus")) return 500;
+  if (normalized.includes("pro")) return 1000;
+  return 0;
+}
 
 export async function POST(request) {
-  if (!process.env.LEMONSQUEEZY_WEBHOOK_SECRET) {
-    return new Response("Lemon Squeezy Webhook Secret not set in .env", {
-      status: 500,
-    });
-  }
-
-  // First, make sure the request is from Lemon Squeezy.
-  const rawBody = await request.text();
-  const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
-
-  const hmac = crypto.createHmac("sha256", secret);
-  const digest = Buffer.from(hmac.update(rawBody).digest("hex"), "utf8");
-  const signature = Buffer.from(
-    request.headers.get("X-Signature") || "",
-    "utf8"
-  );
-
-  if (!crypto.timingSafeEqual(digest, signature)) {
-    return new Response("Invalid signature.", { status: 400 });
-  }
-
-  const data = JSON.parse(rawBody);
-
-  if (subscriptionEvents.includes(data.meta.event_name)) {
-    const userId = data.meta.custom_data?.user_id;
-    if (!userId) {
-      return new Response("User ID not found", { status: 400 });
+  try {
+    if (!process.env.LEMONSQUEEZY_WEBHOOK_SECRET) {
+      return NextResponse.json(
+        { error: "Lemon Squeezy Webhook Secret not set in .env" },
+        { status: 500 }
+      );
     }
 
-    const subscription = data.data;
-    const productId = subscription.attributes.product_id;
-    const variantId = subscription.attributes.variant_id;
-    const productName = subscription.attributes.product_name;
-    const variant = await getProductVariant(variantId);
-    const price = variant?.attributes?.price;
+    const rawBody = await request.text();
+    const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
 
-    const supabaseAdmin = await createAdminClient();
+    const hmac = crypto.createHmac("sha256", secret);
+    const digest = Buffer.from(hmac.update(rawBody).digest("hex"), "utf8");
+    const signature = Buffer.from(
+      request.headers.get("X-Signature") || "",
+      "utf8"
+    );
 
-    const customerId = subscription.attributes.customer_id;
-    if (!customerId) {
-      return new Response("Customer ID not found", { status: 400 });
+    if (!crypto.timingSafeEqual(digest, signature)) {
+      return NextResponse.json(
+        { error: "Invalid signature." },
+        { status: 400 }
+      );
     }
-    const productUpsert = upsertProduct(supabaseAdmin, {
-      variant_id: variantId.toString(),
-      product_id: productId.toString(),
-      name: productName,
-      price: price,
-    });
 
-    const customerUpsert = updateCustomerId(supabaseAdmin, {
-      userId,
-      customerId: customerId.toString(),
-    });
+    const data = JSON.parse(rawBody);
+    console.dir(data, { depth: null, colors: true });
 
-    await Promise.all([productUpsert, customerUpsert]);
+    const db = await connectDB();
 
-    await insertSubscription(supabaseAdmin, {
-      customerId: customerId.toString(),
-      subscriptionId:
-        subscription.attributes.first_subscription_item.subscription_id,
-      productId: productId.toString(),
-      variantId: variantId.toString(),
-      status: subscription.attributes.status,
-      cancelled: subscription.attributes.cancelled,
-      renewsAt: subscription.attributes.renews_at,
-      endsAt: subscription.attributes.ends_at,
-      createdAt: subscription.attributes.created_at,
-      updatedAt: subscription.attributes.updated_at,
-    });
+    const updateSubscription = () => {
+      const userId = data.meta.custom_data.user_id;
+      const subscriptionId = data.data.id;
 
-    return new Response("Order Complete", { status: 200 });
+      return db.collection("users").updateOne(
+        { _id: new ObjectId(userId), "subscriptions.id": subscriptionId },
+        {
+          $set: {
+            "subscriptions.$.status": data.data.attributes.status,
+            "subscriptions.$.renewsAt": data.data.attributes.renews_at,
+            "subscriptions.$.endsAt": data.data.attributes.ends_at,
+            "subscriptions.$.name": data.data.attributes.product_name,
+          },
+        }
+      );
+    };
+
+    // Khi user mới tạo subscription
+    if (data.meta.event_name === "subscription_created") {
+      const newSubscription = {
+        id: data.data.id,
+        createdAt: data.data.attributes.created_at,
+        name: data.data.attributes.product_name,
+        status: data.data.attributes.status,
+        renewsAt: data.data.attributes.renews_at,
+        endsAt: data.data.attributes.ends_at,
+      };
+
+      const gems = getGemsByPlan(data.data.attributes.product_name);
+
+      await db.collection("users").updateOne(
+        { _id: new ObjectId(data.meta.custom_data.user_id) },
+        {
+          $push: { subscriptions: newSubscription },
+          $set: { gems },
+        }
+      );
+    }
+
+    // Khi subscription hết hạn
+    else if (data.meta.event_name === "subscription_payment_success") {
+      const gems = getGemsByPlan(data.data.attributes.product_name);
+      await db
+        .collection("users")
+        .updateOne(
+          { _id: new ObjectId(data.meta.custom_data.user_id) },
+          { $set: { gems } }
+        );
+    } else {
+      await updateSubscription();
+    }
+
+    return NextResponse.json({ message: "Webhook received" }, { status: 200 });
+  } catch (err) {
+    console.error("Webhook error:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
-
-  return new Response("Webhook received", { status: 200 });
 }

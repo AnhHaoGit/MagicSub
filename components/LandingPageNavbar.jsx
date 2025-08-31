@@ -22,16 +22,19 @@ const LandingPageNavbar = () => {
               <Image src={logo} alt="LingoTube" width={30} />
               <p className="black text-2xl ml-2 font-semibold">MagicSub</p>
             </Link>
-            <Link href="/feedback" className="hover:light-gray">
-              Feedback
-            </Link>
-            <Link href="/pricing" className="hover:light-gray">
-              Pricing
-            </Link>
+
             {session && (
-              <button onClick={handleSignout} className="hover:light-gray">
-                Logout
-              </button>
+              <>
+                <Link href="/feedback" className="hover:light-gray">
+                  Feedback
+                </Link>
+                <Link href="/pricing" className="hover:light-gray">
+                  Pricing
+                </Link>
+                <button onClick={handleSignout} className="hover:light-gray">
+                  Logout
+                </button>
+              </>
             )}
           </div>
           {!session ? (
@@ -52,7 +55,7 @@ const LandingPageNavbar = () => {
 
               <Link
                 href="/main"
-                className="bg-iris px-7 py-3 text-white rounded-4xl hover:bg-violet transition-colors cursor-pointer"
+                className="bg-black px-7 py-3 text-white rounded-4xl hover:bg-gray transition-colors cursor-pointer"
               >
                 Go to App
               </Link>

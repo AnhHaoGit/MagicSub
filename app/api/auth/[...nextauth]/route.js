@@ -81,6 +81,8 @@ export const authOptions = {
               background_opacity: 55,
               margin_bottom: 15,
             },
+            gems: 100,
+            subscriptions: [],
           });
         }
       }
@@ -117,6 +119,9 @@ export const authOptions = {
       });
 
       session.user.id = token.id;
+
+      session.user.gems = user.gems;
+      session.user.subscriptions = user.subscriptions;
 
       if (user?.style) {
         session.user.style = user.style;

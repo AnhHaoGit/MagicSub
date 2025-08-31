@@ -54,6 +54,8 @@ export async function POST(req) {
       background_opacity: 55,
       margin_bottom: 15,
     },
+    gems: 100,
+    subscriptions: [],
   });
 
   return NextResponse.json({ message: "User created" });
