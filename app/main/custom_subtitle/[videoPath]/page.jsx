@@ -13,6 +13,7 @@ import {
   update_video_in_local_storage,
 } from "@/lib/local_storage_handlers";
 import { useSession } from "next-auth/react";
+import SuggestAFeature from "@/components/SuggestAFeature";
 
 const Page = () => {
   const { videoPath } = useParams();
@@ -281,6 +282,8 @@ bg-[${customize.background_color}]`;
       if (!response.ok) {
         const errorData = await response.json();
         toast.error("Failed to generate ASS file:", errorData.message);
+        setIsLoading(false);
+
         return;
       }
 
@@ -376,7 +379,6 @@ bg-[${customize.background_color}]`;
     setIsDownloadingTxt(false);
   };
 
-
   return (
     <>
       <MainNavbar />
@@ -419,7 +421,7 @@ bg-[${customize.background_color}]`;
                 )}
               </div>
             </div>
-            
+
             <div className="h-1/5 w-full bg-smoke rounded-2xl flex items-center justify-center gap-3">
               <button
                 className="py-2 px-3 rounded-4xl text-sm transition-colors bg-black white hover:bg-gray"

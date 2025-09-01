@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { add_video_to_local_storage } from "@/lib/local_storage_handlers";
 import Link from "next/link";
 import SuggestAFeature from "@/components/SuggestAFeature";
+import RotatingTexts from "@/components/RotatingTexts";
 
 const LandingPage = () => {
   const [loading, setLoading] = useState(false);
@@ -44,6 +45,7 @@ const LandingPage = () => {
   };
 
   const handleFileUpload = async (e) => {
+    const date = new Date();
     const file = e.target.files[0];
     if (!file) return;
 
@@ -67,7 +69,6 @@ const LandingPage = () => {
       videoElement.onloadedmetadata = async () => {
         const duration = videoElement.duration;
 
-
         const res = await fetch("/api/s3_presign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -78,14 +79,14 @@ const LandingPage = () => {
             title,
             size,
             duration,
+            createdAt: date.toISOString()
           }),
         });
 
-        if (!res.ok) throw new Error("Failed to get presigned URL");
 
         const newVideo = await res.json();
 
-        // 2. Upload file trực tiếp lên S3
+        // 2. Upload file directly to S3
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", newVideo.uploadUrl, true);
         xhr.setRequestHeader("Content-Type", file.type);
@@ -96,7 +97,7 @@ const LandingPage = () => {
           if (event.lengthComputable) {
             const percent = Math.round((event.loaded / event.total) * 100);
 
-            const elapsed = (Date.now() - startTime) / 1000; 
+            const elapsed = (Date.now() - startTime) / 1000;
             const speed = event.loaded / elapsed;
             const remaining = (event.total - event.loaded) / speed;
 
@@ -107,17 +108,17 @@ const LandingPage = () => {
 
         xhr.onload = () => {
           if (xhr.status === 200) {
-            toast.success("Upload thành công!");
+            toast.success("Upload successful!");
             add_video_to_local_storage(newVideo);
             router.push(`/main/${newVideo._id}`);
           } else {
-            toast.error("Upload thất bại!");
+            toast.error("Upload failed!");
           }
           setLoading(false);
         };
 
         xhr.onerror = () => {
-          toast.error("Upload thất bại (network error)!");
+          toast.error("Upload failed (network error)!");
           setLoading(false);
         };
 
@@ -125,7 +126,7 @@ const LandingPage = () => {
       };
     } catch (err) {
       console.error("Upload error:", err);
-      toast.error("Upload thất bại!");
+      toast.error("Upload failed!");
       setLoading(false);
     }
   };
@@ -135,11 +136,7 @@ const LandingPage = () => {
       <LandingPageNavbar />
       <main className="flex flex-col items-center gap-10 justify-center h-screen">
         <div>
-          <div className="flex items-center justify-center text-[clamp(2rem,4vw,3.75rem)] font-bold">
-            <h1 className="">Instant</h1>
-            <h1 className="ml-3 bg-black text-white">AI subtitles</h1>
-            <h1 className="ml-3"> for every YouTube video,</h1>
-          </div>
+          <RotatingTexts />
 
           <div className="flex items-center justify-center text-[clamp(2rem,4vw,3.75rem)] font-bold">
             <h1 className="">in</h1>
@@ -179,6 +176,11 @@ const LandingPage = () => {
             Login to continue
           </Link>
         )}
+        <div>
+          <p className="text-xs gray">
+            Download Youtube, Instagram, Tiktok videos before uploading.
+          </p>
+        </div>
 
         {loading && (
           <div className="mt-6 w-80">
@@ -189,7 +191,7 @@ const LandingPage = () => {
               ></div>
             </div>
             <p className="text-center mt-2 text-sm">
-              {progress}% {eta && `(~${eta}s còn lại)`}
+              {progress}% {eta && `(~${eta}s left)`}
             </p>
           </div>
         )}

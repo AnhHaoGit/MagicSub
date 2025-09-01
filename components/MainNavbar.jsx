@@ -1,9 +1,20 @@
-import React from "react";
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import logo from "@/assets/logo.png";
+import { useState, useEffect } from "react";
 
 const MainNavbar = () => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
   return (
     <nav className=" fixed top-0 left-0 w-full rounded-b-2xl shadow-[0_0_30px_rgba(76,59,207,0.3)] bg-white z-50">
       <div className="flex justify-between items-center p-4">
@@ -23,11 +34,14 @@ const MainNavbar = () => {
           </Link>
         </div>
         <div className="flex items-center justify-center gap-2">
-          <Link href='/main' className="px-5 py-2 bg-iris text-white rounded-full hover:bg-violet transition-colors cursor-pointer">
+          <Link
+            href="/main"
+            className="px-5 py-2 bg-black text-white rounded-full hover:bg-gray transition-colors cursor-pointer"
+          >
             + New video
           </Link>
-          <p className="border-2 border-iris rounded-full px-4 py-2">
-            Gems: 100 💎
+          <p className="border-2 border-black rounded-full px-4 py-2">
+            Gems: {user?.gems} 💎
           </p>
         </div>
       </div>

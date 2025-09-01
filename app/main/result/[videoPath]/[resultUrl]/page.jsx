@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import MainNavbar from "@/components/MainNavbar";
+import SuggestAFeature from "@/components/SuggestAFeature";
 
 const Page = () => {
   const [videoData, setVideoData] = useState(null);
@@ -33,6 +34,7 @@ const Page = () => {
             className="shadow-xl w-full"
           />
         </div>
+        <SuggestAFeature />
       </main>
     </>
   );

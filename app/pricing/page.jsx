@@ -1,6 +1,7 @@
 "use client";
 
 import LandingPageNavbar from "@/components/LandingPageNavbar";
+import SuggestAFeature from "@/components/SuggestAFeature";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
@@ -332,6 +333,7 @@ const Page = () => {
             })}
           </div>
         </div>
+        <SuggestAFeature />
       </main>
     </>
   );

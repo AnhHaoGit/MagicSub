@@ -10,7 +10,6 @@ import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
 import {
   add_subtitle_to_local_storage_by_video_id,
-  update_video_in_local_storage,
 } from "@/lib/local_storage_handlers";
 import { useRouter } from "next/navigation";
 import SuggestAFeature from "@/components/SuggestAFeature";
@@ -61,7 +60,8 @@ export default function VideoPage() {
         cloudUrl: videoData.cloudUrl,
         _id: videoData._id,
         targetLanguage: targetLanguage,
-        style: session.user.style
+        style: session.user.style,
+        userId: session.user.id,
       }),
     });
 

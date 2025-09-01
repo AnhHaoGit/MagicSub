@@ -1,8 +1,6 @@
 "use server";
 
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
 import axios from "axios";
 import { Readable } from "stream";
 import { spawn } from "child_process";
@@ -59,28 +57,29 @@ const formatSrtFile = (data, lastSecond) => {
 };
 
 export async function POST(req) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const { cloudUrl, _id, targetLanguage, style } = await req.json();
-    if (!cloudUrl || !_id || !targetLanguage) {
+    console.log("🔹 Bắt đầu xử lý request...");
+    const { cloudUrl, _id, targetLanguage, style, userId } = await req.json();
+    console.log("📥 Params:", { cloudUrl, _id, targetLanguage, style, userId });
+
+    if (!cloudUrl || !_id || !targetLanguage || !userId) {
+      console.warn("⚠️ Thiếu parameters!");
       return NextResponse.json(
         { message: "Missing parameters" },
         { status: 400 }
       );
     }
 
-    const response = await axios.get(cloudUrl, {
-      responseType: "arraybuffer",
-    });
-    const audioBuffer = Buffer.from(response.data);
+    console.log("⬇️ Tải file audio từ cloud...");
+    const response = await axios.get(cloudUrl, { responseType: "arraybuffer" });
+    console.log("✅ Downloaded audio:", response.data.byteLength, "bytes");
 
+    const audioBuffer = Buffer.from(response.data);
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "chunks-"));
+    console.log("📂 Temp dir created:", tempDir);
 
     // Tách file bằng ffmpeg
+    console.log("🎬 Bắt đầu tách file bằng ffmpeg...");
     await new Promise((resolve, reject) => {
       const ffmpeg = spawn("ffmpeg", [
         "-i",
@@ -98,23 +97,33 @@ export async function POST(req) {
         path.join(tempDir, "chunk_%03d.mp3"),
       ]);
 
+      ffmpeg.stdout?.on("data", (d) =>
+        console.log("ffmpeg out:", d.toString())
+      );
+      ffmpeg.stderr?.on("data", (d) =>
+        console.log("ffmpeg err:", d.toString())
+      );
+
       ffmpeg.on("error", (err) => reject(err));
       ffmpeg.on("close", (code) => {
+        console.log("ffmpeg closed with code:", code);
         if (code === 0) resolve();
         else reject(new Error(`ffmpeg exited with code ${code}`));
       });
 
-      const readable = Readable.from(audioBuffer);
-      readable.pipe(ffmpeg.stdin);
+      Readable.from(audioBuffer).pipe(ffmpeg.stdin);
     });
 
-    // Đọc các file nhỏ và gửi lên Whisper (định dạng srt)
+    console.log("✅ Tách file thành công, bắt đầu upload lên Whisper...");
     const files = await fs.readdir(tempDir);
     files.sort();
+    console.log("📂 Chunk files:", files);
+
     const segments = [];
     let lastSecond = 0;
 
     for (const fileName of files) {
+      console.log(`📤 Upload chunk: ${fileName} -> Whisper`);
       const filePath = path.join(tempDir, fileName);
       const fileBuffer = await fs.readFile(filePath);
 
@@ -124,7 +133,7 @@ export async function POST(req) {
         contentType: "audio/mp3",
       });
       form.append("model", "whisper-1");
-      form.append("response_format", "srt"); // <-- chuyển về srt
+      form.append("response_format", "srt");
       form.append("language", targetLanguage);
 
       const whisperRes = await axios.post(WHISPER_API_URL, form, {
@@ -134,22 +143,26 @@ export async function POST(req) {
         },
       });
 
-      const formattedSrt = formatSrtFile(whisperRes.data, lastSecond);
+      console.log(`✅ Nhận transcript từ Whisper cho file ${fileName}`);
 
+      const formattedSrt = formatSrtFile(whisperRes.data, lastSecond);
       lastSecond = formattedSrt.lastSecond;
-      const { formattedData } = formattedSrt;
-      segments.push(...formattedData);
+      segments.push(...formattedSrt.formattedData);
     }
 
     await fs.rm(tempDir, { recursive: true, force: true });
+    console.log("🧹 Đã xóa temp dir");
 
     const db = await connectDB();
+    console.log("🔗 Đã kết nối MongoDB");
     const result = await db.collection("subtitle").insertOne({
-      userId: new ObjectId(session.user.id),
+      userId: new ObjectId(userId),
       videoId: new ObjectId(_id),
       subtitle: segments,
       customize: style,
     });
+
+    console.log("💾 Lưu vào Mongo thành công:", result.insertedId);
 
     return NextResponse.json({
       message: "Transcript segments saved (SRT format)",
@@ -158,7 +171,7 @@ export async function POST(req) {
       customize: style,
     });
   } catch (err) {
-    console.error("Error processing video:", err);
+    console.error("❌ Error processing video:", err);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }

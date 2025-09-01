@@ -32,7 +32,10 @@ export async function POST(req) {
       title,
       size,
       duration,
+      createdAt
     } = body;
+
+    console.log(createdAt)
 
     if (!fileName || !fileType) {
       return NextResponse.json(
@@ -41,7 +44,7 @@ export async function POST(req) {
       );
     }
 
-    const key = `uploads/${Date.now()}-${fileName}`;
+    const key = `uploads/${Date.now()}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET,
@@ -60,6 +63,7 @@ export async function POST(req) {
       title,
       size,
       duration,
+      createdAt
     });
 
     return NextResponse.json({
@@ -70,6 +74,7 @@ export async function POST(req) {
       title,
       size,
       duration,
+      createdAt
     });
   } catch (err) {
     console.error("Error creating presigned URL:", err);

@@ -7,12 +7,8 @@ const HistoryBox = ({ video }) => {
       key={video._id}
       className="w-full p-4 border-light-gray flex items-center gap-4 rounded-3xl shadow-lg h-40"
     >
-      <div className="flex-shrink-0 w-1/10">
-        <img
-          src={video.thumbnail}
-          className="w-full rounded-lg"
-          alt={video.title}
-        />
+      <div className="flex-shrink-0 w-1/10 items-center justify-center flex">
+        <video src={video.cloudUrl} className="rounded-xl w-4/5"></video>
       </div>
       <div className="w-6/10 flex flex-col gap-1">
         <p className="font-bold text-lg">{video.title}</p>
