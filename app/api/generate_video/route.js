@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
+import axios from "axios";
 import { spawn } from "child_process";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import fs from "fs";
+import fs from "fs/promises";
+import path from "path";
+import os from "os";
+import {
+  S3Client,
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
+} from "@aws-sdk/client-s3";
 import { MongoClient, ObjectId } from "mongodb";
 
-
-// AWS S3 config
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -25,6 +31,90 @@ async function connectDB() {
   return db;
 }
 
+// Ghi ffmpeg output ra file tạm mp4
+async function generateTempMp4(cloudUrl, assPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    const ffmpeg = spawn("ffmpeg", [
+      "-i",
+      cloudUrl,
+      "-vf",
+      `ass=${assPath}`,
+      "-c:v",
+      "libx264",
+      "-preset",
+      "fast",
+      "-crf",
+      "23",
+      "-pix_fmt",
+      "yuv420p",
+      "-c:a",
+      "aac",
+      "-f",
+      "mp4",
+      outputPath,
+    ]);
+    ffmpeg.stderr.on("data", (d) => console.log("ffmpeg err:", d.toString()));
+    ffmpeg.on("error", reject);
+    ffmpeg.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`ffmpeg exited with code ${code}`));
+    });
+  });
+}
+
+// Multipart upload từng phần ~500MB lên S3
+async function multipartUpload(
+  filePath,
+  bucket,
+  key,
+  partSize = 500 * 1024 * 1024
+) {
+  const stat = await fs.stat(filePath);
+  const totalSize = stat.size;
+  const createRes = await s3.send(
+    new CreateMultipartUploadCommand({
+      Bucket: bucket,
+      Key: key,
+      ContentType: "video/mp4",
+    })
+  );
+  const uploadId = createRes.UploadId;
+  const parts = [];
+  let partNumber = 1;
+  let start = 0;
+  const fd = await fs.open(filePath, "r");
+
+  while (start < totalSize) {
+    const end = Math.min(start + partSize, totalSize);
+    const buffer = Buffer.alloc(end - start);
+    await fd.read(buffer, 0, end - start, start);
+
+    const uploadRes = await s3.send(
+      new UploadPartCommand({
+        Bucket: bucket,
+        Key: key,
+        PartNumber: partNumber,
+        UploadId: uploadId,
+        Body: buffer,
+      })
+    );
+    parts.push({ ETag: uploadRes.ETag, PartNumber: partNumber });
+
+    start = end;
+    partNumber += 1;
+  }
+  await fd.close();
+
+  await s3.send(
+    new CompleteMultipartUploadCommand({
+      Bucket: bucket,
+      Key: key,
+      UploadId: uploadId,
+      MultipartUpload: { Parts: parts },
+    })
+  );
+}
+
 export async function POST(req) {
   try {
     const { subtitle, customize, cloudUrl, videoId, userId } = await req.json();
@@ -36,64 +126,26 @@ export async function POST(req) {
       );
     }
 
-    const now = Date.now()
-
-    // 🔹 Generate ASS content
-    const assContent = generateASS(subtitle, customize);
-    const assPath = `/tmp/subtitles_${Date.now()}.ass`;
-    await fs.promises.writeFile(assPath, assContent);
-
-    // 🔹 Output file path
-    const outputPath = `/tmp/output_${Date.now()}.mp4`;
-
-    // 🔹 Run ffmpeg và lưu vào local file
-    await new Promise((resolve, reject) => {
-      const ffmpeg = spawn("ffmpeg", [
-        "-i",
-        cloudUrl,
-        "-vf",
-        `ass=${assPath}`,
-        "-c:v",
-        "libx264",
-        "-preset",
-        "fast",
-        "-crf",
-        "23",
-        "-pix_fmt",
-        "yuv420p",
-        "-c:a",
-        "aac",
-        outputPath,
-      ]);
-
-      ffmpeg.on("close", (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(new Error(`FFmpeg exited with code ${code}`));
-        }
-      });
-    });
-
-    // 🔹 Upload file local lên S3
+    const now = Date.now();
     const Key = `generated_videos/video_${now}.mp4`;
-    const fileStream = fs.createReadStream(outputPath);
 
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET,
-        Key,
-        Body: fileStream,
-        ContentType: "video/mp4",
-      })
-    );
+    // Tạo file ASS tạm
+    const assContent = generateASS(subtitle, customize);
+    const assPath = path.join(os.tmpdir(), `sub_${now}.ass`);
+    await fs.writeFile(assPath, assContent);
 
-    // 🔹 Tạo URL
+    // Tạo file mp4 tạm
+    const tempMp4 = path.join(os.tmpdir(), `video_${now}.mp4`);
+    await generateTempMp4(cloudUrl, assPath, tempMp4);
+
+    // Multipart upload lên S3
+    await multipartUpload(tempMp4, process.env.AWS_S3_BUCKET, Key);
+
+    // Xóa file tạm
+    await fs.unlink(assPath);
+    await fs.unlink(tempMp4);
+
     const videoUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${Key}`;
-
-    // (optional) Xóa file local sau khi upload xong
-    await fs.promises.unlink(outputPath);
-    await fs.promises.unlink(assPath);
 
     const db = await connectDB();
     const collection = db.collection("videos");
@@ -101,9 +153,9 @@ export async function POST(req) {
     const newEntry = { id: now, url: videoUrl };
 
     await collection.updateOne(
-     { _id: new ObjectId(videoId), userId: new ObjectId(userId) },
-     { $push: { cloudUrls: newEntry } }, // thêm vào mảng
-     { upsert: true } // nếu chưa có document thì tạo mới
+      { _id: new ObjectId(videoId), userId: new ObjectId(userId) },
+      { $push: { cloudUrls: newEntry } },
+      { upsert: true }
     );
 
     return NextResponse.json({
@@ -182,6 +234,6 @@ function borderColor(customize) {
     const b = customize.outline_color.substring(5, 7);
     const g = customize.outline_color.substring(3, 5);
     const r = customize.outline_color.substring(1, 3);
-    return `&HFF${b}${g}${r}`.toUpperCase();
+    return `&H00${b}${g}${r}`.toUpperCase();
   }
 }
