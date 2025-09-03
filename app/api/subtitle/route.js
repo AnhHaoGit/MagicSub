@@ -4,9 +4,6 @@ import { NextResponse } from "next/server";
 import axios from "axios";
 import { Readable } from "stream";
 import { spawn } from "child_process";
-import path from "path";
-import os from "os";
-import fs from "fs/promises";
 import FormData from "form-data";
 import { MongoClient, ObjectId } from "mongodb";
 import { v4 as uuidv4 } from "uuid";
@@ -59,12 +56,17 @@ const formatSrtFile = (data, lastSecond) => {
 async function extractAudioSegment(buffer, start, duration) {
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn("ffmpeg", [
-      "-i", "pipe:0",
-      "-ss", start.toString(),
-      "-t", duration.toString(),
-      "-f", "mp3",
-      "-acodec", "libmp3lame",
-      "pipe:1"
+      "-i",
+      "pipe:0",
+      "-ss",
+      start.toString(),
+      "-t",
+      duration.toString(),
+      "-f",
+      "mp3",
+      "-acodec",
+      "libmp3lame",
+      "pipe:1",
     ]);
     const chunks = [];
     ffmpeg.stdout.on("data", (chunk) => chunks.push(chunk));
@@ -79,24 +81,32 @@ async function extractAudioSegment(buffer, start, duration) {
 }
 
 export async function POST(req) {
+  const session = client.startSession();
   try {
-    const { cloudUrl, _id, targetLanguage, style, userId, duration } = await req.json();
+    const { cloudUrl, _id, targetLanguage, style, userId, duration, cost } =
+      await req.json();
 
-    if (!cloudUrl || !_id || !targetLanguage || !userId || !duration) {
-      return NextResponse.json({ message: "Missing parameters" }, { status: 400 });
+    if (!cloudUrl || !_id || !targetLanguage || !userId || !duration || !cost) {
+      return NextResponse.json(
+        { message: "Missing parameters" },
+        { status: 400 }
+      );
     }
 
     const response = await axios.get(cloudUrl, { responseType: "arraybuffer" });
     const audioBuffer = Buffer.from(response.data);
 
-    // Giả sử video dài 5 phút, chia thành các đoạn 240s
     const segmentDuration = 240;
-    const totalDuration = duration; // hoặc lấy từ metadata video/audio
+    const totalDuration = duration;
     const segments = [];
     let lastSecond = 0;
 
     for (let start = 0; start < totalDuration; start += segmentDuration) {
-      const segmentBuffer = await extractAudioSegment(audioBuffer, start, segmentDuration);
+      const segmentBuffer = await extractAudioSegment(
+        audioBuffer,
+        start,
+        segmentDuration
+      );
 
       const form = new FormData();
       form.append("file", segmentBuffer, {
@@ -120,11 +130,27 @@ export async function POST(req) {
     }
 
     const db = await connectDB();
-    const result = await db.collection("subtitle").insertOne({
-      userId: new ObjectId(userId),
-      videoId: new ObjectId(_id),
-      subtitle: segments,
-      customize: style,
+
+    const users = db.collection("users");
+    const subtitles = db.collection("subtitle");
+
+    let result;
+    await session.withTransaction(async () => {
+      await users.updateOne(
+        { _id: new ObjectId(userId) },
+        { $inc: { gems: -cost } },
+        { session }
+      );
+
+      result = await subtitles.insertOne(
+        {
+          userId: new ObjectId(userId),
+          videoId: new ObjectId(_id),
+          subtitle: segments,
+          customize: style,
+        },
+        { session }
+      );
     });
 
     return NextResponse.json({
@@ -136,123 +162,7 @@ export async function POST(req) {
   } catch (err) {
     console.error("Error processing video:", err);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
+  } finally {
+    await session.endSession();
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// export async function POST(req) {
-//   try {
-//     const { cloudUrl, _id, targetLanguage, style, userId } = await req.json();
-
-//     if (!cloudUrl || !_id || !targetLanguage || !userId) {
-//       console.warn("⚠️ Thiếu parameters!");
-//       return NextResponse.json(
-//         { message: "Missing parameters" },
-//         { status: 400 }
-//       );
-//     }
-
-//     const response = await axios.get(cloudUrl, { responseType: "arraybuffer" });
-//     const audioBuffer = Buffer.from(response.data);
-//     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "chunks-"));
-
-//     // Tách file bằng ffmpeg
-//     console.log("🎬 Bắt đầu tách file bằng ffmpeg...");
-//     await new Promise((resolve, reject) => {
-//       const ffmpeg = spawn("ffmpeg", [
-//         "-i",
-//         "pipe:0",
-//         "-f",
-//         "segment",
-//         "-segment_time",
-//         "240",
-//         "-c:a",
-//         "libmp3lame",
-//         "-b:a",
-//         "192k",
-//         "-reset_timestamps",
-//         "1",
-//         path.join(tempDir, "chunk_%03d.mp3"),
-//       ]);
-
-//       ffmpeg.stdout?.on("data", (d) =>
-//         console.log("ffmpeg out:", d.toString())
-//       );
-//       ffmpeg.stderr?.on("data", (d) =>
-//         console.log("ffmpeg err:", d.toString())
-//       );
-
-//       ffmpeg.on("error", (err) => reject(err));
-//       ffmpeg.on("close", (code) => {
-//         console.log("ffmpeg closed with code:", code);
-//         if (code === 0) resolve();
-//         else reject(new Error(`ffmpeg exited with code ${code}`));
-//       });
-
-//       Readable.from(audioBuffer).pipe(ffmpeg.stdin);
-//     });
-
-//     const files = await fs.readdir(tempDir);
-//     files.sort();
-
-//     const segments = [];
-//     let lastSecond = 0;
-
-//     for (const fileName of files) {
-//       const filePath = path.join(tempDir, fileName);
-//       const fileBuffer = await fs.readFile(filePath);
-
-//       const form = new FormData();
-//       form.append("file", fileBuffer, {
-//         filename: fileName,
-//         contentType: "audio/mp3",
-//       });
-//       form.append("model", "whisper-1");
-//       form.append("response_format", "srt");
-//       form.append("language", targetLanguage);
-
-//       const whisperRes = await axios.post(WHISPER_API_URL, form, {
-//         headers: {
-//           Authorization: `Bearer ${OPENAI_API_KEY}`,
-//           ...form.getHeaders(),
-//         },
-//       });
-
-//       const formattedSrt = formatSrtFile(whisperRes.data, lastSecond);
-//       lastSecond = formattedSrt.lastSecond;
-//       segments.push(...formattedSrt.formattedData);
-//     }
-
-//     await fs.rm(tempDir, { recursive: true, force: true });
-
-//     const db = await connectDB();
-//     const result = await db.collection("subtitle").insertOne({
-//       userId: new ObjectId(userId),
-//       videoId: new ObjectId(_id),
-//       subtitle: segments,
-//       customize: style,
-//     });
-
-//     return NextResponse.json({
-//       message: "Transcript segments saved (SRT format)",
-//       subtitle: segments,
-//       subtitleId: result.insertedId,
-//       customize: style,
-//     });
-//   } catch (err) {
-//     console.error("Error processing video:", err);
-//     return NextResponse.json({ message: "Server error" }, { status: 500 });
-//   }
-// }
