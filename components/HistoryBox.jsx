@@ -5,10 +5,10 @@ const HistoryBox = ({ video }) => {
   return (
     <div
       key={video._id}
-      className="w-full p-4 border-light-gray flex items-center gap-4 rounded-3xl shadow-lg h-40"
+      className="w-full p-4 border-light-gray flex items-center gap-4 rounded-3xl shadow-lg"
     >
       <div className="flex-shrink-0 w-1/10 items-center justify-center flex">
-        <video src={video.cloudUrl} className="rounded-xl w-4/5"></video>
+        <img src={video.thumbnailUrl} className="rounded-xl w-4/5"></img>
       </div>
       <div className="w-6/10 flex flex-col gap-1">
         <p className="font-bold text-lg">{video.title}</p>

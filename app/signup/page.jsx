@@ -40,6 +40,7 @@ const SignupPage = () => {
         }
       } else {
         const { message } = await res.json();
+        console.log(message)
         toast.error(message || "Signup failed");
       }
       setLoading(false);

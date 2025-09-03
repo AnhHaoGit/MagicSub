@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
-import { add_video_to_local_storage } from "@/lib/local_storage_handlers";
+import { add_video_to_local_storage, update_video_in_local_storage } from "@/lib/local_storage_handlers";
 import Link from "next/link";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import RotatingTexts from "@/components/RotatingTexts";
@@ -79,10 +79,9 @@ const LandingPage = () => {
             title,
             size,
             duration,
-            createdAt: date.toISOString()
+            createdAt: date.toISOString(),
           }),
         });
-
 
         const newVideo = await res.json();
 
@@ -106,10 +105,30 @@ const LandingPage = () => {
           }
         };
 
-        xhr.onload = () => {
+        xhr.onload = async () => {
           if (xhr.status === 200) {
             toast.success("Upload successful!");
             add_video_to_local_storage(newVideo);
+
+            try {
+              const thumbRes = await fetch("/api/generate_thumbnail", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  videoId: newVideo._id,
+                  cloudUrl: newVideo.cloudUrl,
+                }),
+              });
+
+              if (thumbRes.ok) {
+                const { thumbnailUrl } = await thumbRes.json();
+                update_video_in_local_storage(newVideo._id, thumbnailUrl);
+              } else {
+                console.warn("⚠️ Failed to generate thumbnail");
+              }
+            } catch (e) {
+              console.error("Thumbnail API error:", e);
+            }
             router.push(`/main/${newVideo._id}`);
           } else {
             toast.error("Upload failed!");

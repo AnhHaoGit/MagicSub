@@ -8,9 +8,7 @@ import { useParams } from "next/navigation";
 import LanguageSelect from "@/components/LanguageSelect";
 import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
-import {
-  add_subtitle_to_local_storage_by_video_id,
-} from "@/lib/local_storage_handlers";
+import { add_subtitle_to_local_storage_by_video_id } from "@/lib/local_storage_handlers";
 import { useRouter } from "next/navigation";
 import SuggestAFeature from "@/components/SuggestAFeature";
 
@@ -38,7 +36,6 @@ export default function VideoPage() {
     setTargetLanguage(value);
   };
 
-
   const videoRef = useRef(null);
 
   // useEffect(() => {
@@ -62,6 +59,7 @@ export default function VideoPage() {
         targetLanguage: targetLanguage,
         style: session.user.style,
         userId: session.user.id,
+        duration: videoData.duration,
       }),
     });
 
@@ -71,7 +69,12 @@ export default function VideoPage() {
       setIsProcessing(false);
       return;
     } else {
-      add_subtitle_to_local_storage_by_video_id(videoData._id, data.subtitle, data.subtitleId, data.customize);
+      add_subtitle_to_local_storage_by_video_id(
+        videoData._id,
+        data.subtitle,
+        data.subtitleId,
+        data.customize
+      );
       toast.success("Subtitle successfully generated!");
       router.push(`/main/custom_subtitle/${videoData._id}`);
     }
@@ -84,14 +87,13 @@ export default function VideoPage() {
       <main className="flex flex-col items-center justify-items-start h-screen w-full p-10">
         <div className="flex w-full items-center justify-between gap-5 h-8/10 mt-20">
           <div className="w-2/3 h-full bg-black rounded-2xl flex items-center justify-center">
-              <video
-                ref={videoRef}
-                src={videoData?.cloudUrl}
-                controls
-                className="rounded-xl shadow-xl w-90% h-full"
-                allowFullScreen
-              />
-
+            <video
+              ref={videoRef}
+              src={videoData?.cloudUrl}
+              controls
+              className="rounded-xl shadow-xl w-90% h-full"
+              allowFullScreen
+            />
           </div>
           <div className="w-1/3 h-full flex flex-col items-center justify-between p-5 bg-smoke rounded-4xl shadow-lg">
             <div className="flex flex-col w-full items-center gap-4">

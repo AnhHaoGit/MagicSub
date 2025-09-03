@@ -54,7 +54,7 @@ export async function POST(req) {
 
     const fileUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 }); // URL hết hạn sau 60 giây
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
 
     const db = await connectDB();
     const result = await db.collection("videos").insertOne({
