@@ -149,8 +149,8 @@ export async function POST(req) {
 
     const db = await connectDB();
     const collection = db.collection("videos");
-
-    const newEntry = { id: now, url: videoUrl };
+    const date = new Date();
+    const newEntry = { id: now, url: videoUrl, createdAt: date.toISOString() };
 
     await collection.updateOne(
       { _id: new ObjectId(videoId), userId: new ObjectId(userId) },

@@ -4,10 +4,21 @@ import LandingPageNavbar from "@/components/LandingPageNavbar";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const Page = () => {
   const [productsData, setProductsData] = useState([]);
   const [customerPortalUrl, setCustomerPortalUrl] = useState("");
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated" || !session) {
+      router.push("/login");
+    }
+  }, [status, router]);
 
   function sortProducts(products) {
     const order = ["Starter Plan", "Plus Plan", "Pro Plan"]; // thứ tự mong muốn
@@ -44,7 +55,6 @@ const Page = () => {
 
     fetchProductsData();
   }, []);
-
 
   useEffect(() => {
     const fetchCustomerPortal = async () => {

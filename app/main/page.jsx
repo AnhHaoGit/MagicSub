@@ -6,7 +6,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "react-toastify";
-import { add_video_to_local_storage, update_video_in_local_storage } from "@/lib/local_storage_handlers";
+import {
+  add_video_to_local_storage,
+  update_video_in_local_storage,
+} from "@/lib/local_storage_handlers";
 import SuggestAFeature from "@/components/SuggestAFeature";
 
 const MainPage = () => {
@@ -19,7 +22,7 @@ const MainPage = () => {
 
   useEffect(() => {
     if (status === "loading") return;
-    if (status === "unauthenticated") {
+    if (status === "unauthenticated" || !session) {
       router.push("/login");
     }
   }, [status, router]);
@@ -136,13 +139,15 @@ const MainPage = () => {
   return (
     <>
       <MainNavbar />
-      <main className="flex flex-col items-center justify-center h-screen">
-        <div className="flex flex-col items-center w-2/3 justify-center mt-10 bg-smoke p-10 gap-10 rounded-4xl shadow-lg">
+      <main className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center w-full max-w-4xl justify-center mt-10 bg-smoke p-6 sm:p-8 md:p-10 gap-8 sm:gap-10 rounded-3xl shadow-lg">
           <div className="text-center">
-            <p className="font-bold text-2xl">Upload your media</p>
-            <p>
+            <p className="font-bold text-xl sm:text-2xl md:text-3xl">
+              Upload your media
+            </p>
+            <p className="text-sm sm:text-base mt-2">
               (or check your{" "}
-              <Link href="/history" className="iris">
+              <Link href="/history" className="iris underline">
                 history
               </Link>{" "}
               to see your uploaded videos)
@@ -150,7 +155,7 @@ const MainPage = () => {
           </div>
 
           {session && status === "authenticated" ? (
-            <label className="flex items-center gap-2 bg-iris text-white rounded-full py-4 px-20 shadow-2xl mt-10 font-bold justify-center hover:bg-violet transition-colors cursor-pointer">
+            <label className="flex items-center gap-2 bg-iris text-white rounded-full py-3 sm:py-4 px-8 sm:px-16 md:px-20 shadow-2xl mt-6 sm:mt-10 font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm sm:text-base">
               <input
                 type="file"
                 accept="video/*"
@@ -163,7 +168,7 @@ const MainPage = () => {
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="size-6"
+                className="size-5 sm:size-6"
               >
                 <path
                   strokeLinecap="round"
@@ -176,27 +181,27 @@ const MainPage = () => {
           ) : (
             <Link
               href="/login"
-              className="flex gap-3 items-center bg-iris text-white rounded-full py-4 px-20 shadow-2xl mt-10 font-bold justify-center hover:bg-violet transition-colors"
+              className="flex gap-2 sm:gap-3 items-center bg-iris text-white rounded-full py-3 sm:py-4 px-8 sm:px-16 md:px-20 shadow-2xl mt-6 sm:mt-10 font-bold justify-center hover:bg-violet transition-colors text-sm sm:text-base"
             >
               Login to continue
             </Link>
           )}
 
           <div>
-            <p className="text-xs gray">
+            <p className="text-xs sm:text-sm gray text-center px-2">
               Download Youtube, Instagram, Tiktok videos before uploading.
             </p>
           </div>
 
           {loading && (
-            <div className="mt-6 w-80">
-              <div className="w-full bg-gray-200 rounded-full h-4">
+            <div className="mt-6 w-full max-w-xs sm:max-w-sm md:max-w-md">
+              <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4">
                 <div
-                  className="bg-iris h-4 rounded-full transition-all"
+                  className="bg-iris h-3 sm:h-4 rounded-full transition-all"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
-              <p className="text-center mt-2 text-sm">
+              <p className="text-center mt-2 text-xs sm:text-sm">
                 {progress}% {eta && `(~${eta}s left)`}
               </p>
             </div>

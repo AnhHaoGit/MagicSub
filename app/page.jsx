@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
-import { add_video_to_local_storage, update_video_in_local_storage } from "@/lib/local_storage_handlers";
+import {
+  add_video_to_local_storage,
+  update_video_in_local_storage,
+} from "@/lib/local_storage_handlers";
 import Link from "next/link";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import RotatingTexts from "@/components/RotatingTexts";
@@ -153,68 +156,73 @@ const LandingPage = () => {
   return (
     <>
       <LandingPageNavbar />
-      <main className="flex flex-col items-center gap-10 justify-center h-screen">
+      <main className="flex flex-col items-center gap-6 justify-center min-h-screen px-4 text-center">
         <div>
           <RotatingTexts />
 
-          <div className="flex items-center justify-center text-[clamp(2rem,4vw,3.75rem)] font-bold">
+          <div
+            className="flex flex-col sm:flex-row items-center justify-center font-bold mt-4 
+  text-lg sm:text-3xl md:text-4xl lg:text-5xl"
+          >
             <h1 className="">in</h1>
-            <h1 className="iris ml-3">any language</h1>
+            <h1 className="iris sm:ml-3 mt-2 sm:mt-0">any language</h1>
           </div>
         </div>
 
         {session && status === "authenticated" ? (
-          <label className="flex gap-3 items-center bg-iris text-white rounded-full py-4 px-20 shadow-2xl mt-10 font-bold justify-center hover:bg-violet transition-colors cursor-pointer">
-            <input
-              type="file"
-              accept="video/*"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="size-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+          <>
+            <label className="flex gap-3 items-center bg-iris text-white rounded-full py-3 px-6 sm:py-4 sm:px-12 lg:px-20 shadow-2xl mt-6 font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm sm:text-base">
+              <input
+                type="file"
+                accept="video/*"
+                onChange={handleFileUpload}
+                className="hidden"
               />
-            </svg>
-            Upload your Video
-          </label>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="size-5 sm:size-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+                />
+              </svg>
+              Upload your Video
+            </label>
+            <p className="text-xs gray max-w-xs sm:max-w-md mt-2">
+              Download Youtube, Instagram, Tiktok videos before uploading.
+            </p>
+          </>
         ) : (
           <Link
             href="/login"
-            className="flex gap-3 items-center bg-iris text-white rounded-full py-4 px-20 shadow-2xl mt-10 font-bold justify-center hover:bg-violet transition-colors"
+            className="flex gap-3 items-center bg-iris text-white rounded-full py-3 px-6 sm:py-4 sm:px-12 lg:px-20 shadow-2xl mt-6 font-bold justify-center hover:bg-violet transition-colors text-sm sm:text-base"
           >
             Login to continue
           </Link>
         )}
-        <div>
-          <p className="text-xs gray">
-            Download Youtube, Instagram, Tiktok videos before uploading.
-          </p>
-        </div>
 
         {loading && (
-          <div className="mt-6 w-80">
-            <div className="w-full bg-gray-200 rounded-full h-4">
+          <div className="mt-6 w-full max-w-xs sm:max-w-md">
+            <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4">
               <div
-                className="bg-iris h-4 rounded-full transition-all"
+                className="bg-iris h-3 sm:h-4 rounded-full transition-all"
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
-            <p className="text-center mt-2 text-sm">
+            <p className="text-center mt-2 text-xs sm:text-sm">
               {progress}% {eta && `(~${eta}s left)`}
             </p>
           </div>
         )}
-        <SuggestAFeature />
+        <div className="mt-6 w-full flex justify-center">
+          <SuggestAFeature />
+        </div>
       </main>
     </>
   );

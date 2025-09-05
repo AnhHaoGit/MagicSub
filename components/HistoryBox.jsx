@@ -2,48 +2,53 @@ import format_duration from "@/lib/format_duration";
 import Link from "next/link";
 
 const HistoryBox = ({ video }) => {
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return "0 Bytes";
+
+    const MB = 1024 * 1024;
+    const GB = 1024 * MB;
+
+    if (bytes >= GB) {
+      return (bytes / GB).toFixed(2) + " GB";
+    } else {
+      return (bytes / MB).toFixed(2) + " MB";
+    }
+  }
+
   return (
     <div
       key={video._id}
       className="w-full p-4 border-light-gray flex items-center gap-4 rounded-3xl shadow-lg"
     >
-      <div className="flex-shrink-0 w-1/10 items-center justify-center flex">
+      <div className="flex-shrink-0 w-2/10 items-center justify-center flex">
         <img src={video.thumbnailUrl} className="rounded-xl w-4/5"></img>
       </div>
-      <div className="w-6/10 flex flex-col gap-1">
-        <p className="font-bold text-lg">{video.title}</p>
-        <p className="light-gray text-sm">
-          {new Date(video.createdAt).toLocaleString()}
-        </p>
-        <p className="text-sm">{format_duration(video.duration)}</p>
-      </div>
-      <div className="w-2/10 h-full">
-        {video.cloudUrls ? (
-          <div className="h-full flex flex-col items-center">
-            <p>{`Generated videos (${video.cloudUrls.length})`}</p>
-            <div className="flex flex-col overflow-y-auto max-h-8/10 hide-scrollbar">
-              {video.cloudUrls.map((url) => (
-                <Link
-                  key={url.id}
-                  className="text-sm text-blue-500"
-                  href={`/main/result/${video._id}/${url.id}`}
-                >
-                  {url.id}
-                </Link>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="w-full flex flex-col items-center">
-            <p>No generated videos</p>
-          </div>
+      <div className="w-8/10 flex flex-col gap-2">
+        <p className="font-bold text-sm">{video.title}</p>
+        <div className="flex gap-2">
+          <p className="text-xs px-2 rounded-lg bg-violet-200 font-semibold iris flex items-center justify-center h-">
+            {video.subtitle ? <span>subtitle</span> : <span>uploaded</span>}
+          </p>
+          <p className="gray text-xs">
+            {new Date(video.createdAt).toLocaleString()}
+          </p>
+        </div>
+
+        <p className="text-xs gray">Duration: {format_duration(video.duration)}</p>
+        <p className="text-xs gray">Size: {formatBytes(video.size)}</p>
+        {video.cloudUrls && video.cloudUrls.length > 0 && (
+          <p className="text-xs gray">
+            Hard-subbed videos: {video.cloudUrls.length}
+          </p>
         )}
       </div>
-      <div className="w-1/10 flex items-center justify-center">
+
+      <div className="w-2/10 flex items-center justify-center">
         {video.subtitle ? (
           <Link
             href={`/main/custom_subtitle/${video._id}`}
-            className="white bg-iris font-bold p-3 rounded-full hover:bg-violet"
+            className="white bg-iris font-bold p-2 rounded-full hover:bg-violet"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -51,7 +56,7 @@ const HistoryBox = ({ video }) => {
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="size-6"
+              className="size-5"
             >
               <path
                 strokeLinecap="round"
@@ -63,7 +68,7 @@ const HistoryBox = ({ video }) => {
         ) : (
           <Link
             href={`/main/${video._id}`}
-            className="white bg-iris font-bold p-3 rounded-full hover:bg-violet"
+            className="white bg-iris font-bold p-2 rounded-full hover:bg-violet"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -71,7 +76,7 @@ const HistoryBox = ({ video }) => {
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="size-6"
+              className="size-5"
             >
               <path
                 strokeLinecap="round"

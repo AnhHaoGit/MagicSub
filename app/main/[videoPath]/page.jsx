@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import { useParams } from "next/navigation";
 import LanguageSelect from "@/components/LanguageSelect";
@@ -18,12 +18,19 @@ import SuggestAFeature from "@/components/SuggestAFeature";
 export default function VideoPage() {
   const router = useRouter();
   const { videoPath } = useParams();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [videoData, setVideoData] = useState(null);
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isProccessing, setIsProcessing] = useState(false);
   const [videoCost, setVideoCost] = useState(null);
   const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated" || !session) {
+      router.push("/login");
+    }
+  }, [status, router]);
 
   useEffect(() => {
     const video = JSON.parse(localStorage.getItem("videos")) || [];
@@ -40,8 +47,6 @@ export default function VideoPage() {
   const handleTargetLanguageChange = (value) => {
     setTargetLanguage(value);
   };
-
-  const videoRef = useRef(null);
 
   const handleProcess = async () => {
     if (!session) {
@@ -90,20 +95,22 @@ export default function VideoPage() {
   return (
     <>
       <MainNavbar />
-      <main className="flex flex-col items-center justify-items-start h-screen w-full p-10">
-        <div className="flex w-full items-center justify-between gap-5 h-8/10 mt-20">
-          <div className="w-2/3 h-full bg-black rounded-2xl flex items-center justify-center">
+      <main className="flex flex-col items-center w-full min-h-screen p-4 sm:p-6 md:p-10">
+        <div className="flex flex-col md:flex-row w-full items-center justify-between gap-8 md:gap-5 mt-20">
+          {/* Video player */}
+          <div className="w-full md:w-2/3 h-auto md:h-[70vh] bg-black rounded-2xl flex items-center justify-center">
             <video
-              ref={videoRef}
               src={videoData?.cloudUrl}
               controls
-              className="rounded-xl shadow-xl w-90% h-full"
+              className="rounded-xl shadow-xl w-full h-full object-contain"
               allowFullScreen
             />
           </div>
-          <div className="w-1/3 h-full flex flex-col items-center justify-between p-5 bg-smoke rounded-4xl shadow-lg">
+
+          {/* Sidebar settings */}
+          <div className="w-full md:w-1/3 h-auto md:h-[70vh] flex flex-col items-center justify-between p-5 bg-smoke rounded-4xl shadow-lg">
             <div className="flex flex-col w-full items-center gap-4">
-              <h1 className="font-bold text-[clamp(1rem, 2vw, 1.5rem)] mt-5">
+              <h1 className="font-bold text-[clamp(1rem, 2vw, 1.5rem)] mt-2 md:mt-5 text-center">
                 Add your Subtitle here!
               </h1>
               <LanguageSelect
@@ -111,13 +118,13 @@ export default function VideoPage() {
                 handleTargetLanguageChange={handleTargetLanguageChange}
               />
             </div>
-            <div className="flex flex-col justify-between items-center gap-5">
-              <p className="text-xs">
+            <div className="flex flex-col justify-between items-center gap-5 mt-6">
+              <p className="text-xs text-center">
                 You will be charged {videoCost} 💎 for this video
               </p>
 
               <button
-                className="flex items-center gap-2 bg-iris text-white rounded-full py-4 px-20 shadow-2xl font-bold justify-center hover:bg-violet transition-colors cursor-pointer"
+                className="flex items-center gap-2 bg-iris text-white rounded-full py-3 px-10 md:py-4 md:px-20 shadow-2xl font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm md:text-base"
                 onClick={handleProcess}
               >
                 {isProccessing ? (
@@ -134,7 +141,7 @@ export default function VideoPage() {
                       viewBox="0 0 24 24"
                       strokeWidth={1.5}
                       stroke="currentColor"
-                      className="size-6"
+                      className="size-5 md:size-6"
                     >
                       <path
                         strokeLinecap="round"

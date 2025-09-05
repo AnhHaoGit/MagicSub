@@ -44,7 +44,7 @@ const SubtitleScrollBox = ({ subtitle, setSubtitle, activeSubtitleIndex }) => {
   }, [activeSubtitleIndex, subtitle]);
 
   return (
-    <div className="flex flex-col gap-3 bg-light-gray shadow-lg max-h-full overflow-y-auto p-3 rounded-2xl mt-15">
+    <div className="flex flex-col gap-3 bg-light-gray shadow-lg h-[60vh] overflow-y-auto p-3 rounded-2xl mt-15">
       {subtitle.map((item, index) => (
         <div key={index} ref={(el) => (itemRefs.current[index] = el)}>
           <div

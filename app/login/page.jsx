@@ -1,13 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Google } from "@lobehub/icons";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { signIn } from "next-auth/react";
 import { toast } from "react-toastify";
 
 function LoginContent() {
@@ -48,7 +46,8 @@ function LoginContent() {
   };
 
   return (
-    <main className="flex items-center justify-center h-screen">
+    <main className="flex items-center justify-center min-h-screen px-4 sm:px-6">
+      {/* Back button */}
       <div className="flex justify-between items-center p-4 fixed top-0 left-0">
         <Link href="/" className="flex items-center">
           <svg
@@ -66,31 +65,37 @@ function LoginContent() {
             />
           </svg>
 
-          <p className="text-xl ml-2 gray">back to home</p>
+          <p className="text-sm ml-2 black">back to home</p>
         </Link>
       </div>
 
-      <div className="flex flex-col items-center justify-center w-5/12 py-20 shadow-2xl rounded-4xl bg-smoke">
-        <div className="flex items-center justify-center text-[clamp(1rem,2.5vw,4rem)] ">
+      {/* Login card */}
+      <div className="flex flex-col items-center justify-center w-11/12 sm:w-4/5 md:w-2/3 lg:w-5/12 py-12 sm:py-16 md:py-20 shadow-2xl rounded-4xl bg-smoke">
+        {/* Title */}
+        <div className="flex flex-wrap items-center justify-center text-xl sm:text-2xl md:text-3xl lg:text-4xl text-center">
           <h1 className="font-bold">Welcome Back To</h1>
-          <p className="bg-black white font-bold ml-2">MagicSub</p>
-          <h1 className="text-4xl font-bold ml-2"> !!!</h1>
+          <p className="bg-black white font-bold ml-2 px-1">MagicSub</p>
+          <h1 className="font-bold ml-2">!!!</h1>
         </div>
-        <p className="text-sm text-center mt-4 gray">
+
+        <p className="text-sm sm:text-base text-center mt-4 gray">
           Login to access your account
         </p>
+
+        {/* Form */}
         <form
-          className="flex flex-col items-center justify-center gap-4 mt-16 w-4/5"
+          className="flex flex-col items-center justify-center gap-4 mt-10 sm:mt-12 md:mt-16 w-11/12 sm:w-4/5"
           onSubmit={handleSubmit}
         >
-          <div className="flex items-center bg-white rounded-full p-4 w-full shadow-md group transition-colors duration-200">
+          {/* Email */}
+          <div className="flex items-center bg-white rounded-full p-3 sm:p-4 w-full shadow-md group transition-colors duration-200">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="size-6 light-gray icon"
+              className="size-5 sm:size-6 light-gray icon"
             >
               <path
                 strokeLinecap="round"
@@ -102,20 +107,22 @@ function LoginContent() {
             <input
               type="email"
               placeholder="Email"
-              className="bg-white border-none outline-none w-full ml-3"
+              className="bg-white border-none outline-none w-full ml-3 text-sm sm:text-base"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-          <div className="flex items-center bg-white rounded-full p-4 w-full shadow-md group">
+
+          {/* Password */}
+          <div className="flex items-center bg-white rounded-full p-3 sm:p-4 w-full shadow-md group">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="size-6 light-gray icon"
+              className="size-5 sm:size-6 light-gray icon"
             >
               <path
                 strokeLinecap="round"
@@ -127,7 +134,7 @@ function LoginContent() {
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="bg-white border-none outline-none w-full ml-3"
+              className="bg-white border-none outline-none w-full ml-3 text-sm sm:text-base"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -137,6 +144,7 @@ function LoginContent() {
               onClick={() => setShowPassword((prev) => !prev)}
               className="ml-2 focus:outline-none"
             >
+              {/* Eye icon giữ nguyên */}
               {showPassword ? (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -175,21 +183,27 @@ function LoginContent() {
               )}
             </button>
           </div>
+
+          {/* Submit */}
           <button
             type="submit"
-            className="bg-iris text-white rounded-full py-4 w-full shadow-md flex items-center justify-center hover:bg-violet transition-colors cursor-pointer"
+            className="bg-iris text-white rounded-full py-3 sm:py-4 w-full shadow-md flex items-center justify-center hover:bg-violet transition-colors cursor-pointer text-sm sm:text-base"
             disabled={loading}
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-        <div className="flex items-center justify-center gap-4 mt-3 w-2/3">
+
+        {/* Divider */}
+        <div className="flex items-center justify-center gap-4 mt-4 sm:mt-6 w-4/5">
           <div className="w-full h-0.5 bg-gray opacity-20"></div>
-          <p className="text-sm text-center gray opacity-50">or</p>
+          <p className="text-xs sm:text-sm text-center gray opacity-50">or</p>
           <div className="w-full h-0.5 bg-gray opacity-20"></div>
         </div>
+
+        {/* Google login */}
         <button
-          className="bg-white rounded-full py-4 w-4/5 shadow-md flex items-center justify-center hover:bg-light-gray transition-colors mt-3 cursor-pointer"
+          className="bg-white rounded-full py-3 sm:py-4 w-11/12 sm:w-4/5 shadow-md flex items-center justify-center hover:bg-light-gray transition-colors mt-3 cursor-pointer text-sm sm:text-base"
           onClick={handleGoogleLogin}
           disabled={loadingGoogle}
         >
@@ -198,7 +212,9 @@ function LoginContent() {
             {loadingGoogle ? "Logging in..." : "Continue with Google"}
           </p>
         </button>
-        <p className="text-sm text-center mt-4">
+
+        {/* Signup link */}
+        <p className="text-xs sm:text-sm text-center mt-4">
           Don't have an account?{" "}
           <Link href="/signup" className="iris underline">
             Sign up

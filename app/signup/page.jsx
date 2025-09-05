@@ -1,9 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Google } from "@lobehub/icons";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { toast } from "react-toastify";
@@ -14,37 +13,63 @@ const SignupPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
-    const router = useRouter();
+  const router = useRouter();
 
-    const handleSignup = async (e) => {
-      e.preventDefault();
-      setLoading(true);
-      const res = await fetch("/api/signup", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-        headers: { "Content-Type": "application/json" },
+  const validateForm = (email, password) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!emailRegex.test(email)) {
+      return { valid: false, message: "Invalid email address" };
+    }
+
+    if (!passwordRegex.test(password)) {
+      return {
+        valid: false,
+        message:
+          "Password must be at least 8 characters long, include uppercase, lowercase, number, and special character",
+      };
+    }
+
+    return { valid: true };
+  };
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    const { valid, message } = validateForm(email, password);
+    if (!valid) {
+      toast.error(message);
+      return;
+    }
+    setLoading(true);
+
+    const res = await fetch("/api/signup", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (res.ok) {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
       });
 
-      if (res.ok) {
-        const result = await signIn("credentials", {
-          email,
-          password,
-          redirect: false,
-        });
-
-        if (result.ok) {
-          router.push("/");
-          toast.success("Signup successful!");
-        } else {
-          toast.error("Login failed");
-        }
+      if (result.ok) {
+        router.push("/");
+        toast.success("Signup successful!");
       } else {
-        const { message } = await res.json();
-        console.log(message)
-        toast.error(message || "Signup failed");
+        toast.error("Login failed");
       }
-      setLoading(false);
-    };
+    } else {
+      const { message } = await res.json();
+      console.log(message);
+      toast.error(message || "Signup failed");
+    }
+    setLoading(false);
+  };
 
   const handleGoogleSignup = async () => {
     setLoadingGoogle(true);
@@ -52,7 +77,8 @@ const SignupPage = () => {
   };
 
   return (
-    <main className="flex items-center justify-center h-screen">
+    <main className="flex items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8">
+      {/* Nút back */}
       <div className="flex justify-between items-center p-4 fixed top-0 left-0">
         <Link href="/" className="flex items-center">
           <svg
@@ -69,30 +95,32 @@ const SignupPage = () => {
               d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18"
             />
           </svg>
-
-          <p className="text-xl ml-2 gray">back to home</p>
+          <p className="text-sm ml-2 black">back to home</p>
         </Link>
       </div>
-      <div className="flex flex-col items-center justify-center w-5/12 py-20 shadow-2xl rounded-4xl bg-smoke">
-        <div className="flex items-center justify-center text-[clamp(1rem,2.5vw,4rem)] ">
+
+      {/* Form signup */}
+      <div className="flex flex-col items-center justify-center w-full sm:w-11/12 md:w-8/12 lg:w-5/12 py-12 sm:py-16 lg:py-20 px-6 sm:px-10 shadow-2xl rounded-2xl bg-smoke">
+        <div className="flex flex-col sm:flex-row items-center justify-center text-[clamp(1.25rem,3vw,2.5rem)] text-center sm:text-left">
           <h1 className="font-bold">Get Started Now</h1>
         </div>
-        <p className="text-sm text-center mt-2 gray">
-          Create an account to expore our amazing features
+        <p className="text-sm text-center mt-2 gray px-2">
+          Create an account to explore our amazing features
         </p>
 
+        {/* Form nhập email/password */}
         <form
-          className="flex flex-col items-center justify-center gap-4 mt-16 w-4/5"
+          className="flex flex-col items-center justify-center gap-4 mt-10 sm:mt-12 w-full sm:w-4/5"
           onSubmit={handleSignup}
         >
-          <div className="flex items-center bg-white rounded-full p-4 w-full shadow-md group transition-colors duration-200">
+          <div className="flex items-center bg-white rounded-full p-3 sm:p-4 w-full shadow-md group transition-colors duration-200">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="size-6 light-gray icon"
+              className="size-5 sm:size-6 light-gray icon"
             >
               <path
                 strokeLinecap="round"
@@ -100,24 +128,25 @@ const SignupPage = () => {
                 d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
               />
             </svg>
-            <div className="w-[1px] h-5 bg-light-gray ml-3"></div>
+            <div className="hidden sm:block w-[1px] h-5 bg-light-gray ml-3"></div>
             <input
               type="email"
               placeholder="Email"
-              className="bg-white border-none outline-none w-full ml-3"
+              className="bg-white border-none outline-none w-full ml-2 sm:ml-3 text-sm sm:text-base"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
-          <div className="flex items-center bg-white rounded-full p-4 w-full shadow-md group">
+
+          <div className="flex items-center bg-white rounded-full p-3 sm:p-4 w-full shadow-md group">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="size-6 light-gray icon"
+              className="size-5 sm:size-6 light-gray icon"
             >
               <path
                 strokeLinecap="round"
@@ -125,11 +154,11 @@ const SignupPage = () => {
                 d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
               />
             </svg>
-            <div className="w-[1px] h-5 bg-light-gray ml-3"></div>
+            <div className="hidden sm:block w-[1px] h-5 bg-light-gray ml-3"></div>
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Password"
-              className="bg-white border-none outline-none w-full ml-3"
+              className="bg-white border-none outline-none w-full ml-2 sm:ml-3 text-sm sm:text-base"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -177,28 +206,36 @@ const SignupPage = () => {
               )}
             </button>
           </div>
+
           <button
             type="submit"
-            className="bg-iris text-white rounded-full py-4 w-full shadow-md flex items-center justify-center hover:bg-violet transition-colors cursor-pointer"
+            className="bg-iris text-white rounded-full py-3 sm:py-4 w-full shadow-md flex items-center justify-center hover:bg-violet transition-colors cursor-pointer text-sm sm:text-base"
             disabled={loading}
           >
             {loading ? "Signing up..." : "Sign up"}
           </button>
         </form>
-        <div className="flex items-center justify-center gap-4 mt-3 w-2/3">
+
+        {/* or */}
+        <div className="flex items-center justify-center gap-4 mt-4 w-full sm:w-2/3">
           <div className="w-full h-0.5 bg-gray opacity-20"></div>
           <p className="text-sm text-center gray opacity-50">or</p>
           <div className="w-full h-0.5 bg-gray opacity-20"></div>
         </div>
-        <button className="bg-white rounded-full py-4 w-4/5 shadow-md flex items-center justify-center hover:bg-light-gray transition-colors mt-3 cursor-pointer"
-        onClick={handleGoogleSignup}
-        disabled={loadingGoogle}
+
+        {/* Google signup */}
+        <button
+          className="bg-white rounded-full py-3 sm:py-4 w-full sm:w-4/5 shadow-md flex items-center justify-center hover:bg-light-gray transition-colors mt-3 cursor-pointer text-sm sm:text-base"
+          onClick={handleGoogleSignup}
+          disabled={loadingGoogle}
         >
           <Google.Color size={20} />
           <p className="ml-2">
             {loadingGoogle ? "Signing up..." : "Continue with Google"}
           </p>
         </button>
+
+        {/* Login link */}
         <p className="text-sm text-center mt-4">
           Already have an account?{" "}
           <Link href="/login" className="iris underline">
