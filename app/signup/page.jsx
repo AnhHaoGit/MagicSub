@@ -64,8 +64,8 @@ const SignupPage = () => {
         toast.error("Login failed");
       }
     } else {
-      const { message } = await res.json();
-      console.log(message);
+      const { message, error } = await res.json();
+      console.log(error);
       toast.error(message || "Signup failed");
     }
     setLoading(false);
