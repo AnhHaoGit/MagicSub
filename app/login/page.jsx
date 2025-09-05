@@ -34,9 +34,11 @@ function LoginContent() {
 
     if (result.ok) {
       toast.success("Login successful!");
+      setLoading(false);
       router.push("/");
     } else {
       toast.error("Invalid credentials");
+      setLoading(false);
     }
   };
 
