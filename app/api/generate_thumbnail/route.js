@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { MongoClient, ObjectId } from "mongodb";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import ffmpeg from "fluent-ffmpeg";
+import ffmpegPath from "@ffmpeg-installer/ffmpeg";
+import ffprobePath from "@ffprobe-installer/ffprobe";
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+
+ffmpeg.setFfmpegPath(ffmpegPath.path);
+ffmpeg.setFfprobePath(ffprobePath.path);
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -53,7 +58,6 @@ export async function POST(req) {
       );
     }
 
-    // Generate thumbnail
     const thumbPath = await generateThumbnail(cloudUrl);
     const thumbKey = `thumbnails/${Date.now()}_${path.basename(thumbPath)}`;
     const fileBuffer = await fs.readFile(thumbPath);
@@ -69,7 +73,6 @@ export async function POST(req) {
 
     const thumbnailUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${thumbKey}`;
 
-    // Update DB
     const db = await connectDB();
     await db
       .collection("videos")
