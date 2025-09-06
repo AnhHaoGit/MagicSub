@@ -2,13 +2,15 @@ import { NextResponse } from "next/server";
 import { MongoClient, ObjectId } from "mongodb";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import ffmpeg from "fluent-ffmpeg";
-import ffmpegPath from "@ffmpeg-installer/ffmpeg";
+import ffmpegPath from "ffmpeg-static";
+import ffprobePath from "ffprobe-static";
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
-ffmpeg.setFfmpegPath(ffmpegPath.path);
+ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfprobePath(ffprobePath);
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
