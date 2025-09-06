@@ -9,8 +9,6 @@ import os from "os";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
-ffmpeg.setFfmpegPath(ffmpegPath);
-ffmpeg.setFfprobePath(ffprobePath);
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
