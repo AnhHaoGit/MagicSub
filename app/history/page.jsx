@@ -51,10 +51,10 @@ const Page = () => {
   return (
     <>
       <MainNavbar />
-      <main className="mt-25 w-full px-2 sm:px-4 lg:px-10 flex flex-col lg:flex-row justify-between items-center gap-6 lg:gap-10">
+      <main className="mt-25 w-full px-2 sm:px-4 lg:px-10 flex flex-col lg:flex-row justify-between items-center lg:items-start gap-6 lg:gap-10">
         <div className="w-full lg:w-1/2 flex flex-col items-center">
           <p className="font-bold text-2xl sm:text-3xl">History</p>
-          <div className="sm:mt-10 gap-5 flex flex-col w-full max-w-2xl">
+          <div className="sm:mt-10 gap-5 flex flex-col items-center w-full max-w-2xl">
             {videoData &&
               videoData.map((video) => (
                 <HistoryBox key={video._id} video={video} />
@@ -66,9 +66,9 @@ const Page = () => {
           </div>
         </div>
 
-        <div className="w-full lg:w-1/2 flex flex-col items-center">
+        <div className="w-full lg:w-1/2 flex flex-col items-center mt-20 lg:mt-0">
           <p className="font-bold text-2xl sm:text-3xl">Hard-subbed video</p>
-          <div className="mt-6 sm:mt-10 gap-5 flex flex-col w-full max-w-2xl">
+          <div className="mt-6 sm:mt-10 gap-5 flex flex-col items-center w-full max-w-2xl">
             {hardSubbedData &&
               hardSubbedData.map((data) => (
                 <HardSubbedBox key={data.id} data={data} />
