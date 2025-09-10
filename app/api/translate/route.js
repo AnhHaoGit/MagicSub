@@ -9,6 +9,7 @@ import { MongoClient, ObjectId } from "mongodb";
 import { v4 as uuidv4 } from "uuid";
 import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import { secondsToSrtTimestamp } from "@/lib/second_to_srt";
+import { languages } from "@/lib/languages";
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 
@@ -24,6 +25,11 @@ async function connectDB() {
   }
   return db;
 }
+
+const formatLanguage = (code) => {
+  const lang = languages.find((l) => l.code === code);
+  return lang ? lang.name : code;
+};
 
 const formatSrtFile = (data, lastSecond) => {
   const array = data.split("\n\n");
@@ -84,7 +90,7 @@ async function extractAudioSegment(buffer, start, duration) {
 async function translateSegments(segments, targetLanguage) {
   const texts = segments.map((s) => s.text);
 
-  const systemPrompt = `You are a professional translator. Your task is to translate an array of subtitles into ${targetLanguage}.
+  const systemPrompt = `You are a professional translator. Your task is to translate an array of subtitles into ${formatLanguage(targetLanguage)}.
 - Keep the number of elements exactly the same as the input.
 - Each element in the output must correspond to the same element in the input.
 - Translate naturally and fluently, as if written by a native speaker.

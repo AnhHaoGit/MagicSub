@@ -3,7 +3,7 @@
 import React from "react";
 import * as Select from "@radix-ui/react-select";
 import { CheckIcon, ChevronDownIcon } from "@radix-ui/react-icons";
-import { languages } from "@/lib/languages";
+
 
 const SelectItem = React.forwardRef(({ children, ...props }, forwardedRef) => (
   <Select.Item
@@ -19,7 +19,7 @@ const SelectItem = React.forwardRef(({ children, ...props }, forwardedRef) => (
 ));
 SelectItem.displayName = "SelectItem";
 
-const LanguageSelect = ({ title, language, handleLanguageChange }) => {
+const LanguageSelect = ({ title, language, handleLanguageChange, languagesList }) => {
   return (
     <>
       <div className="w-full flex flex-col items-start mt-5">
@@ -44,7 +44,7 @@ const LanguageSelect = ({ title, language, handleLanguageChange }) => {
                 {title === "Source Language" && (
                   <SelectItem value="auto">Auto Detect</SelectItem>
                 )}
-                {languages.map((lang) => (
+                {languagesList.map((lang) => (
                   <SelectItem key={lang.code} value={lang.code}>
                     {lang.name}
                   </SelectItem>

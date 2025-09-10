@@ -14,6 +14,8 @@ import { useRouter } from "next/navigation";
 import calculateCost from "@/lib/calculateCost";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import SuggestAFeature from "@/components/SuggestAFeature";
+import { languages } from "@/lib/languages";
+import { source_languages } from "@/lib/source_languages";
 
 export default function VideoPage() {
   const router = useRouter();
@@ -60,7 +62,7 @@ export default function VideoPage() {
       toast.error("Please login to continue the process.");
       return;
     }
-    if (videoData.subtitles.find((sub) => sub.language === targetLanguage)) {
+    if (videoData.subtitles && videoData.subtitles.find((sub) => sub.language === targetLanguage)) {
       toast.error(
         `Subtitle in ${targetLanguage} already exists! Please choose another language or edit the existing subtitle in the history page.`
       );
@@ -130,6 +132,7 @@ export default function VideoPage() {
                 title="Source Language"
                 language={sourceLanguage}
                 handleLanguageChange={handleSourceLanguageChange}
+                languagesList={source_languages}
               />
               <p className="gray text-xs">
                 Choose source language for more accurate transcription
@@ -138,6 +141,7 @@ export default function VideoPage() {
                 title="Target Language"
                 language={targetLanguage}
                 handleLanguageChange={handleTargetLanguageChange}
+                languagesList={languages}
               />
             </div>
             <div className="flex flex-col justify-between items-center gap-5 mt-6">

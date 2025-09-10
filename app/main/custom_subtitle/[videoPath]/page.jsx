@@ -227,15 +227,12 @@ const Page = () => {
     }
   }, [videoPath]);
 
-  let subtitleClasses = `text-[${customize.font_size}px] ${
-    customize.is_bold ? "font-bold" : ""
-  } ${customize.is_italic ? "italic" : ""} ${
-    customize.is_underline ? "underline" : ""
-  }  text-[${
+  let subtitleClasses = `${customize.is_bold ? "font-bold" : ""} ${
+    customize.is_italic ? "italic" : ""
+  } ${customize.is_underline ? "underline" : ""}  text-[${
     customize.font_color
   }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block max-w-full 
 bg-[${customize.background_color}]`;
-
   const strokeLayers = [];
   const steps = 64;
   const radius = customize.outline_width;
@@ -407,6 +404,7 @@ bg-[${customize.background_color}]`;
                     style={{
                       color: customize.font_color,
                       bottom: `${customize.margin_bottom}px`,
+                      fontSize: `${customize.font_size + 6}px`,
                       backgroundColor: `${
                         customize.border_style === "text_outline"
                           ? "transparent"

@@ -15,7 +15,6 @@ const HistoryBox = ({ video }) => {
       return (bytes / MB).toFixed(2) + " MB";
     }
   }
-  console.log("Rendering HistoryBox for video:", video);
 
   const formatLanguage = (code) => {
     const lang = languages.find((l) => l.code === code);
