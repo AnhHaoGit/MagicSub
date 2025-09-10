@@ -32,10 +32,11 @@ export async function POST(req) {
       title,
       size,
       duration,
-      createdAt
+      createdAt,
+      style,
     } = body;
 
-    console.log(createdAt)
+    console.log(createdAt);
 
     if (!fileName || !fileType) {
       return NextResponse.json(
@@ -63,7 +64,8 @@ export async function POST(req) {
       title,
       size,
       duration,
-      createdAt
+      createdAt,
+      customize: style,
     });
 
     return NextResponse.json({
@@ -74,7 +76,8 @@ export async function POST(req) {
       title,
       size,
       duration,
-      createdAt
+      createdAt,
+      customize: style,
     });
   } catch (err) {
     console.error("Error creating presigned URL:", err);

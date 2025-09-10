@@ -19,14 +19,14 @@ const SelectItem = React.forwardRef(({ children, ...props }, forwardedRef) => (
 ));
 SelectItem.displayName = "SelectItem";
 
-const LanguageSelect = ({ targetLanguage, handleTargetLanguageChange }) => {
+const LanguageSelect = ({ title, language, handleLanguageChange }) => {
   return (
     <>
       <div className="w-full flex flex-col items-start mt-5">
-        <span className="text-xs mb-2">Target Language</span>
+        <span className="text-xs mb-2">{title}</span>
         <Select.Root
-          value={targetLanguage}
-          onValueChange={handleTargetLanguageChange}
+          value={language}
+          onValueChange={handleLanguageChange}
         >
           <Select.Trigger className="flex justify-between items-center w-full p-3 bg-white rounded-lg shadow-md cursor-pointer text-sm">
             <Select.Value placeholder="Select a language" />
@@ -41,6 +41,9 @@ const LanguageSelect = ({ targetLanguage, handleTargetLanguageChange }) => {
               position="popper"
             >
               <Select.Viewport className="p-2">
+                {title === "Source Language" && (
+                  <SelectItem value="auto">Auto Detect</SelectItem>
+                )}
                 {languages.map((lang) => (
                   <SelectItem key={lang.code} value={lang.code}>
                     {lang.name}

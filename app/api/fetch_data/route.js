@@ -39,19 +39,10 @@ export async function POST(req) {
       .toArray();
 
     const mergedVideos = videos.map((video) => {
-      const matchingSubtitle = subtitles.find(
+      const videoSubtitles = subtitles.filter(
         (sub) => sub.videoId.toString() === video._id.toString()
       );
-
-      if (!matchingSubtitle) {
-        return video;
-      }
-      return {
-        ...video,
-        subtitle: matchingSubtitle.subtitle,
-        subtitleId: matchingSubtitle._id.toString(),
-        customize: matchingSubtitle.customize,
-      };
+      return { ...video, subtitles: videoSubtitles };
     });
 
     return NextResponse.json(mergedVideos);

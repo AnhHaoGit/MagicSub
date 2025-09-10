@@ -1,8 +1,8 @@
 import format_duration from "@/lib/format_duration";
 import Link from "next/link";
+import { languages } from "@/lib/languages";
 
 const HistoryBox = ({ video }) => {
-
   function formatBytes(bytes) {
     if (bytes === 0) return "0 Bytes";
 
@@ -15,7 +15,12 @@ const HistoryBox = ({ video }) => {
       return (bytes / MB).toFixed(2) + " MB";
     }
   }
+  console.log("Rendering HistoryBox for video:", video);
 
+  const formatLanguage = (code) => {
+    const lang = languages.find((l) => l.code === code);
+    return lang ? lang.name : code;
+  }
   return (
     <div
       key={video._id}
@@ -28,14 +33,30 @@ const HistoryBox = ({ video }) => {
         <p className="font-bold text-sm">{video.title}</p>
         <div className="flex gap-2">
           <p className="text-xs px-2 rounded-lg bg-violet-200 font-semibold iris flex items-center justify-center h-">
-            {video.subtitle ? <span>subtitle</span> : <span>uploaded</span>}
+            {video.subtitles ? <span>subtitle</span> : <span>uploaded</span>}
           </p>
           <p className="gray text-xs">
             {new Date(video.createdAt).toLocaleString()}
           </p>
         </div>
 
-        <p className="text-xs gray">Duration: {format_duration(video.duration)}</p>
+        <p className="text-xs gray">
+          Duration: {format_duration(video.duration)}
+        </p>
+        <div className="flex gap-2 text-xs gray">
+          Languages:
+          {video.subtitles &&
+            video.subtitles.length > 0 &&
+            video.subtitles.map((sub) => (
+              <Link
+                key={sub._id}
+                href={`/main/custom_subtitle/${video._id}?subtitleId=${sub._id}`}
+                className="underline iris text-xs"
+              >
+                {formatLanguage(sub.language)}
+              </Link>
+            ))}
+        </div>
         <p className="text-xs gray">Size: {formatBytes(video.size)}</p>
         {video.cloudUrls && video.cloudUrls.length > 0 && (
           <p className="text-xs gray">
@@ -43,49 +64,11 @@ const HistoryBox = ({ video }) => {
           </p>
         )}
       </div>
-
       <div className="w-2/10 flex items-center justify-center">
-        {video.subtitle ? (
-          <Link
-            href={`/main/custom_subtitle/${video._id}`}
-            className="white bg-iris font-bold p-2 rounded-full hover:bg-violet"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="size-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-              />
-            </svg>
-          </Link>
-        ) : (
-          <Link
-            href={`/main/${video._id}`}
-            className="white bg-iris font-bold p-2 rounded-full hover:bg-violet"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="size-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-              />
-            </svg>
-          </Link>
-        )}
+        <Link
+          href={`/main/${video._id}`}
+          className="white bg-iris text-xs px-3 py-2 rounded-full hover:bg-violet transition-colors"
+        >New subtitle</Link>
       </div>
     </div>
   );

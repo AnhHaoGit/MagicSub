@@ -83,6 +83,7 @@ const LandingPage = () => {
             size,
             duration,
             createdAt: date.toISOString(),
+            style: session.user.style,
           }),
         });
 

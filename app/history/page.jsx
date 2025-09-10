@@ -51,7 +51,7 @@ const Page = () => {
   return (
     <>
       <MainNavbar />
-      <main className="mt-25 w-full px-2 sm:px-4 lg:px-10 flex flex-col lg:flex-row justify-between items-center lg:items-start gap-6 lg:gap-10">
+      <main className="w-full px-2 sm:px-4 lg:px-10 flex flex-col lg:flex-row justify-between items-center lg:items-start gap-6 lg:gap-10 py-25">
         <div className="w-full lg:w-1/2 flex flex-col items-center">
           <p className="font-bold text-2xl sm:text-3xl">History</p>
           <div className="sm:mt-10 gap-5 flex flex-col items-center w-full max-w-2xl">

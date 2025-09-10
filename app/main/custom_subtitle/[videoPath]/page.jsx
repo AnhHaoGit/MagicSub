@@ -2,7 +2,7 @@
 
 import MainNavbar from "@/components/MainNavbar";
 import SubtitleScrollBox from "@/components/SubtitleScrollBox";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useRef, useEffect, useState, useCallback } from "react";
 import { toast } from "react-toastify";
@@ -15,6 +15,8 @@ import { useSession } from "next-auth/react";
 
 const Page = () => {
   const { videoPath } = useParams();
+  const searchParams = useSearchParams();
+  const subtitleId = searchParams.get("subtitleId");
   const [videoData, setVideoData] = useState(null);
   const [subtitle, setSubtitle] = useState([]);
   const [originalSubtitle, setOriginalSubtitle] = useState([]);
@@ -212,10 +214,13 @@ const Page = () => {
     const found = video.find((v) => v._id === videoPath);
     if (found) {
       setVideoData(found);
-      const clonedSubtitle = JSON.parse(JSON.stringify(found.subtitle));
-      setSubtitle(clonedSubtitle);
+      const clonedSubtitles = JSON.parse(JSON.stringify(found.subtitles));
+      const clonedSubtitle = clonedSubtitles.find(
+        (sub) => sub._id === subtitleId
+      );
+      setSubtitle(clonedSubtitle.subtitle);
       setCustomize(found.customize);
-      setOriginalSubtitle(clonedSubtitle);
+      setOriginalSubtitle(clonedSubtitle.subtitle);
       setOriginalCustomize(found.customize);
     } else {
       toast.error("Cannot find video data!");

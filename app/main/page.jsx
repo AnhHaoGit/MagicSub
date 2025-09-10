@@ -63,6 +63,7 @@ const MainPage = () => {
             size,
             duration,
             createdAt: date.toISOString(),
+            style: session.user.style,
           }),
         });
 

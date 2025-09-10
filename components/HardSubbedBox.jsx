@@ -16,12 +16,12 @@ const HardSubbedBox = ({ data }) => {
           <p className="text-xs px-2 rounded-lg bg-violet-200 font-semibold iris flex items-center justify-center h-">
             hard-subbed
           </p>
-          <p className="light-gray text-sm">
+          <p className="gray text-xs">
             {new Date(data.createdAt).toLocaleString()}
           </p>
         </div>
 
-        <p className="text-xs">{format_duration(data.duration)}</p>
+        <p className="text-xs gray">Duration: {format_duration(data.duration)}</p>
       </div>
 
       <div className="w-2/10 flex items-center justify-center">

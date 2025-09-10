@@ -20,10 +20,11 @@ export default function VideoPage() {
   const { videoPath } = useParams();
   const { data: session, status } = useSession();
   const [videoData, setVideoData] = useState(null);
+  const [sourceLanguage, setSourceLanguage] = useState("en");
   const [targetLanguage, setTargetLanguage] = useState("en");
-  const [isProccessing, setIsProcessing] = useState(false);
   const [videoCost, setVideoCost] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -44,13 +45,25 @@ export default function VideoPage() {
     setUserData(user);
   }, []);
 
+  const handleSourceLanguageChange = (value) => {
+    setSourceLanguage(value);
+  };
+
   const handleTargetLanguageChange = (value) => {
     setTargetLanguage(value);
   };
 
-  const handleProcess = async () => {
+  console.log(videoData);
+
+  const handleTranslate = async () => {
     if (!session) {
       toast.error("Please login to continue the process.");
+      return;
+    }
+    if (videoData.subtitles.find((sub) => sub.language === targetLanguage)) {
+      toast.error(
+        `Subtitle in ${targetLanguage} already exists! Please choose another language or edit the existing subtitle in the history page.`
+      );
       return;
     }
     if (userData.gems < videoCost) {
@@ -59,12 +72,13 @@ export default function VideoPage() {
     }
 
     setIsProcessing(true);
-    const res = await fetch("/api/subtitle", {
+    const res = await fetch("/api/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         cloudUrl: videoData.cloudUrl,
         _id: videoData._id,
+        sourceLanguage: sourceLanguage,
         targetLanguage: targetLanguage,
         style: session.user.style,
         userId: session.user.id,
@@ -83,11 +97,13 @@ export default function VideoPage() {
         videoData._id,
         data.subtitle,
         data.subtitleId,
-        data.customize
+        data.language
       );
       update_gems(videoCost);
       toast.success("Subtitle successfully generated!");
-      router.push(`/main/custom_subtitle/${videoData._id}`);
+      router.push(
+        `/main/custom_subtitle/${videoData._id}?subtitleId=${data.subtitleId}`
+      );
     }
     setIsProcessing(false);
   };
@@ -110,24 +126,29 @@ export default function VideoPage() {
           {/* Sidebar settings */}
           <div className="w-full md:w-1/3 h-auto md:h-[70vh] flex flex-col items-center justify-between p-5 bg-smoke rounded-4xl shadow-lg">
             <div className="flex flex-col w-full items-center gap-4">
-              <h1 className="font-bold text-[clamp(1rem, 2vw, 1.5rem)] mt-2 md:mt-5 text-center">
-                Add your Subtitle here!
-              </h1>
               <LanguageSelect
-                targetLanguage={targetLanguage}
-                handleTargetLanguageChange={handleTargetLanguageChange}
+                title="Source Language"
+                language={sourceLanguage}
+                handleLanguageChange={handleSourceLanguageChange}
+              />
+              <p className="gray text-xs">
+                Choose source language for more accurate transcription
+              </p>
+              <LanguageSelect
+                title="Target Language"
+                language={targetLanguage}
+                handleLanguageChange={handleTargetLanguageChange}
               />
             </div>
             <div className="flex flex-col justify-between items-center gap-5 mt-6">
               <p className="text-xs text-center">
                 You will be charged {videoCost} 💎 for this video
               </p>
-
               <button
                 className="flex items-center gap-2 bg-iris text-white rounded-full py-3 px-10 md:py-4 md:px-20 shadow-2xl font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm md:text-base"
-                onClick={handleProcess}
+                onClick={handleTranslate}
               >
-                {isProccessing ? (
+                {isProcessing ? (
                   <>
                     <span>Processing</span>
                     <Spinner key="ellipsis" variant="ellipsis" />

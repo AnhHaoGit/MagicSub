@@ -32,13 +32,17 @@ async function connectDB() {
 }
 
 // Ghi ffmpeg output ra file tạm mp4
+// Ghi ffmpeg output ra file tạm mp4
 async function generateTempMp4(cloudUrl, assPath, outputPath) {
   return new Promise((resolve, reject) => {
+    // Lấy đường dẫn tuyệt đối đến thư mục fonts
+    const fontsDir = path.join(process.cwd(), "public", "fonts");
+
     const ffmpeg = spawn("ffmpeg", [
       "-i",
       cloudUrl,
       "-vf",
-      `ass=${assPath}`,
+      `ass=${assPath}:fontsdir=${fontsDir}`, // thêm fontsdir
       "-c:v",
       "libx264",
       "-preset",
@@ -53,7 +57,8 @@ async function generateTempMp4(cloudUrl, assPath, outputPath) {
       "mp4",
       outputPath,
     ]);
-    ffmpeg.stderr.on("data", (d) => console.log("ffmpeg err:", d.toString()));
+
+    ffmpeg.stderr.on("data", (d) => console.log("ffmpeg:", d.toString()));
     ffmpeg.on("error", reject);
     ffmpeg.on("close", (code) => {
       if (code === 0) resolve();
@@ -132,7 +137,7 @@ export async function POST(req) {
     // Tạo file ASS tạm
     const assContent = generateASS(subtitle, customize);
     const assPath = path.join(os.tmpdir(), `sub_${now}.ass`);
-    await fs.writeFile(assPath, assContent);
+    await fs.writeFile(assPath, assContent, { encoding: "utf8" });
 
     // Tạo file mp4 tạm
     const tempMp4 = path.join(os.tmpdir(), `video_${now}.mp4`);
