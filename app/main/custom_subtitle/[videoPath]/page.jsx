@@ -138,19 +138,19 @@ const Page = () => {
     const index = updatedVideos.findIndex((v) => v._id === videoPath);
 
     if (index !== -1) {
-      const subtitleId = updatedVideos[index].subtitleId;
       try {
         const response = await fetch(`/api/save_customization`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ subtitleId, customize }),
+          body: JSON.stringify({ videoId: updatedVideos[index]._id, customize }),
         });
 
         if (!response.ok) {
           const errorData = await response.json();
           toast.error(`Failed to save customization: ${errorData.message}`);
+          return;
         }
       } catch (error) {
         toast.error("An error occurred while saving to database.");
@@ -174,7 +174,6 @@ const Page = () => {
     const updatedVideos = JSON.parse(localStorage.getItem("videos")) || [];
     const index = updatedVideos.findIndex((v) => v._id === videoPath);
     if (index !== -1) {
-      const subtitleId = updatedVideos[index].subtitleId;
       try {
         const response = await fetch(`/api/save_subtitle`, {
           method: "PUT",

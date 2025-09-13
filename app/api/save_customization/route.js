@@ -14,10 +14,12 @@ async function connectDB() {
 
 export async function PUT(req) {
   try {
-    const { subtitleId, customize } = await req.json();
+    const { videoId, customize } = await req.json();
+
+    console.log("Received data:", { videoId, customize });
 
 
-    if (!subtitleId || !customize) {
+    if (!videoId || !customize) {
       return NextResponse.json(
         { message: "Missing parameters" },
         { status: 400 }
@@ -25,10 +27,10 @@ export async function PUT(req) {
     }
 
     const db = await connectDB();
-    const collection = db.collection("subtitle");
+    const collection = db.collection("videos");
 
     await collection.updateOne(
-      { _id: new ObjectId(subtitleId) },
+      { _id: new ObjectId(videoId) },
       { $set: { customize: customize } },
       { upsert: true } // If not exist, create new
     );

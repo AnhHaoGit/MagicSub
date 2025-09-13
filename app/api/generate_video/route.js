@@ -225,14 +225,16 @@ function fontColor(color) {
   const b = color.substring(5, 7);
   const g = color.substring(3, 5);
   const r = color.substring(1, 3);
-  return `&H00${b}${g}${r}`.toUpperCase();
+  return `&H${b}${g}${r}`.toUpperCase();
 }
 
 function borderColor(customize) {
   if (customize.border_style === "opaque_box") {
+    console.log(customize.background_opacity)
     const alpha = (255 - Math.round((customize.background_opacity / 100) * 255))
       .toString(16)
       .padStart(2, "0");
+    console.log(alpha)
     const b = customize.background_color.substring(5, 7);
     const g = customize.background_color.substring(3, 5);
     const r = customize.background_color.substring(1, 3);
@@ -241,6 +243,6 @@ function borderColor(customize) {
     const b = customize.outline_color.substring(5, 7);
     const g = customize.outline_color.substring(3, 5);
     const r = customize.outline_color.substring(1, 3);
-    return `&H00${b}${g}${r}`.toUpperCase();
+    return `&H${b}${g}${r}`.toUpperCase();
   }
 }
