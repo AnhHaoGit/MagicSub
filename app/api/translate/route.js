@@ -88,45 +88,69 @@ async function extractAudioSegment(buffer, start, duration) {
 }
 
 async function translateSegments(segments, targetLanguage) {
-  const texts = segments.map((s) => s.text);
+  const batchSize = 40; // số câu mỗi lần gửi, tùy chỉnh theo nhu cầu
+  const result = [];
 
-  const systemPrompt = `You are a professional translator. Your task is to translate an array of subtitles into ${formatLanguage(targetLanguage)}.
+  for (let i = 0; i < segments.length; i += batchSize) {
+    const batch = segments.slice(i, i + batchSize);
+    const texts = batch.map((s) => s.text);
+
+    const systemPrompt = `You are a professional translator. Your task is to translate an array of subtitles into ${formatLanguage(
+      targetLanguage
+    )}.
 - Keep the number of elements exactly the same as the input.
 - Each element in the output must correspond to the same element in the input.
 - Translate naturally and fluently, as if written by a native speaker.
 - Do NOT merge, split, or omit any sentences.
+- If the output array would have fewer elements than the input,
+  repeat the missing elements untranslated to preserve array length.
 - Return ONLY a valid JSON array of translated strings, with no extra text.`;
 
-  const res = await axios.post(
-    "https://api.openai.com/v1/chat/completions",
-    {
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: JSON.stringify(texts) },
-      ],
-      temperature: 0,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
+    const res = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4.1",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: JSON.stringify(texts) },
+        ],
+        temperature: 0,
       },
-    }
-  );
+      {
+        headers: {
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  let translatedArray;
-  try {
-    translatedArray = JSON.parse(res.data.choices[0].message.content.trim());
-  } catch (e) {
-    console.error("Error parsing translation:", e);
-    throw new Error("Failed to parse translation response");
+    let translatedArray;
+    try {
+      translatedArray = JSON.parse(res.data.choices[0].message.content.trim());
+    } catch (e) {
+      console.error("Error parsing translation:", e);
+      throw new Error("Failed to parse translation response");
+    }
+
+    // Nếu thiếu phần tử, tự chèn câu gốc cho đủ
+    if (translatedArray.length !== batch.length) {
+      console.warn(
+        `Mismatch: expected ${batch.length}, got ${translatedArray.length}`
+      );
+      while (translatedArray.length < batch.length) {
+        translatedArray.push(batch[translatedArray.length].text);
+      }
+    }
+
+    batch.forEach((s, idx) => {
+      result.push({
+        ...s,
+        text: translatedArray[idx] || s.text,
+      });
+    });
   }
 
-  return segments.map((s, i) => ({
-    ...s,
-    text: translatedArray[i] || s.text,
-  }));
+  return result;
 }
 
 export async function POST(req) {
@@ -194,6 +218,8 @@ export async function POST(req) {
       lastSecond = formattedSrt.lastSecond;
       segments.push(...formattedSrt.formattedData);
     }
+
+    console.log(segments);
 
     const translatedSegments = await translateSegments(
       segments,

@@ -35,16 +35,18 @@ const Page = () => {
 
     if (found) {
       const cloudUrls = found?.cloudUrls || [];
-      const urlObj = cloudUrls.find(
-        (u) => toString(u.id) === toString(resultUrl)
-      );
-      const url = urlObj ? urlObj.url : null;
 
-      setCloudUrl(url);
+      for (let i = 0; i < cloudUrls.length; i++) {
+        const urlObj = cloudUrls[i];
+        if (toString(urlObj.id) === toString(resultUrl)) {
+          setCloudUrl(urlObj.url);
+        }
+      }
     } else {
       toast.error("Cannot find video data!");
     }
   }, [videoPath, resultUrl]);
+  console.log(cloudUrl);
 
   return (
     <>

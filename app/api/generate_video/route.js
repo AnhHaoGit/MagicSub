@@ -123,6 +123,7 @@ async function multipartUpload(
 export async function POST(req) {
   try {
     const { subtitle, customize, cloudUrl, videoId, userId } = await req.json();
+    
 
     if (!subtitle || !customize || !cloudUrl || !videoId || !userId) {
       return NextResponse.json(
@@ -136,6 +137,7 @@ export async function POST(req) {
 
     // Tạo file ASS tạm
     const assContent = generateASS(subtitle, customize);
+    console.log(assContent)
     const assPath = path.join(os.tmpdir(), `sub_${now}.ass`);
     await fs.writeFile(assPath, assContent, { encoding: "utf8" });
 
