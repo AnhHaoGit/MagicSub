@@ -77,7 +77,7 @@ async function extractAudioSegment(buffer, start, duration) {
     ]);
     const chunks = [];
     ffmpeg.stdout.on("data", (chunk) => chunks.push(chunk));
-    ffmpeg.stderr.on("data", (d) => console.log("ffmpeg err:", d.toString()));
+    ffmpeg.stderr.on("data", (d) => console.log("ffmpeg:", d.toString()));
     ffmpeg.on("error", reject);
     ffmpeg.on("close", (code) => {
       if (code === 0) resolve(Buffer.concat(chunks));
@@ -219,7 +219,6 @@ export async function POST(req) {
       segments.push(...formattedSrt.formattedData);
     }
 
-    console.log(segments);
 
     const translatedSegments = await translateSegments(
       segments,

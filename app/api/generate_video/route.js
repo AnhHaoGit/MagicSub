@@ -42,7 +42,7 @@ async function generateTempMp4(cloudUrl, assPath, outputPath) {
       "-i",
       cloudUrl,
       "-vf",
-      `ass=${assPath}:fontsdir=${fontsDir}`, // thêm fontsdir
+      `ass=${assPath}:fontsdir=${fontsDir}`,
       "-c:v",
       "libx264",
       "-preset",
@@ -137,7 +137,6 @@ export async function POST(req) {
 
     // Tạo file ASS tạm
     const assContent = generateASS(subtitle, customize);
-    console.log(assContent)
     const assPath = path.join(os.tmpdir(), `sub_${now}.ass`);
     await fs.writeFile(assPath, assContent, { encoding: "utf8" });
 
