@@ -153,6 +153,8 @@ const SubtitleStylingBox = ({ customize, setCustomize }) => {
         </div>
       </div>
 
+      <p className="gray text-[10px]">Select the right font family of your subtitle language.</p>
+
       <div className="flex justify-between w-full mt-5">
         <div className="flex items-center gap-2">
           <p className="text-[10px]">Font Color</p>
