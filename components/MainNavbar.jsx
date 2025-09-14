@@ -36,9 +36,6 @@ const MainNavbar = () => {
             <Link href="/history" className="hover:text-gray-600">
               History
             </Link>
-            <Link href="/feedback" className="hover:text-gray-600">
-              Feedback
-            </Link>
           </div>
         </div>
 
@@ -100,9 +97,6 @@ const MainNavbar = () => {
           </Link>
           <Link href="/history" className="hover:text-gray-600">
             History
-          </Link>
-          <Link href="/feedback" className="hover:text-gray-600">
-            Feedback
           </Link>
           <Link
             href="/main"
