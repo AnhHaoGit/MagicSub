@@ -7,346 +7,174 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-const Page = () => {
+export default function Page() {
   const [productsData, setProductsData] = useState([]);
-  const [customerPortalUrl, setCustomerPortalUrl] = useState("");
   const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
     if (status === "loading") return;
-    if (status === "unauthenticated" || !session) {
-      router.push("/login");
-    }
+    if (status === "unauthenticated" || !session) router.push("/login");
   }, [status, router]);
 
   function sortProducts(products) {
-    const order = ["Starter Plan", "Plus Plan", "Pro Plan"]; // thứ tự mong muốn
-
-    return products.sort((a, b) => {
-      const indexA = order.indexOf(a.name);
-      const indexB = order.indexOf(b.name);
-      return indexA - indexB;
-    });
+    const order = ["Starter Plan", "Plus Plan", "Pro Plan"];
+    return products.sort(
+      (a, b) => order.indexOf(a.name) - order.indexOf(b.name)
+    );
   }
 
   useEffect(() => {
-    const fetchProductsData = async () => {
+    async function fetchProductsData() {
       try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
         const res = await fetch("/api/fetch_products_data", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userEmail: JSON.parse(localStorage.getItem("user")).email,
-            userId: JSON.parse(localStorage.getItem("user")).id,
+            userEmail: user.email,
+            userId: user.id,
             embed: false,
           }),
         });
         const data = await res.json();
-        const sorted = sortProducts(data);
-
-        setProductsData(sorted);
+        setProductsData(sortProducts(data));
       } catch (err) {
         console.error("Failed to load checkout URLs:", err);
       }
-    };
-
+    }
     fetchProductsData();
-  }, []);
-
-  useEffect(() => {
-    const fetchCustomerPortal = async () => {
-      try {
-        const res = await fetch("/api/create_customer_portal", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            subscription_id: 1448037,
-          }),
-        });
-        const data = await res.json();
-
-        setCustomerPortalUrl(data.portal_url);
-      } catch (err) {
-        console.error("Failed to load checkout URLs:", err);
-      }
-    };
-
-    fetchCustomerPortal();
   }, []);
 
   return (
     <>
       <LandingPageNavbar />
-      <main className="p-10 h-screen w-full flex flex-col items-center justify-items-start">
-        <p className="font-bold text-3xl mt-15">
-          Pay only for <span className="inline iris">what you need</span>
-        </p>
-        <div className="flex w-full p-3 items-center gap-5 mt-4 h-full">
-          <div className="border-light-gray rounded-xl w-2/5 p-5 flex flex-col gap-5 shadow-xl h-full">
-            <p className="font-bold text-2xl">Applied to all plans</p>
-            <div className="flex items-center gap-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="iris size-6 ml-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <p className="text-sm">Automatic language detection</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="iris size-6 ml-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <p className="text-sm">
-                AI-powered subtitle generation for YouTube videos
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="iris size-6 ml-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <p className="text-sm">Support for 99 languages</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="iris size-6 ml-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <p className="text-sm">Fully customizable subtitles</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="iris size-6 ml-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <p className="text-sm">Export in .SRT, .ASS, or .TXT</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="iris size-6 ml-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <p className="text-sm">Video export without watermark</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="iris size-6 ml-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <p className="text-sm">7-day secure video storage</p>
-            </div>
-          </div>
-          <div className="flex flex-col h-full gap-5 w-3/5">
-            {productsData.map((product) => {
-              if (product.name === "Plus Plan") {
-                return (
-                  <div
-                    key={product.id}
-                    className="border-iris flex items-center w-full justify-between rounded-xl h-full shadow-[0_0_30px_rgba(76,59,207,0.3)] "
-                  >
-                    <div className="border-r-[1px] border-r-gray-300 h-full w-3/10 rounded-l-2xl p-3">
-                      <div className="flex justify-between w-full">
-                        <p className="font-semibold">{product.name}</p>
-                        <p className="bg-smoke text-[10px] flex justify-center items-center px-2 rounded-lg">
-                          Most Popular
-                        </p>
-                      </div>
+      <main className="max-h-screen px-6 pt-25 py-12">
+        <section className="text-center">
+          <h1 className="text-4xl font-bold tracking-tight">
+            Pay only for <span className="iris">what you need</span>
+          </h1>
+          <p className="text-gray-600 mt-3 text-lg">
+            Simple pricing. Powerful features.
+          </p>
+        </section>
 
-                      <div className="flex items-center gap-2 mt-6 ml-3">
-                        <p className="line-through text-[10px] gray">$16</p>
-                        <p className="font-bold text-5xl">
-                          ${product.price / 100}
-                        </p>
-                        <div className="text-[10px] gray">
-                          <p>per user</p>
-                          <p>per month</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-7/10 flex h-full">
-                      <div className="w-7/10 flex justify-center gap-2 flex-col">
-                        <div className="flex text-xs gray items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="iris size-5 ml-4"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                            />
-                          </svg>
-                          <p>Get 500 💎 per month</p>
-                        </div>
-                        <div className="flex text-xs gray items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="iris size-5 ml-4"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                            />
-                          </svg>
-                          <p>5% off</p>
-                        </div>
-                      </div>
-                      <div className="w-3/10 flex items-center h-full">
-                        <Link
-                          href={product.checkoutUrl}
-                          className="bg-iris hover:bg-violet transition white text-xs px-6 py-2 rounded-lg"
-                        >
-                          Select Plan
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                );
-              } else {
-                return (
-                  <div
-                    key={product.id}
-                    className="border-light-gray flex items-center w-full justify-between rounded-xl h-full shadow-lg "
-                  >
-                    <div className="border-r-[1px] border-r-gray-300 h-full w-3/10 rounded-l-2xl p-3">
-                      <p className="font-semibold">{product.name}</p>
-                      <div className="flex items-center gap-2 mt-6 ml-3">
-                        <p className="font-bold text-5xl">
-                          ${product.price / 100}
-                        </p>
-                        <div className="text-[10px] gray">
-                          <p>per user</p>
-                          <p>per month</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="w-7/10 flex h-full">
-                      <div className="w-7/10 flex items-center">
-                        <div className="flex text-xs gray items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="iris size-5 ml-4"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                            />
-                          </svg>
-                          <p>
-                            Get{" "}
-                            {product.name === "Starter Plan" ? "250" : "1000"}{" "}
-                            💎 per month
-                          </p>
-                        </div>
-                      </div>
-                      <div className="w-3/10 flex items-center h-full">
-                        <Link
-                          href={product.checkoutUrl}
-                          className="bg-black hover:bg-gray transition white text-xs px-6 py-2 rounded-lg"
-                        >
-                          Select Plan
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-            })}
-          </div>
+        {/* Features list */}
+        <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-6 mt-10">
+          {[
+            "Automatic language detection",
+            "AI-powered subtitle generation for YouTube videos",
+            "Support for 99 languages",
+            "Fully customizable subtitles",
+            "Export in .SRT, .ASS, or .TXT",
+            "Video export without watermark",
+            "7-day secure video storage",
+          ].map((text) => (
+            <div
+              key={text}
+              className="flex items-start gap-3 bg-white shadow-sm rounded-xl p-4 border border-gray-100"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 iris shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+              <p className="text-sm text-gray-700">{text}</p>
+            </div>
+          ))}
         </div>
-        <SuggestAFeature />
+
+        {/* Pricing cards */}
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 mt-20">
+          {productsData.map((product) => (
+            <PlanCard key={product.id} product={product} />
+          ))}
+        </div>
+
+        <div className="max-w-6xl mx-auto mt-16">
+          <SuggestAFeature />
+        </div>
       </main>
     </>
   );
-};
+}
 
-export default Page;
+/* --- Reusable Plan Card --- */
+function PlanCard({ product }) {
+  const popular = product.name === "Plus Plan";
+  const gems =
+    product.name === "Starter Plan"
+      ? 250
+      : product.name === "Plus Plan"
+      ? 500
+      : 1000;
+
+  return (
+    <div
+      className={`relative flex flex-col rounded-2xl border bg-white p-8 shadow-sm transition hover:shadow-xl ${
+        popular ? "border-iris shadow-violet-100" : "border-gray-200"
+      }`}
+    >
+      {popular && (
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-iris text-white text-xs px-3 py-1 rounded-full shadow">
+          Most Popular
+        </span>
+      )}
+      <h3 className="text-xl font-semibold">{product.name}</h3>
+      <p className="mt-4 flex items-baseline gap-1">
+        <span className="text-4xl font-bold">${product.price / 100}</span>
+        <span className="text-sm text-gray-500">/month</span>
+      </p>
+
+      <ul className="mt-6 space-y-3 text-sm text-gray-700 mb-6">
+        <li className="flex items-center gap-2">
+          <CheckIcon /> Get {gems} 💎 per month
+        </li>
+        {popular && (
+          <li className="flex items-center gap-2">
+            <CheckIcon /> 5% off
+          </li>
+        )}
+      </ul>
+
+      <Link
+        href={product.checkoutUrl}
+        className={`mt-auto inline-block rounded-lg px-5 py-2 text-center font-medium text-white transition ${
+          popular
+            ? "bg-iris hover:bg-violet"
+            : "bg-gray-900 hover:bg-gray-800"
+        }`}
+      >
+        Select Plan
+      </Link>
+    </div>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-4 w-4 iris"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth="1.5"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+      />
+    </svg>
+  );
+}

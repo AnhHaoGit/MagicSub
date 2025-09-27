@@ -25,6 +25,7 @@ function getGemsByPlan(planName) {
 
 export async function POST(request) {
   try {
+    // configure webhook
     if (!process.env.LEMONSQUEEZY_WEBHOOK_SECRET) {
       return NextResponse.json(
         { error: "Lemon Squeezy Webhook Secret not set in .env" },
@@ -50,6 +51,7 @@ export async function POST(request) {
     }
 
     const data = JSON.parse(rawBody);
+    console.log(data)
     console.dir(data, { depth: null, colors: true });
 
     const db = await connectDB();
@@ -93,7 +95,6 @@ export async function POST(request) {
       );
     }
 
-    // Khi subscription hết hạn
     else if (data.meta.event_name === "subscription_payment_success") {
       const gems = getGemsByPlan(data.data.attributes.product_name);
       await db

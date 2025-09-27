@@ -8,11 +8,14 @@ import {
 
 export async function POST(req) {
   try {
+    // configure
     lemonSqueezySetup({ apiKey: process.env.LEMONSQUEEZY_API_KEY });
+
 
     const { userEmail, userId, embed } = await req.json();
     console.log("Fetching products data for:", userEmail, userId);
 
+    // fetching all products from the store
     const products = await listProducts({
       filter: { storeId: process.env.LEMONSQUEEZY_STORE_ID },
     });

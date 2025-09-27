@@ -81,8 +81,8 @@ export const authOptions = {
               background_opacity: 55,
               margin_bottom: 15,
             },
-            gems: 100,
-            subscriptions: [],
+            gems: 0,
+            subscriptions: null,
           });
         }
       }
