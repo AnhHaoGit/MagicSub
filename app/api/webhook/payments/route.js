@@ -51,30 +51,18 @@ export async function POST(request) {
     }
 
     const data = JSON.parse(rawBody);
-    console.log(data)
+    console.log("webhook data:", data);
     console.dir(data, { depth: null, colors: true });
 
     const db = await connectDB();
 
-    const updateSubscription = () => {
-      const userId = data.meta.custom_data.user_id;
-      const subscriptionId = data.data.id;
-
-      return db.collection("users").updateOne(
-        { _id: new ObjectId(userId), "subscriptions.id": subscriptionId },
-        {
-          $set: {
-            "subscriptions.$.status": data.data.attributes.status,
-            "subscriptions.$.renewsAt": data.data.attributes.renews_at,
-            "subscriptions.$.endsAt": data.data.attributes.ends_at,
-            "subscriptions.$.name": data.data.attributes.product_name,
-          },
-        }
-      );
-    };
-
-    // Khi user mới tạo subscription
-    if (data.meta.event_name === "subscription_created") {
+    // Khi user mới tạo subscription hoặc subscription được cập nhật
+    // khi subscription hết hạn và thanh toán thành công
+    if (
+      data.meta.event_name === "subscription_created" ||
+      data.meta.event_name === "subscription_updated" ||
+      data.meta.event_name === "subscription_payment_success"
+    ) {
       const newSubscription = {
         id: data.data.id,
         createdAt: data.data.attributes.created_at,
@@ -89,24 +77,39 @@ export async function POST(request) {
       await db.collection("users").updateOne(
         { _id: new ObjectId(data.meta.custom_data.user_id) },
         {
-          $push: { subscriptions: newSubscription },
-          $set: { gems },
+          $set: { subscriptions: newSubscription, gems },
         }
       );
     }
 
-    else if (data.meta.event_name === "subscription_payment_success") {
-      const gems = getGemsByPlan(data.data.attributes.product_name);
+    // khi subscription hết hạn nhưng thanh toán không thành công
+    else if (data.meta.event_name === "subscription_payment_failed") {
+      const newSubscription = {
+        id: data.data.id,
+        createdAt: data.data.attributes.created_at,
+        name: data.data.attributes.product_name,
+        status: data.data.attributes.status,
+        renewsAt: data.data.attributes.renews_at,
+        endsAt: data.data.attributes.ends_at,
+      };
+
       await db
         .collection("users")
         .updateOne(
           { _id: new ObjectId(data.meta.custom_data.user_id) },
-          { $set: { gems } }
+          { $set: { subscriptions: newSubscription, gems: 0 } }
         );
-    } else {
-      await updateSubscription();
     }
 
+    // khi sau nhiều lần thu tiền không thành công, plan bị huỷ bỏ hoàn toàn:
+    else if (data.meta.event_name === "subscription_expired") {
+      await db
+        .collection("users")
+        .updateOne(
+          { _id: new ObjectId(data.meta.custom_data.user_id) },
+          { $set: { subscriptions: null, gems: 0 } }
+        );
+    }
     return NextResponse.json({ message: "Webhook received" }, { status: 200 });
   } catch (err) {
     console.error("Webhook error:", err);

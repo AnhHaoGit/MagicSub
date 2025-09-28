@@ -6,10 +6,14 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
+
 
 export default function Page() {
   const [productsData, setProductsData] = useState([]);
   const { data: session, status } = useSession();
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -26,6 +30,7 @@ export default function Page() {
 
   useEffect(() => {
     async function fetchProductsData() {
+      setIsFetching(true);
       try {
         const user = JSON.parse(localStorage.getItem("user") || "{}");
         const res = await fetch("/api/fetch_products_data", {
@@ -39,10 +44,14 @@ export default function Page() {
         });
         const data = await res.json();
         setProductsData(sortProducts(data));
+        setIsFetching(false);
       } catch (err) {
         console.error("Failed to load checkout URLs:", err);
+        setError("Failed to load plans.");
+        setIsFetching(false);
       }
     }
+
     fetchProductsData();
   }, []);
 
@@ -93,12 +102,27 @@ export default function Page() {
           ))}
         </div>
 
+        {error && (
+          <>
+            <p>{error}</p>
+          </>
+        )}
+
+        {isFetching && (
+          <div className="flex justify-center items-center py-20 gap-3">
+            <p className="text-sm">Fetching all plans</p>
+            <Spinner key="ellipsis" variant="ellipsis" />
+          </div>
+        )}
+
         {/* Pricing cards */}
-        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 mt-20">
-          {productsData.map((product) => (
-            <PlanCard key={product.id} product={product} />
-          ))}
-        </div>
+        {productsData.length > 0 && !error && (
+          <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 mt-20">
+            {productsData.map((product) => (
+              <PlanCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
 
         <div className="max-w-6xl mx-auto mt-16">
           <SuggestAFeature />
@@ -149,9 +173,7 @@ function PlanCard({ product }) {
       <Link
         href={product.checkoutUrl}
         className={`mt-auto inline-block rounded-lg px-5 py-2 text-center font-medium text-white transition ${
-          popular
-            ? "bg-iris hover:bg-violet"
-            : "bg-gray-900 hover:bg-gray-800"
+          popular ? "bg-iris hover:bg-violet" : "bg-gray-900 hover:bg-gray-800"
         }`}
       >
         Select Plan
