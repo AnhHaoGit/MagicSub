@@ -56,7 +56,7 @@ export async function POST(req) {
         margin_bottom: 15,
       },
       gems: 0,
-      subscriptions: null,
+      subscriptions: [],
     });
 
     return NextResponse.json({ message: "User created" }, { status: 201 });

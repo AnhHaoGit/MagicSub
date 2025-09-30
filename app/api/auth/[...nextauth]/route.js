@@ -82,7 +82,7 @@ export const authOptions = {
               margin_bottom: 15,
             },
             gems: 0,
-            subscriptions: null,
+            subscriptions: [],
           });
         }
       }

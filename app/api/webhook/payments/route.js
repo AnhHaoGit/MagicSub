@@ -2,6 +2,10 @@
 import crypto from "node:crypto";
 import { MongoClient, ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
+import {
+  lemonSqueezySetup,
+  getSubscription,
+} from "@lemonsqueezy/lemonsqueezy.js";
 
 const client = new MongoClient(process.env.MONGODB_URI);
 let db;
@@ -23,9 +27,22 @@ function getGemsByPlan(planName) {
   return 0;
 }
 
+async function getSubscriptionData(subscription_id) {
+  try {
+    lemonSqueezySetup({ apiKey: process.env.LEMONSQUEEZY_API_KEY });
+    const { data } = await getSubscription(subscription_id);
+    return data;
+  } catch (error) {
+    console.error("Error fetching subscription:", error);
+    return {
+      error: true,
+      message: error.message || "Failed to fetch subscription",
+    };
+  }
+}
+
 export async function POST(request) {
   try {
-    // configure webhook
     if (!process.env.LEMONSQUEEZY_WEBHOOK_SECRET) {
       return NextResponse.json(
         { error: "Lemon Squeezy Webhook Secret not set in .env" },
@@ -55,61 +72,68 @@ export async function POST(request) {
     console.dir(data, { depth: null, colors: true });
 
     const db = await connectDB();
+    const userId = new ObjectId(data.meta.custom_data.user_id);
 
-    // Khi user mới tạo subscription hoặc subscription được cập nhật
-    // khi subscription hết hạn và thanh toán thành công
-    if (
-      data.meta.event_name === "subscription_created" ||
-      data.meta.event_name === "subscription_updated" ||
-      data.meta.event_name === "subscription_payment_success"
-    ) {
-      const newSubscription = {
-        id: data.data.id,
-        createdAt: data.data.attributes.created_at,
-        name: data.data.attributes.product_name,
-        status: data.data.attributes.status,
-        renewsAt: data.data.attributes.renews_at,
-        endsAt: data.data.attributes.ends_at,
-      };
-
+    // ✅ Thêm mới object vào mảng subscriptions
+    if (data.meta.event_name === "subscription_created") {
       const gems = getGemsByPlan(data.data.attributes.product_name);
-
       await db.collection("users").updateOne(
-        { _id: new ObjectId(data.meta.custom_data.user_id) },
+        { _id: userId },
         {
-          $set: { subscriptions: newSubscription, gems },
+          $push: { subscriptions: data }, // thêm vào mảng
+          $set: { gems },
         }
       );
     }
 
-    // khi subscription hết hạn nhưng thanh toán không thành công
-    else if (data.meta.event_name === "subscription_payment_failed") {
-      const newSubscription = {
-        id: data.data.id,
-        createdAt: data.data.attributes.created_at,
-        name: data.data.attributes.product_name,
-        status: data.data.attributes.status,
-        renewsAt: data.data.attributes.renews_at,
-        endsAt: data.data.attributes.ends_at,
-      };
-
-      await db
-        .collection("users")
-        .updateOne(
-          { _id: new ObjectId(data.meta.custom_data.user_id) },
-          { $set: { subscriptions: newSubscription, gems: 0 } }
-        );
+    // cập nhật một subscription có sẵn (cần lọc theo id nếu muốn cập nhật từng item)
+    else if (
+      data.meta.event_name === "subscription_updated" ||
+      data.meta.event_name === "subscription_resumed" ||
+      data.meta.event_name === "subscription_paused" ||
+      data.meta.event_name === "subscription_unpaused"
+    ) {
+      await db.collection("users").updateOne(
+        { _id: userId, "subscriptions.data.id": data.data.id },
+        { $set: { "subscriptions.$": data } }
+      );
     }
 
-    // khi sau nhiều lần thu tiền không thành công, plan bị huỷ bỏ hoàn toàn:
-    else if (data.meta.event_name === "subscription_expired") {
+    // khi hết hạn hoặc hủy, set gems = 0
+    else if (
+      data.meta.event_name === "subscription_expired" ||
+      data.meta.event_name === "subscription_cancelled"
+    ) {
+      await db.collection("users").updateOne(
+        { _id: userId, "subscriptions.data.id": data.data.id },
+        {
+          $set: { "subscriptions.$": data, gems: 0 },
+        }
+      );
+    }
+
+    // thanh toán thành công, gia hạn cho payment, cập nhật lại gems
+    else if (data.meta.event_name === "subscription_payment_success") {
+      const subscriptionData = await getSubscriptionData(
+        data.data.attributes.subscription_id
+      );
+      if (subscriptionData.error) {
+        console.error(
+          "Failed to fetch subscription data:",
+          subscriptionData.message
+        );
+        return NextResponse.json(
+          { error: "Failed to fetch subscription data" },
+          { status: 500 }
+        );
+      }
+
+      const gems = getGemsByPlan(subscriptionData.data.attributes.product_name);
       await db
         .collection("users")
-        .updateOne(
-          { _id: new ObjectId(data.meta.custom_data.user_id) },
-          { $set: { subscriptions: null, gems: 0 } }
-        );
+        .updateOne({ _id: userId }, { $set: { gems } });
     }
+
     return NextResponse.json({ message: "Webhook received" }, { status: 200 });
   } catch (err) {
     console.error("Webhook error:", err);
