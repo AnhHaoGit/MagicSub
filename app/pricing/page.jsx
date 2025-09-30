@@ -8,13 +8,41 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
-
 export default function Page() {
   const [productsData, setProductsData] = useState([]);
   const { data: session, status } = useSession();
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
+
+  console.log(productsData);
+
+  const getSubscriptionStatus = (planName) => {
+    try {
+      const userRaw = localStorage.getItem("user");
+      if (!userRaw) return "purchase";
+
+      const user = JSON.parse(userRaw);
+      const subs = user.subscriptions || [];
+      if (!subs.length) return "purchase";
+
+      const target = subs.find((s) => {
+        const pName = s?.data?.attributes?.product_name || "";
+        return pName.toLowerCase() === planName.toLowerCase();
+      });
+
+      if (!target) return "Select Plan";
+
+      const status = target.data.attributes.status;
+
+      if (status !== "active") return "Resume";
+
+      return "Active";
+    } catch (err) {
+      console.error("getSubscriptionStatus error:", err);
+      return "Select Plan";
+    }
+  };
 
   useEffect(() => {
     if (status === "loading") return;
@@ -119,7 +147,11 @@ export default function Page() {
         {productsData.length > 0 && !error && (
           <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 mt-20">
             {productsData.map((product) => (
-              <PlanCard key={product.id} product={product} />
+              <PlanCard
+                key={product.id}
+                product={product}
+                status={getSubscriptionStatus(product.name)}
+              />
             ))}
           </div>
         )}
@@ -133,7 +165,7 @@ export default function Page() {
 }
 
 /* --- Reusable Plan Card --- */
-function PlanCard({ product }) {
+function PlanCard({ product, status }) {
   const popular = product.name === "Plus Plan";
   const gems =
     product.name === "Starter Plan"
@@ -173,10 +205,13 @@ function PlanCard({ product }) {
       <Link
         href={product.checkoutUrl}
         className={`mt-auto inline-block rounded-lg px-5 py-2 text-center font-medium text-white transition ${
-          popular ? "bg-iris hover:bg-violet" : "bg-gray-900 hover:bg-gray-800"
-        }`}
+          popular ? "bg-iris hover:bg-violet" : "bg-black hover:bg-gray"
+        } ${status === "Active" ? "pointer-events-none opacity-60" : ""}`}
+        target={status === "Active" ? "_self" : "_blank"}
+        rel="noreferrer"
       >
-        Select Plan
+        {status === "Active" ? "Current Plan" : status}
+      
       </Link>
     </div>
   );
