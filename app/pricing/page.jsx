@@ -17,30 +17,19 @@ export default function Page() {
 
   console.log(productsData);
 
+  console.log(session);
+
   const getSubscriptionStatus = (planName) => {
-    try {
-      const userRaw = localStorage.getItem("user");
-      if (!userRaw) return "purchase";
-
-      const user = JSON.parse(userRaw);
-      const subs = user.subscriptions || [];
-      if (!subs.length) return "purchase";
-
-      const target = subs.find((s) => {
-        const pName = s?.data?.attributes?.product_name || "";
-        return pName.toLowerCase() === planName.toLowerCase();
-      });
-
-      if (!target) return "Select Plan";
-
-      const status = target.data.attributes.status;
-
-      if (status !== "active") return "Resume";
-
-      return "Active";
-    } catch (err) {
-      console.error("getSubscriptionStatus error:", err);
+    if (!session?.user?.subscription) {
       return "Select Plan";
+    } else {
+      if (
+        planName === session.user.subscription.data.attributes.product_name
+      ) {
+        return "Your Current Plan";
+      } else {
+        return "Select Plan";
+      }
     }
   };
 
@@ -206,12 +195,11 @@ function PlanCard({ product, status }) {
         href={product.checkoutUrl}
         className={`mt-auto inline-block rounded-lg px-5 py-2 text-center font-medium text-white transition ${
           popular ? "bg-iris hover:bg-violet" : "bg-black hover:bg-gray"
-        } ${status === "Active" ? "pointer-events-none opacity-60" : ""}`}
-        target={status === "Active" ? "_self" : "_blank"}
+        } ${status === "Your Current Plan" ? "pointer-events-none opacity-60" : ""}`}
+        target={status === "Your Current Plan" ? "_self" : "_blank"}
         rel="noreferrer"
       >
-        {status === "Active" ? "Current Plan" : status}
-      
+        {status}
       </Link>
     </div>
   );

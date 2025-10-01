@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import {
   lemonSqueezySetup,
   getSubscription,
+  cancelSubscription,
 } from "@lemonsqueezy/lemonsqueezy.js";
 
 const client = new MongoClient(process.env.MONGODB_URI);
@@ -68,51 +69,80 @@ export async function POST(request) {
     }
 
     const data = JSON.parse(rawBody);
-    console.log("webhook data:", data);
+    console.log(
+      "webhook event:",
+      data?.meta?.event_name,
+      "| updated_at:",
+      new Date(data?.data?.attributes?.updated_at).toLocaleString("vi-VN", {
+        timeZone: "Asia/Ho_Chi_Minh",
+      })
+    );
+
     console.dir(data, { depth: null, colors: true });
 
     const db = await connectDB();
     const userId = new ObjectId(data.meta.custom_data.user_id);
 
-    // ✅ Thêm mới object vào mảng subscriptions
+    // ✅ Khi tạo subscription mới → ghi đè object subscription
     if (data.meta.event_name === "subscription_created") {
       const gems = getGemsByPlan(data.data.attributes.product_name);
+      const user = await db.collection("users").findOne({ _id: userId });
+
+      if (user?.subscription) {
+        const oldSubId = user.subscription.data.id;
+        console.log("Cancelling old subscription:", oldSubId);
+        await cancelSubscription(oldSubId);
+      }
+
       await db.collection("users").updateOne(
         { _id: userId },
         {
-          $push: { subscriptions: data }, // thêm vào mảng
-          $set: { gems },
+          $set: {
+            subscription: data,
+            gems,
+          },
         }
       );
     }
 
-    // cập nhật một subscription có sẵn (cần lọc theo id nếu muốn cập nhật từng item)
+    // ✅ Cập nhật subscription đang có
     else if (
       data.meta.event_name === "subscription_updated" ||
       data.meta.event_name === "subscription_resumed" ||
       data.meta.event_name === "subscription_paused" ||
       data.meta.event_name === "subscription_unpaused"
     ) {
-      await db.collection("users").updateOne(
-        { _id: userId, "subscriptions.data.id": data.data.id },
-        { $set: { "subscriptions.$": data } }
-      );
+      await db
+        .collection("users")
+        .updateOne({ _id: userId }, { $set: { subscription: data } });
     }
 
-    // khi hết hạn hoặc hủy, set gems = 0
-    else if (
-      data.meta.event_name === "subscription_expired" ||
-      data.meta.event_name === "subscription_cancelled"
-    ) {
-      await db.collection("users").updateOne(
-        { _id: userId, "subscriptions.data.id": data.data.id },
-        {
-          $set: { "subscriptions.$": data, gems: 0 },
-        }
-      );
+    // ✅ Khi hết hạn hoặc hủy → reset gems về 0
+    else if (data.meta.event_name === "subscription_expired") {
+      const user = await db.collection("users").findOne({ _id: userId });
+
+      if (user?.subscription?.data?.id === data.data.id) {
+        await db.collection("users").updateOne(
+          { _id: userId },
+          {
+            $set: { subscription: data, gems: 0 },
+          }
+        );
+      }
+    } else if (data.meta.event_name === "subscription_cancelled") {
+      const user = await db.collection("users").findOne({ _id: userId });
+
+      if (user?.subscription?.data?.id === data.data.id) {
+        await db.collection("users").updateOne(
+          { _id: userId },
+          {
+            $set: { subscription: data },
+          }
+        );
+      }
     }
 
-    // thanh toán thành công, gia hạn cho payment, cập nhật lại gems
+    // ✅ Khi thanh toán thành công → cập nhật lại gems theo plan
     else if (data.meta.event_name === "subscription_payment_success") {
       const subscriptionData = await getSubscriptionData(
         data.data.attributes.subscription_id
@@ -132,6 +162,12 @@ export async function POST(request) {
       await db
         .collection("users")
         .updateOne({ _id: userId }, { $set: { gems } });
+    }
+    // thanh toán không thành công, reset gems về 0
+    else if (data.meta.event_name === "subscription_payment_failed") {
+      await db
+        .collection("users")
+        .updateOne({ _id: userId }, { $set: { gems: 0 } });
     }
 
     return NextResponse.json({ message: "Webhook received" }, { status: 200 });
