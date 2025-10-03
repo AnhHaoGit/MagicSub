@@ -34,7 +34,6 @@ async function getSubscriptionData(subscription_id) {
     const { data } = await getSubscription(subscription_id);
     return data;
   } catch (error) {
-    console.error("Error fetching subscription:", error);
     return {
       error: true,
       message: error.message || "Failed to fetch subscription",
@@ -43,6 +42,7 @@ async function getSubscriptionData(subscription_id) {
 }
 
 export async function POST(request) {
+  // Configure
   try {
     if (!process.env.LEMONSQUEEZY_WEBHOOK_SECRET) {
       return NextResponse.json(
@@ -68,29 +68,25 @@ export async function POST(request) {
       );
     }
 
+    // Lấy dữ liệu từ webhook gửi về
     const data = JSON.parse(rawBody);
-    console.log(
-      "webhook event:",
-      data?.meta?.event_name,
-      "| updated_at:",
-      new Date(data?.data?.attributes?.updated_at).toLocaleString("vi-VN", {
-        timeZone: "Asia/Ho_Chi_Minh",
-      })
-    );
+    if (!data.meta?.custom_data?.user_id) {
+      return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
+    }
 
-    console.dir(data, { depth: null, colors: true });
+    // console.dir(data, { depth: null, colors: true });
 
     const db = await connectDB();
     const userId = new ObjectId(data.meta.custom_data.user_id);
 
-    // ✅ Khi tạo subscription mới → ghi đè object subscription
+    // Khi tạo subscription mới
     if (data.meta.event_name === "subscription_created") {
       const gems = getGemsByPlan(data.data.attributes.product_name);
       const user = await db.collection("users").findOne({ _id: userId });
 
+      // Nếu user đã có subscription rồi thì hủy cái cũ đi
       if (user?.subscription) {
         const oldSubId = user.subscription.data.id;
-        console.log("Cancelling old subscription:", oldSubId);
         await cancelSubscription(oldSubId);
       }
 
@@ -105,7 +101,7 @@ export async function POST(request) {
       );
     }
 
-    // ✅ Cập nhật subscription đang có
+    // Cập nhật subscription đang có
     else if (
       data.meta.event_name === "subscription_updated" ||
       data.meta.event_name === "subscription_resumed" ||
@@ -117,7 +113,7 @@ export async function POST(request) {
         .updateOne({ _id: userId }, { $set: { subscription: data } });
     }
 
-    // ✅ Khi hết hạn hoặc hủy → reset gems về 0
+    // Khi hết hạn → reset gems về 0
     else if (data.meta.event_name === "subscription_expired") {
       const user = await db.collection("users").findOne({ _id: userId });
 
@@ -129,7 +125,9 @@ export async function POST(request) {
           }
         );
       }
-    } else if (data.meta.event_name === "subscription_cancelled") {
+    }
+    // Khi huỷ
+    else if (data.meta.event_name === "subscription_cancelled") {
       const user = await db.collection("users").findOne({ _id: userId });
 
       if (user?.subscription?.data?.id === data.data.id) {
@@ -142,28 +140,26 @@ export async function POST(request) {
       }
     }
 
-    // ✅ Khi thanh toán thành công → cập nhật lại gems theo plan
+    // Khi thanh toán thành công → cập nhật lại gems theo plan
     else if (data.meta.event_name === "subscription_payment_success") {
+      // Lấy dữ liệu Plan từ Lemon Squeezy
       const subscriptionData = await getSubscriptionData(
         data.data.attributes.subscription_id
       );
       if (subscriptionData.error) {
-        console.error(
-          "Failed to fetch subscription data:",
-          subscriptionData.message
-        );
         return NextResponse.json(
           { error: "Failed to fetch subscription data" },
           { status: 500 }
         );
       }
 
+      // Lấy số gems tương ứng và cập nhật vào users
       const gems = getGemsByPlan(subscriptionData.data.attributes.product_name);
       await db
         .collection("users")
         .updateOne({ _id: userId }, { $set: { gems } });
     }
-    // thanh toán không thành công, reset gems về 0
+    // Thanh toán không thành công, reset gems về 0
     else if (data.meta.event_name === "subscription_payment_failed") {
       await db
         .collection("users")
