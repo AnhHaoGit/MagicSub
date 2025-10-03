@@ -68,10 +68,10 @@ export default function VideoPage() {
       );
       return;
     }
-    if (userData.gems < videoCost) {
-      toast.error("Insufficient gems to process video.");
-      return;
-    }
+    // if (userData.gems < videoCost) {
+    //   toast.error("Insufficient gems to process video.");
+    //   return;
+    // }
 
     setIsProcessing(true);
     const res = await fetch("/api/translate", {
@@ -91,7 +91,7 @@ export default function VideoPage() {
 
     const data = await res.json();
     if (!res.ok) {
-      console.error("Error processing video:", data);
+      console.error("Error processing video:", data.message);
       setIsProcessing(false);
       return;
     } else {

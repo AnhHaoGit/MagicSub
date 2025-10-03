@@ -181,6 +181,21 @@ export async function POST(req) {
       );
     }
 
+    const db = await connectDB();
+    const users = db.collection("users");
+    const subtitles = db.collection("subtitle");
+
+    const user = await users.findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return NextResponse.json({ message: "User not found!" }, { status: 404 });
+    }
+    if ((user.gems || 0) < cost) {
+      return NextResponse.json(
+        { message: "Not enough gems to process request!" },
+        { status: 400 }
+      );
+    }
+
     const response = await axios.get(cloudUrl, { responseType: "arraybuffer" });
     const audioBuffer = Buffer.from(response.data);
 
@@ -219,16 +234,10 @@ export async function POST(req) {
       segments.push(...formattedSrt.formattedData);
     }
 
-
     const translatedSegments = await translateSegments(
       segments,
       targetLanguage
     );
-
-    const db = await connectDB();
-
-    const users = db.collection("users");
-    const subtitles = db.collection("subtitle");
 
     let result;
     await session.withTransaction(async () => {
