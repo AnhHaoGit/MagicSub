@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 const Page = () => {
   const [cloudUrl, setCloudUrl] = useState(null);
   const { videoPath, resultUrl } = useParams();
+  const [copied, setCopied] = useState(false);
   const router = useRouter();
 
   const { data: session, status } = useSession();
@@ -20,8 +21,6 @@ const Page = () => {
       router.push("/login");
     }
   }, [status, router]);
-
-  const [copied, setCopied] = useState(false);
 
   const handleCopyLink = (url) => {
     navigator.clipboard.writeText(url);

@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import SubtitleStylingBox from "@/components/SubtitleStylingBox";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
+import Link from "next/link";
 
 import { update_cloud_urls_to_local_storage_by_video_id } from "@/lib/local_storage_handlers";
 import { useSession } from "next-auth/react";
@@ -144,7 +145,10 @@ const Page = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ videoId: updatedVideos[index]._id, customize }),
+          body: JSON.stringify({
+            videoId: updatedVideos[index]._id,
+            customize,
+          }),
         });
 
         if (!response.ok) {
@@ -427,58 +431,71 @@ bg-[${customize.background_color}]`;
             </div>
 
             {/* Buttons row */}
-            <div className="h-auto lg:h-1/5 w-full bg-smoke rounded-2xl flex flex-wrap sm:flex-nowrap items-center justify-center gap-3 p-3">
-              <button
-                className="py-2 px-3 rounded-4xl text-xs sm:text-sm transition-colors bg-black white hover:bg-gray"
-                onClick={handleDownloadSrt}
-                disabled={isDownloadingSrt}
-              >
-                {isDownloadingSrt ? "Downloading..." : "Download .srt"}
-              </button>
-              <button
-                className="py-2 px-3 rounded-4xl text-xs sm:text-sm transition-colors bg-black white hover:bg-gray"
-                onClick={handleDownloadAss}
-                disabled={isDownloadingAss}
-              >
-                {isDownloadingAss ? "Downloading..." : "Download .ass"}
-              </button>
-              <button
-                className="py-2 px-3 rounded-4xl text-xs sm:text-sm transition-colors bg-black white hover:bg-gray"
-                onClick={handleDownloadTxt}
-                disabled={isDownloadingTxt}
-              >
-                {isDownloadingTxt ? "Downloading..." : "Download .txt"}
-              </button>
-              <button
-                onClick={handleGenerateVideo}
-                className="flex items-center gap-2 py-2 px-3 font-semibold rounded-4xl text-xs sm:text-sm transition-colors bg-iris text-white hover:bg-violet"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <p>Generating</p>
-                    <Spinner key="ellipsis" variant="ellipsis" />
-                  </>
-                ) : (
-                  <>
-                    <p>Generate Video</p>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="size-5"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
-                      />
-                    </svg>
-                  </>
-                )}
-              </button>
+            <div className="lg:h-1/5 w-full bg-smoke rounded-2xl flex flex-wrap sm:flex-nowrap items-center justify-center">
+              <div className="flex justify-center items-end gap-3">
+                <button
+                  className="py-2 px-3 rounded-4xl text-xs sm:text-sm transition-colors bg-black white hover:bg-gray"
+                  onClick={handleDownloadSrt}
+                  disabled={isDownloadingSrt}
+                >
+                  {isDownloadingSrt ? "Downloading..." : "Download .srt"}
+                </button>
+                <button
+                  className="py-2 px-3 rounded-4xl text-xs sm:text-sm transition-colors bg-black white hover:bg-gray"
+                  onClick={handleDownloadAss}
+                  disabled={isDownloadingAss}
+                >
+                  {isDownloadingAss ? "Downloading..." : "Download .ass"}
+                </button>
+                <button
+                  className="py-2 px-3 rounded-4xl text-xs sm:text-sm transition-colors bg-black white hover:bg-gray"
+                  onClick={handleDownloadTxt}
+                  disabled={isDownloadingTxt}
+                >
+                  {isDownloadingTxt ? "Downloading..." : "Download .txt"}
+                </button>
+                <button
+                  onClick={handleGenerateVideo}
+                  className="flex items-center gap-2 py-2 px-3 font-semibold rounded-4xl text-xs sm:text-sm transition-colors bg-iris text-white hover:bg-violet"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <p>Generating</p>
+                      <Spinner key="ellipsis" variant="ellipsis" />
+                    </>
+                  ) : (
+                    <>
+                      <p>Generate Video</p>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="size-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
+                        />
+                      </svg>
+                    </>
+                  )}
+                </button>
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] gray font-bold mb-1">
+                    New Feature
+                  </span>
+                  <Link
+                    href={`/main/live/${videoData._id}?subtitleId=${subtitleId}`}
+                    className="py-2 px-3 rounded-4xl text-xs sm:text-sm font-semibold transition-colors bg-iris text-white hover:bg-violet"
+                  >
+                    Stream Video
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
 

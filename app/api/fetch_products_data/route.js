@@ -54,7 +54,7 @@ export async function POST(req) {
             },
             productOptions: {
               enabledVariants: [parseInt(variantId)],
-              redirectUrl: `http://localhost:3000/`,
+              redirectUrl: process.env.NEXTAUTH_URL,
             },
           }
         );

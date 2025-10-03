@@ -62,7 +62,10 @@ export default function VideoPage() {
       toast.error("Please login to continue the process.");
       return;
     }
-    if (videoData.subtitles && videoData.subtitles.find((sub) => sub.language === targetLanguage)) {
+    if (
+      videoData.subtitles &&
+      videoData.subtitles.find((sub) => sub.language === targetLanguage)
+    ) {
       toast.error(
         `Subtitle in ${targetLanguage} already exists! Please choose another language or edit the existing subtitle in the history page.`
       );
@@ -91,7 +94,7 @@ export default function VideoPage() {
 
     const data = await res.json();
     if (!res.ok) {
-      console.error("Error processing video:", data.message);
+      toast.error(data.message);
       setIsProcessing(false);
       return;
     } else {
