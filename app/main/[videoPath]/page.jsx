@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import SubtitleOption from "@/components/SubtileOption";
+import SubtitleOption from "@/components/SubtitleOption";
 import SummaryOption from "@/components/SummaryOption";
 import QuizzesOption from "@/components/QuizzesOption";
 import { useRouter } from "next/navigation";
@@ -16,7 +16,7 @@ export default function VideoPage() {
   const { data: session, status } = useSession();
   const [videoData, setVideoData] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [option, setOption] = useState("subtitle");
+  const [option, setOption] = useState("summary");
 
   useEffect(() => {
     if (status === "loading") return;
