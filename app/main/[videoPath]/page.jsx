@@ -3,30 +3,20 @@
 import React, { useEffect, useState } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import { useParams } from "next/navigation";
-import LanguageSelect from "@/components/LanguageSelect";
-import { toast } from "react-toastify";
 import { useSession } from "next-auth/react";
-import {
-  add_subtitle_to_local_storage_by_video_id,
-  update_gems,
-} from "@/lib/local_storage_handlers";
+import SubtitleOption from "@/components/SubtileOption";
+import SummaryOption from "@/components/SummaryOption";
+import QuizzesOption from "@/components/QuizzesOption";
 import { useRouter } from "next/navigation";
-import calculateCost from "@/lib/calculateCost";
-import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import SuggestAFeature from "@/components/SuggestAFeature";
-import { languages } from "@/lib/languages";
-import { source_languages } from "@/lib/source_languages";
 
 export default function VideoPage() {
   const router = useRouter();
   const { videoPath } = useParams();
   const { data: session, status } = useSession();
   const [videoData, setVideoData] = useState(null);
-  const [sourceLanguage, setSourceLanguage] = useState("en");
-  const [targetLanguage, setTargetLanguage] = useState("en");
-  const [videoCost, setVideoCost] = useState(null);
   const [userData, setUserData] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [option, setOption] = useState("subtitle");
 
   useEffect(() => {
     if (status === "loading") return;
@@ -39,79 +29,12 @@ export default function VideoPage() {
     const video = JSON.parse(localStorage.getItem("videos")) || [];
     const found = video.find((v) => v._id === videoPath);
     setVideoData(found);
-    setVideoCost(calculateCost(found.size, found.duration));
   }, [videoPath]);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user")) || [];
     setUserData(user);
   }, []);
-
-  const handleSourceLanguageChange = (value) => {
-    setSourceLanguage(value);
-  };
-
-  const handleTargetLanguageChange = (value) => {
-    setTargetLanguage(value);
-  };
-
-  console.log(videoData);
-
-  const handleTranslate = async () => {
-    if (!session) {
-      toast.error("Please login to continue the process.");
-      return;
-    }
-    if (
-      videoData.subtitles &&
-      videoData.subtitles.find((sub) => sub.language === targetLanguage)
-    ) {
-      toast.error(
-        `Subtitle in ${targetLanguage} already exists! Please choose another language or edit the existing subtitle in the history page.`
-      );
-      return;
-    }
-    // if (userData.gems < videoCost) {
-    //   toast.error("Insufficient gems to process video.");
-    //   return;
-    // }
-
-    setIsProcessing(true);
-    const res = await fetch("/api/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        cloudUrl: videoData.cloudUrl,
-        _id: videoData._id,
-        sourceLanguage: sourceLanguage,
-        targetLanguage: targetLanguage,
-        style: session.user.style,
-        userId: session.user.id,
-        duration: videoData.duration,
-        cost: videoCost,
-      }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      toast.error(data.message);
-      setIsProcessing(false);
-      return;
-    } else {
-      add_subtitle_to_local_storage_by_video_id(
-        videoData._id,
-        data.subtitle,
-        data.subtitleId,
-        data.language
-      );
-      update_gems(videoCost);
-      toast.success("Subtitle successfully generated!");
-      router.push(
-        `/main/custom_subtitle/${videoData._id}?subtitleId=${data.subtitleId}`
-      );
-    }
-    setIsProcessing(false);
-  };
 
   return (
     <>
@@ -130,57 +53,90 @@ export default function VideoPage() {
 
           {/* Sidebar settings */}
           <div className="w-full md:w-1/3 h-auto md:h-[70vh] flex flex-col items-center justify-between p-5 bg-smoke rounded-4xl shadow-lg">
-            <div className="flex flex-col w-full items-center gap-4">
-              <LanguageSelect
-                title="Source Language"
-                language={sourceLanguage}
-                handleLanguageChange={handleSourceLanguageChange}
-                languagesList={source_languages}
-              />
-              <p className="gray text-xs">
-                Choose source language for more accurate transcription
-              </p>
-              <LanguageSelect
-                title="Target Language"
-                language={targetLanguage}
-                handleLanguageChange={handleTargetLanguageChange}
-                languagesList={languages}
-              />
-            </div>
-            <div className="flex flex-col justify-between items-center gap-5 mt-6">
-              <p className="text-xs text-center">
-                You will be charged {videoCost} 💎 for this video
-              </p>
+            <div className="flex items-center justify-center top-3 shadow-lg gap-3 sm:gap-5 bg-white p-2 rounded-4xl">
               <button
-                className="flex items-center gap-2 bg-iris text-white rounded-full py-3 px-10 md:py-4 md:px-20 shadow-2xl font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm md:text-base"
-                onClick={handleTranslate}
+                onClick={() => setOption("subtitle")}
+                className={`w-24 gap-2 sm:w-30 flex justify-center items-center sm:text-base black hover:bg-zinc-200 rounded-2xl py-1`}
               >
-                {isProcessing ? (
-                  <>
-                    <span>Processing</span>
-                    <Spinner key="ellipsis" variant="ellipsis" />
-                  </>
+                {option === "subtitle" ? (
+                  <div className="h-[10px] w-[10px] rounded-full bg-iris"></div>
                 ) : (
-                  <>
-                    <span>Process</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="size-5 md:size-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-                      />
-                    </svg>
-                  </>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.75 9h16.5m-16.5 6.75h16.5"
+                    />
+                  </svg>
                 )}
+
+                <span className="text-xs">Subtitle</span>
+              </button>
+              <button
+                onClick={() => setOption("summary")}
+                className={`w-24 gap-2 sm:w-30 flex justify-center items-center sm:text-base black hover:bg-zinc-200 rounded-2xl py-1`}
+              >
+                {option === "summary" ? (
+                  <div className="h-[10px] w-[10px] rounded-full bg-iris"></div>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                    />
+                  </svg>
+                )}
+                <span className="text-xs">Summary</span>
+              </button>
+              <button
+                onClick={() => setOption("quizzes")}
+                className={`w-24 gap-2 sm:w-30 flex justify-center items-center sm:text-base black hover:bg-zinc-200 rounded-2xl py-1`}
+              >
+                {option === "quizzes" ? (
+                  <div className="h-[10px] w-[10px] rounded-full bg-iris"></div>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
+                    />
+                  </svg>
+                )}
+                <span className="text-xs">Quizzes</span>
               </button>
             </div>
+            {option === "subtitle" && (
+              <SubtitleOption videoData={videoData} session={session} />
+            )}
+            {option === "summary" && (
+              <SummaryOption videoData={videoData} session={session} />
+            )}
+            {option === "quizzes" && (
+              <QuizzesOption videoData={videoData} session={session} />
+            )}
           </div>
         </div>
 
