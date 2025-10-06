@@ -9,8 +9,6 @@ const MainNavbar = () => {
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  console.log(user)
-
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");

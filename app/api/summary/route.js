@@ -49,8 +49,38 @@ async function extractAudioSegment(buffer, start, duration) {
   });
 }
 
-async function summarizeTranscript(transcript) {
-  const systemPrompt = `You are an expert video summarizer. Summarize the following transcript into a clear, coherent paragraph capturing the key points and overall meaning. Focus on main ideas, not line-by-line details. Output only the summary text.`;
+async function summarizeTranscript(segments) {
+  const systemPrompt = `
+You are an expert video summarizer.
+Summarize the following transcript (with timestamps) into clear, structured sections suitable for displaying on a website.
+
+Each point must include an approximate timestamp (in seconds) showing where that idea appears in the video.
+
+Return valid JSON only, matching exactly this structure:
+{
+  "title": "Overall title of the summary",
+  "sections": [
+    {
+      "heading": "Section heading (e.g., Introduction, Main Ideas, Key Takeaways...)",
+      "points": [
+        {
+          "text": "Short summary of idea",
+          "timestamp": 123
+        }
+      ]
+    }
+  ],
+  "conclusion": "1–3 sentences summarizing the whole video."
+}
+
+Rules:
+- Always output valid JSON (no markdown or explanations).
+- The number of sections: 3–6.
+- Each section must have 2–6 concise bullet points.
+- Each timestamp must be an integer representing seconds.
+- Base timestamps on the approximate timing of relevant content.
+- Write in a clear, engaging style suitable for general users.
+`;
 
   const res = await axios.post(
     "https://api.openai.com/v1/chat/completions",
@@ -58,9 +88,9 @@ async function summarizeTranscript(transcript) {
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: transcript },
+        { role: "user", content: JSON.stringify(segments) },
       ],
-      temperature: 0.5,
+      temperature: 0.4,
     },
     {
       headers: {
@@ -70,7 +100,15 @@ async function summarizeTranscript(transcript) {
     }
   );
 
-  return res.data.choices[0].message.content.trim();
+  let jsonData;
+  try {
+    jsonData = JSON.parse(res.data.choices[0].message.content.trim());
+  } catch (err) {
+    console.error("Error parsing JSON summary:", err);
+    throw new Error("Failed to parse structured summary from model.");
+  }
+
+  return jsonData;
 }
 
 export async function POST(req) {
@@ -106,11 +144,11 @@ export async function POST(req) {
     const response = await axios.get(cloudUrl, { responseType: "arraybuffer" });
     const audioBuffer = Buffer.from(response.data);
 
-    const segmentDuration = 240;
+    const segmentDuration = 240; // 4 phút/segment
     const totalDuration = duration;
-    let transcriptFull = "";
+    let segmentsAll = [];
 
-    // chia nhỏ audio để gửi Whisper
+    // chia nhỏ audio và gửi Whisper
     for (let start = 0; start < totalDuration; start += segmentDuration) {
       const segmentBuffer = await extractAudioSegment(
         audioBuffer,
@@ -124,7 +162,7 @@ export async function POST(req) {
         contentType: "audio/mp3",
       });
       form.append("model", "whisper-1");
-      form.append("response_format", "text");
+      form.append("response_format", "verbose_json");
 
       const whisperRes = await axios.post(WHISPER_API_URL, form, {
         headers: {
@@ -133,10 +171,26 @@ export async function POST(req) {
         },
       });
 
-      transcriptFull += whisperRes.data + "\n";
+      const parsed =
+        typeof whisperRes.data === "string"
+          ? JSON.parse(whisperRes.data)
+          : whisperRes.data;
+
+      if (parsed.segments && Array.isArray(parsed.segments)) {
+        parsed.segments.forEach((seg) => {
+          segmentsAll.push({
+            start: seg.start + start,
+            end: seg.end + start,
+            text: seg.text.trim(),
+          });
+        });
+      }
     }
 
-    const summaryText = await summarizeTranscript(transcriptFull);
+    console.log("Total segments:", segmentsAll.length);
+
+    // tóm tắt bằng GPT có timestamp
+    const summaryText = await summarizeTranscript(segmentsAll);
 
     let result;
     await session.withTransaction(async () => {
