@@ -5,14 +5,18 @@ import { summary_options } from "@/lib/summary_options";
 import { useState } from "react";
 import calculateCost from "@/lib/calculateCost";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
-import { update_gems } from "@/lib/local_storage_handlers";
+import {
+  update_gems,
+  add_summary_to_local_storage_by_video_id,
+} from "@/lib/local_storage_handlers";
 import { toast } from "react-toastify";
-
-
+import { useRouter } from "next/navigation";
 
 const SummaryOption = ({ videoData, session }) => {
   const [summaryOption, setSummaryOption] = useState("short_summary");
   const [isProcessing, setIsProcessing] = useState(false);
+  const router = useRouter();
+
   const videoCost = videoData
     ? calculateCost(videoData.size, videoData.duration)
     : 0;
@@ -51,7 +55,15 @@ const SummaryOption = ({ videoData, session }) => {
     } else {
       console.log("Summary response data:", data.summary);
       update_gems(videoCost);
+      add_summary_to_local_storage_by_video_id(
+        videoData._id,
+        data.summary,
+        data.summaryId
+      );
       toast.success("Summary successfully generated!");
+      router.push(
+        `/main/summary/${videoData._id}?summaryId=${data.summaryId}`
+      );
     }
     setIsProcessing(false);
   };

@@ -205,7 +205,6 @@ export async function POST(req) {
           userId: new ObjectId(userId),
           videoId: new ObjectId(_id),
           summary: summaryText,
-          createdAt: new Date(),
         },
         { session }
       );
