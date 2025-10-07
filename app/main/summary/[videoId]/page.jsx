@@ -1,21 +1,23 @@
 "use client";
 
-import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import MainNavbar from "@/components/MainNavbar";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import SuggestAFeature from "@/components/SuggestAFeature";
 
 const SummaryPage = () => {
   const { videoId } = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const summaryId = searchParams.get("summaryId");
 
   const [summaryData, setSummaryData] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
-  const [videoTitle, setVideoTitle] = useState("");
+  const [option, setOption] = useState(null);
+
+  const videoRef = useRef(null);
 
   useEffect(() => {
     if (!videoId || !summaryId) return;
@@ -28,11 +30,11 @@ const SummaryPage = () => {
     if (!video) return;
 
     setVideoUrl(video.cloudUrl);
-    setVideoTitle(video.title || "Untitled Video");
 
     const foundSummary = video.summaries?.find((s) => s._id === summaryId);
     if (foundSummary) {
       setSummaryData(foundSummary.summary);
+      setOption(foundSummary.option || "summary");
     }
   }, [videoId, summaryId]);
 
@@ -40,22 +42,53 @@ const SummaryPage = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-gray-500">
         <p>Summary not found.</p>
-        <Button onClick={() => router.push(`/main/${videoId}`)}>Back</Button>
       </div>
     );
 
   const { title, sections, conclusion } = summaryData;
 
+  const formatOption = (opt) => {
+    if (!opt) return "";
+    return opt
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+  };
+
+  // Hàm tua video
+  const handleSeek = (timestamp) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = timestamp;
+      videoRef.current.play();
+    }
+  };
+  const formatTimestamp = (seconds) => {
+    if (typeof seconds !== "number" || isNaN(seconds)) return "00:00";
+
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    const pad = (num) => num.toString().padStart(2, "0");
+
+    if (hrs > 0) {
+      return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+    } else {
+      return `${pad(mins)}:${pad(secs)}`;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <MainNavbar />
 
-      {/* Dùng grid chia tỉ lệ 2/3 - 1/3 */}
+      {/* Grid 2/3 - 1/3 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-25 p-6">
-        {/* Video Preview (chiếm 2 cột) */}
-        <div className="md:col-span-2 flex flex-col items-center">
+        {/* Video Preview */}
+        <div className="md:col-span-2 flex flex-col items-center justify-center rounded-3xl bg-black">
           {videoUrl ? (
             <video
+              ref={videoRef}
               controls
               src={videoUrl}
               className="w-full rounded-xl shadow-md mb-3"
@@ -65,24 +98,17 @@ const SummaryPage = () => {
               No video preview available
             </div>
           )}
-          <p className="text-gray-700 font-semibold text-center">
-            {videoTitle}
-          </p>
-          <Button
-            onClick={() => router.push(`/main/${videoId}`)}
-            className="mt-4"
-          >
-            Back to Video
-          </Button>
         </div>
 
-        {/* Summary Content (chiếm 1 cột) */}
+        {/* Summary Content */}
         <Card className="overflow-y-auto max-h-[80vh] bg-white shadow-lg border border-gray-200">
-          <CardHeader>
-            <h2 className="text-2xl font-bold text-gray-800 text-center">
-              {title}
-            </h2>
+          <CardHeader className="text-center space-y-2">
+            <p className="text-xs text-indigo-500 uppercase tracking-wide font-medium">
+              {formatOption(option)}
+            </p>
+            <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
           </CardHeader>
+
           <CardContent className="space-y-6 p-6">
             {sections?.length > 0 &&
               sections.map((section, index) => (
@@ -95,11 +121,16 @@ const SummaryPage = () => {
                       <li key={i} className="text-gray-700 leading-relaxed">
                         {typeof point === "object" && point.text ? (
                           <>
-                            {point.text}
+                            {point.text}{" "}
                             {point.timestamp !== undefined && (
-                              <span className="text-sm text-gray-500 ml-2">
-                                ({point.timestamp}s)
-                              </span>
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                className="ml-2 text-[10px] px-2"
+                                onClick={() => handleSeek(point.timestamp)}
+                              >
+                                {formatTimestamp(point.timestamp)}
+                              </Button>
                             )}
                           </>
                         ) : (
@@ -122,6 +153,7 @@ const SummaryPage = () => {
           </CardContent>
         </Card>
       </div>
+      <SuggestAFeature />
     </div>
   );
 };

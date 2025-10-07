@@ -19,8 +19,8 @@ export async function POST(req) {
   if (!session) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
-  const { userId } = await req.json();
 
+  const { userId } = await req.json();
   if (!userId) {
     return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
   }
@@ -28,6 +28,7 @@ export async function POST(req) {
   try {
     const db = await connectDB();
 
+    // Lấy danh sách video, subtitle, summary
     const videos = await db
       .collection("videos")
       .find({ userId: new ObjectId(userId) })
@@ -38,11 +39,26 @@ export async function POST(req) {
       .find({ userId: new ObjectId(userId) })
       .toArray();
 
+    const summaries = await db
+      .collection("summary")
+      .find({ userId: new ObjectId(userId) })
+      .toArray();
+
+    // Gộp dữ liệu theo video
     const mergedVideos = videos.map((video) => {
       const videoSubtitles = subtitles.filter(
         (sub) => sub.videoId.toString() === video._id.toString()
       );
-      return { ...video, subtitles: videoSubtitles };
+
+      const videoSummaries = summaries.filter(
+        (sum) => sum.videoId.toString() === video._id.toString()
+      );
+
+      return {
+        ...video,
+        subtitles: videoSubtitles,
+        summaries: videoSummaries,
+      };
     });
 
     return NextResponse.json(mergedVideos);

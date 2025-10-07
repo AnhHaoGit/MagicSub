@@ -49,14 +49,37 @@ async function extractAudioSegment(buffer, start, duration) {
   });
 }
 
-async function summarizeTranscript(segments) {
+async function summarizeTranscript(segments, option) {
+  let styleInstruction = "";
+
+  switch (option) {
+    case "short_summary":
+      styleInstruction = `
+Create a concise summary (around 3–5 key sections total) that captures only the main ideas of the video.
+Keep sentences short and easy to skim.`;
+      break;
+    case "detailed_summary":
+      styleInstruction = `
+Create a detailed, in-depth summary (5–7 sections) explaining the flow of ideas, arguments, or narrative.
+Include more context and clear timestamps to guide the reader.`;
+      break;
+    case "cheat_sheet":
+      styleInstruction = `
+Create a "Cheat Sheet" style summary.
+Focus on key points, actionable insights, and practical takeaways.
+Use short bullet points (phrases or sentences).
+Output still must follow the required JSON structure, but each point should be concise and list-like.`;
+      break;
+    default:
+      styleInstruction = "Write a balanced structured summary.";
+  }
+
   const systemPrompt = `
 You are an expert video summarizer.
-Summarize the following transcript (with timestamps) into clear, structured sections suitable for displaying on a website.
+Your task is to summarize a video transcript into a structured, timestamped format.
+${styleInstruction}
 
-Each point must include an approximate timestamp (in seconds) showing where that idea appears in the video.
-
-Return valid JSON only, matching exactly this structure:
+Always return **valid JSON** only, with this exact structure:
 {
   "title": "Overall title of the summary",
   "sections": [
@@ -74,12 +97,12 @@ Return valid JSON only, matching exactly this structure:
 }
 
 Rules:
-- Always output valid JSON (no markdown or explanations).
-- The number of sections: 3–6.
-- Each section must have 2–6 concise bullet points.
-- Each timestamp must be an integer representing seconds.
-- Base timestamps on the approximate timing of relevant content.
-- Write in a clear, engaging style suitable for general users.
+- Output must be parseable JSON only (no markdown, no extra text).
+- 3–6 sections total.
+- Each section must have 2–6 points.
+- Each timestamp must be an integer (seconds).
+- Base timestamps on the relevant content timing.
+- Write naturally and clearly for general readers.
 `;
 
   const res = await axios.post(
@@ -115,9 +138,9 @@ export async function POST(req) {
   const session = client.startSession();
 
   try {
-    const { cloudUrl, _id, userId, duration, cost } = await req.json();
+    const { cloudUrl, _id, userId, duration, cost, option } = await req.json();
 
-    if (!cloudUrl || !_id || !userId || !duration || !cost) {
+    if (!cloudUrl || !_id || !userId || !duration || !cost || !option) {
       return NextResponse.json(
         { message: "Missing parameters" },
         { status: 400 }
@@ -190,7 +213,7 @@ export async function POST(req) {
     console.log("Total segments:", segmentsAll.length);
 
     // tóm tắt bằng GPT có timestamp
-    const summaryText = await summarizeTranscript(segmentsAll);
+    const summaryText = await summarizeTranscript(segmentsAll, option);
 
     let result;
     await session.withTransaction(async () => {
@@ -205,6 +228,7 @@ export async function POST(req) {
           userId: new ObjectId(userId),
           videoId: new ObjectId(_id),
           summary: summaryText,
+          option: option,
         },
         { session }
       );

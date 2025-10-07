@@ -44,6 +44,7 @@ const SummaryOption = ({ videoData, session }) => {
         userId: session.user.id,
         duration: videoData.duration,
         cost: videoCost,
+        option: summaryOption,
       }),
     });
 
@@ -58,12 +59,11 @@ const SummaryOption = ({ videoData, session }) => {
       add_summary_to_local_storage_by_video_id(
         videoData._id,
         data.summary,
-        data.summaryId
+        data.summaryId,
+        summaryOption
       );
       toast.success("Summary successfully generated!");
-      router.push(
-        `/main/summary/${videoData._id}?summaryId=${data.summaryId}`
-      );
+      router.push(`/main/summary/${videoData._id}?summaryId=${data.summaryId}`);
     }
     setIsProcessing(false);
   };

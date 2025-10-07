@@ -31,8 +31,8 @@ const LandingPageNavbar = () => {
           <div className="hidden md:flex items-center gap-6">
             {session ? (
               <>
-                <Link href="/feedback" className="hover:text-gray-600">
-                  Feedback
+                <Link href="/history" className="hover:text-gray-600">
+                  History
                 </Link>
                 <Link href="/pricing" className="hover:text-gray-600">
                   Pricing
@@ -118,8 +118,8 @@ const LandingPageNavbar = () => {
         <div className="flex flex-col gap-4 px-6 py-6">
           {session ? (
             <>
-              <Link href="/feedback" className="hover:text-gray-600">
-                Feedback
+              <Link href="/history" className="hover:text-gray-600">
+                History
               </Link>
               <Link href="/pricing" className="hover:text-gray-600">
                 Pricing
