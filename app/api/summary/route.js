@@ -149,6 +149,7 @@ export async function POST(req) {
 
     const db = await connectDB();
     const users = db.collection("users");
+    const videos = db.collection("videos");
     const summaries = db.collection("summary");
 
     const user = await users.findOne({ _id: new ObjectId(userId) });
@@ -163,56 +164,68 @@ export async function POST(req) {
       );
     }
 
-    // tải video từ cloud
-    const response = await axios.get(cloudUrl, { responseType: "arraybuffer" });
-    const audioBuffer = Buffer.from(response.data);
-
-    const segmentDuration = 240; // 4 phút/segment
-    const totalDuration = duration;
+    const videoDoc = await videos.findOne({ _id: new ObjectId(_id) });
     let segmentsAll = [];
 
-    // chia nhỏ audio và gửi Whisper
-    for (let start = 0; start < totalDuration; start += segmentDuration) {
-      const segmentBuffer = await extractAudioSegment(
-        audioBuffer,
-        start,
-        segmentDuration
-      );
+    if (videoDoc && videoDoc.transcript && videoDoc.transcript.length > 0) {
+      console.log("Using existing transcript from DB");
+      segmentsAll = videoDoc.transcript;
+    } else {
+      console.log("No transcript found, generating new...");
 
-      const form = new FormData();
-      form.append("file", segmentBuffer, {
-        filename: `chunk_${start}.mp3`,
-        contentType: "audio/mp3",
+      const response = await axios.get(cloudUrl, {
+        responseType: "arraybuffer",
       });
-      form.append("model", "whisper-1");
-      form.append("response_format", "verbose_json");
+      const audioBuffer = Buffer.from(response.data);
 
-      const whisperRes = await axios.post(WHISPER_API_URL, form, {
-        headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-          ...form.getHeaders(),
-        },
-      });
+      const segmentDuration = 240;
+      const totalDuration = duration;
 
-      const parsed =
-        typeof whisperRes.data === "string"
-          ? JSON.parse(whisperRes.data)
-          : whisperRes.data;
+      for (let start = 0; start < totalDuration; start += segmentDuration) {
+        const segmentBuffer = await extractAudioSegment(
+          audioBuffer,
+          start,
+          segmentDuration
+        );
 
-      if (parsed.segments && Array.isArray(parsed.segments)) {
-        parsed.segments.forEach((seg) => {
-          segmentsAll.push({
-            start: seg.start + start,
-            end: seg.end + start,
-            text: seg.text.trim(),
-          });
+        const form = new FormData();
+        form.append("file", segmentBuffer, {
+          filename: `chunk_${start}.mp3`,
+          contentType: "audio/mp3",
         });
+        form.append("model", "whisper-1");
+        form.append("response_format", "verbose_json");
+
+        const whisperRes = await axios.post(WHISPER_API_URL, form, {
+          headers: {
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
+            ...form.getHeaders(),
+          },
+        });
+
+        const parsed =
+          typeof whisperRes.data === "string"
+            ? JSON.parse(whisperRes.data)
+            : whisperRes.data;
+
+        if (parsed.segments && Array.isArray(parsed.segments)) {
+          parsed.segments.forEach((seg) => {
+            segmentsAll.push({
+              start: seg.start + start,
+              end: seg.end + start,
+              text: seg.text.trim(),
+            });
+          });
+        }
       }
+
+      await videos.updateOne(
+        { _id: new ObjectId(_id) },
+        { $set: { transcript: segmentsAll } }
+      );
+      console.log("Transcript saved to DB");
     }
 
-    console.log("Total segments:", segmentsAll.length);
-
-    // tóm tắt bằng GPT có timestamp
     const summaryText = await summarizeTranscript(segmentsAll, option);
 
     let result;
@@ -229,6 +242,7 @@ export async function POST(req) {
           videoId: new ObjectId(_id),
           summary: summaryText,
           option: option,
+          createdAt: new Date(),
         },
         { session }
       );
