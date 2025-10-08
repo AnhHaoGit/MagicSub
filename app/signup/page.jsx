@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Google } from "@lobehub/icons";
 import { useRouter } from "next/navigation";
@@ -44,13 +44,21 @@ const SignupPage = () => {
     }
     setLoading(true);
 
-    const res = await fetch("/api/signup", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-      headers: { "Content-Type": "application/json" },
-    });
+    try {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        headers: { "Content-Type": "application/json" },
+      });
 
-    if (res.ok) {
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message || "Signup failed");
+        setLoading(false);
+        return;
+      }
+
       const result = await signIn("credentials", {
         email,
         password,
@@ -58,22 +66,22 @@ const SignupPage = () => {
       });
 
       if (result.ok) {
-        router.push("/");
         toast.success("Signup successful!");
+        router.push("/survey");
       } else {
         toast.error("Login failed");
       }
-    } else {
-      const { message, error } = await res.json();
-      console.log(error);
-      toast.error(message || "Signup failed");
+    } catch (error) {
+      console.error(error);
+      toast.error("Signup failed");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleGoogleSignup = async () => {
     setLoadingGoogle(true);
-    await signIn("google", { callbackUrl: "/" });
+    await signIn("google", { callbackUrl: "/survey" });
   };
 
   return (
