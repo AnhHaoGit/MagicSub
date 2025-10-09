@@ -4,13 +4,12 @@ import MainNavbar from "@/components/MainNavbar";
 import { useState, useEffect } from "react";
 import HistoryBox from "@/components/HistoryBox";
 import SuggestAFeature from "@/components/SuggestAFeature";
-import HardSubbedBox from "@/components/HardSubbedBox";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 
 const Page = () => {
   const [videoData, setVideoData] = useState(null);
-  const [hardSubbedData, setHardSubbedData] = useState(null);
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -26,59 +25,57 @@ const Page = () => {
     setVideoData(videos);
   }, []);
 
-  useEffect(() => {
-    let hardSubbedVideo = [];
-    for (let video of videoData || []) {
-      if (video.cloudUrls && video.cloudUrls.length > 0) {
-        for (let url of video.cloudUrls) {
-          const newEntry = {
-            videoId: video._id,
-            id: url.id,
-            title: video.title,
-            duration: video.duration,
-            thumbnailUrl: video.thumbnailUrl,
-            url: url.url,
-            createdAt: url.createdAt,
-          };
-          hardSubbedVideo.push(newEntry);
-        }
-      }
-    }
+  const handleDeleteClick = async (videoId, userId) => {
+    try {
+      const res = await fetch("/api/delete_video", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          videoId,
+        }),
+      });
 
-    setHardSubbedData(hardSubbedVideo);
-  }, [videoData]);
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message || "Failed to delete video.");
+        return;
+      }
+
+      // ✅ Cập nhật lại state và localStorage sau khi xoá thành công
+      setVideoData((prev) => {
+        const updated = prev.filter((v) => v._id !== videoId);
+        localStorage.setItem("videos", JSON.stringify(updated));
+        return updated;
+      });
+
+      toast.success("Video deleted successfully.");
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred while deleting the video.");
+    }
+  };
 
   return (
     <>
       <MainNavbar />
-      <main className="w-full px-2 sm:px-4 lg:px-10 flex flex-col lg:flex-row justify-between items-center lg:items-start gap-6 lg:gap-10 py-25">
-        <div className="w-full lg:w-1/2 flex flex-col items-center">
-          <p className="font-bold text-2xl sm:text-3xl">History</p>
-          <div className="sm:mt-10 gap-5 flex flex-col items-center w-full max-w-2xl">
-            {videoData &&
-              videoData.map((video) => (
-                <HistoryBox key={video._id} video={video} />
-              ))}
-            {!videoData ||
-              (videoData.length === 0 && (
-                <p className="text-gray-500">No files uploaded yet</p>
-              ))}
+      <main className="w-full px-4 lg:px-10 py-10 flex flex-col lg:flex-row gap-10 justify-between items-start pt-25">
+        {videoData && videoData.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {videoData.map((video) => (
+              <HistoryBox
+                key={video._id}
+                video={video}
+                onDelete={handleDeleteClick}
+              />
+            ))}
           </div>
-        </div>
-
-        <div className="w-full lg:w-1/2 flex flex-col items-center mt-20 lg:mt-0">
-          <p className="font-bold text-2xl sm:text-3xl">Hard-subbed video</p>
-          <div className="mt-6 sm:mt-10 gap-5 flex flex-col items-center w-full max-w-2xl">
-            {hardSubbedData &&
-              hardSubbedData.map((data) => (
-                <HardSubbedBox key={data.id} data={data} />
-              ))}
-            {!hardSubbedData ||
-              (hardSubbedData.length === 0 && (
-                <p className="text-gray-500">No hard-subbed video yet</p>
-              ))}
-          </div>
-        </div>
+        ) : (
+          <p className="text-gray-500 text-center text-lg">
+            No files uploaded yet
+          </p>
+        )}
 
         <SuggestAFeature />
       </main>

@@ -28,7 +28,7 @@ const LanguageSelect = ({ title, language, handleLanguageChange, languagesList }
           value={language}
           onValueChange={handleLanguageChange}
         >
-          <Select.Trigger className="flex justify-between items-center w-full p-3 bg-white rounded-lg shadow-md cursor-pointer text-sm">
+          <Select.Trigger className="flex justify-between items-center w-full p-2 bg-white rounded-lg shadow-md cursor-pointer text-sm">
             <Select.Value placeholder="Select a language" />
             <Select.Icon>
               <ChevronDownIcon />

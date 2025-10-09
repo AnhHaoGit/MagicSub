@@ -23,7 +23,7 @@ const SelectBox = ({ label, value, onValueChange, options, placeholder }) => {
     <div className="w-full flex flex-col items-start">
       <span className="text-[10px] mb-1">{label}</span>
       <Select.Root value={value} onValueChange={onValueChange}>
-        <Select.Trigger className="flex justify-between items-center w-full px-2 py-1 bg-white rounded-md shadow cursor-pointer text-xs">
+        <Select.Trigger className="flex justify-between items-center w-full p-2 bg-white rounded-md shadow cursor-pointer text-xs">
           <Select.Value placeholder={placeholder} />
           <Select.Icon>
             <ChevronDownIcon className="w-3 h-3" />
@@ -35,7 +35,7 @@ const SelectBox = ({ label, value, onValueChange, options, placeholder }) => {
             className="z-50 bg-white rounded-md shadow-md max-h-48 overflow-y-auto"
             position="popper"
           >
-            <Select.Viewport className="p-1">
+            <Select.Viewport className="p-2">
               {options.map((opt) => (
                 <SelectItem key={opt.label} value={opt.value}>
                   {opt.label}

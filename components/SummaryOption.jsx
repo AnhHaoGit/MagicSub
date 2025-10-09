@@ -11,6 +11,7 @@ import {
 } from "@/lib/local_storage_handlers";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const SummaryOption = ({ videoData, session }) => {
   const [summaryOption, setSummaryOption] = useState("short_summary");
@@ -25,11 +26,20 @@ const SummaryOption = ({ videoData, session }) => {
     setSummaryOption(value);
   };
 
-  console.log("Selected summary option:", summaryOption);
-
   const handleTranslate = async () => {
     if (!session) {
       toast.error("Please login to continue the process.");
+      return;
+    }
+
+    // Nếu summary cùng loại option đã tồn tại thì không tạo lại
+    if (
+      videoData.summaries &&
+      videoData.summaries.find((sum) => sum.option === summaryOption)
+    ) {
+      toast.error(
+        `Summary with "${summaryOption}" option already exists! Please choose another type or edit the existing one.`
+      );
       return;
     }
 
@@ -54,7 +64,6 @@ const SummaryOption = ({ videoData, session }) => {
       setIsProcessing(false);
       return;
     } else {
-      console.log("Summary response data:", data.summary);
       update_gems(videoCost);
       add_summary_to_local_storage_by_video_id(
         videoData._id,
@@ -69,7 +78,33 @@ const SummaryOption = ({ videoData, session }) => {
   };
 
   return (
-    <>
+    <div className="w-full h-full flex flex-col items-center max-h-[60vh] justify-between">
+      <div className="w-full max-w-md border border-gray-300 rounded-xl p-4 bg-white shadow-sm">
+        <h3 className="font-semibold text-center mb-2">Generated Summaries</h3>
+        <div className="w-full overflow-y-auto space-y-2 flex flex-col max-h-[80px]">
+          {videoData?.summaries && videoData.summaries.length > 0 ? (
+            videoData.summaries.map((sum, index) => (
+              <Link
+                href={`/main/summary/${videoData._id}?summaryId=${sum._id}`}
+                key={index}
+                className="text-sm w-full bg-gray-100 rounded-lg px-3 py-2 hover:bg-gray-200 transition-colors"
+              >
+                <span className="font-medium">
+                  {sum.summary?.title || "Untitled Summary"}
+                </span>
+                <span className="text-xs text-gray-500 ml-2">
+                  ({sum.option})
+                </span>
+              </Link>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 text-center">
+              No summaries generated yet
+            </p>
+          )}
+        </div>
+      </div>
+
       <SelectBox
         options={summary_options}
         label="Summary Options"
@@ -77,9 +112,10 @@ const SummaryOption = ({ videoData, session }) => {
         onValueChange={handleSummaryOptionChange}
         placeholder="Select Summary Type"
       />
-      <div className="flex flex-col justify-between items-center gap-5 mt-6">
+
+      <div className="flex flex-col justify-between items-center gap-3 mt-6">
         <button
-          className="flex items-center gap-2 bg-iris text-white rounded-full py-3 px-10 md:py-4 md:px-20 shadow-xl font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm md:text-base"
+          className="flex items-center gap-2 bg-iris text-white rounded-full py-2 px-8 md:py-3 md:px-15 shadow-xl font-semibold justify-center hover:bg-violet transition-colors cursor-pointer text-xs md:text-sm"
           onClick={handleTranslate}
         >
           {isProcessing ? (
@@ -111,7 +147,7 @@ const SummaryOption = ({ videoData, session }) => {
           You will be charged {videoCost} 💎 for this video
         </p>
       </div>
-    </>
+    </div>
   );
 };
 

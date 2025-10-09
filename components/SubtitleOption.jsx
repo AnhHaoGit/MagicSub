@@ -7,16 +7,19 @@ import { source_languages } from "@/lib/source_languages";
 import { toast } from "react-toastify";
 import { useState } from "react";
 import calculateCost from "@/lib/calculateCost";
+import { useRouter } from "next/navigation";
 
 import {
   add_subtitle_to_local_storage_by_video_id,
   update_gems,
 } from "@/lib/local_storage_handlers";
+import Link from "next/link";
 
 const SubtitleOption = ({ videoData, session }) => {
   const [sourceLanguage, setSourceLanguage] = useState("en");
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isProcessing, setIsProcessing] = useState(false);
+  const router = useRouter();
   const videoCost = videoData
     ? calculateCost(videoData.size, videoData.duration)
     : 0;
@@ -79,18 +82,53 @@ const SubtitleOption = ({ videoData, session }) => {
     }
     setIsProcessing(false);
   };
+
+  function getLanguageNameByCode(code) {
+    if (!code) return "Unknown";
+    const lang = languages.find(
+      (l) => l.code.toLowerCase() === code.toLowerCase()
+    );
+    return lang ? lang.name : "Unknown";
+  }
+
   return (
-    <>
-      <div className="flex flex-col w-full items-center gap-4">
-        <LanguageSelect
-          title="Source Language"
-          language={sourceLanguage}
-          handleLanguageChange={handleSourceLanguageChange}
-          languagesList={source_languages}
-        />
-        <p className="gray text-xs">
-          Choose source language for more accurate transcription
-        </p>
+    <div className="w-full h-full flex flex-col items-center max-h-[60vh] justify-between">
+      <div className="w-full max-w-md border border-gray-300 rounded-xl p-4 bg-white shadow-sm">
+        <h3 className="font-semibold text-center mb-2">Generated Subtitles</h3>
+        <div className="w-full overflow-y-auto space-y-2 flex flex-col max-h-[80px]">
+          {videoData?.subtitles && videoData.subtitles.length > 0 ? (
+            videoData.subtitles.map((sub, index) => (
+              <Link
+                href={`/main/custom_subtitle/${videoData._id}?subtitleId=${sub._id}`}
+                key={index}
+                className="text-sm w-full bg-gray-100 rounded-lg px-3 py-2 hover:bg-gray-200 transition-colors"
+              >
+                <span className="font-medium">
+                  {getLanguageNameByCode(sub.language)}
+                </span>{" "}
+              </Link>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 text-center">
+              No subtitles generated yet
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="w-full">
+        <div className="flex flex-col items-center gap-1">
+          <LanguageSelect
+            title="Source Language"
+            language={sourceLanguage}
+            handleLanguageChange={handleSourceLanguageChange}
+            languagesList={source_languages}
+          />
+          <p className="gray text-xs">
+            Choose source language for more accurate transcription
+          </p>
+        </div>
+
         <LanguageSelect
           title="Target Language"
           language={targetLanguage}
@@ -98,9 +136,10 @@ const SubtitleOption = ({ videoData, session }) => {
           languagesList={languages}
         />
       </div>
-      <div className="flex flex-col justify-between items-center gap-5 mt-6">
+
+      <div className="flex flex-col justify-between items-center gap-3 mt-6">
         <button
-          className="flex items-center gap-2 bg-iris text-white rounded-full py-3 px-10 md:py-4 md:px-20 shadow-xl font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm md:text-base"
+          className="flex items-center gap-2 bg-iris text-white rounded-full py-2 px-8 md:py-3 md:px-15 shadow-xl font-semibold justify-center hover:bg-violet transition-colors cursor-pointer text-xs md:text-sm"
           onClick={handleTranslate}
         >
           {isProcessing ? (
@@ -132,7 +171,7 @@ const SubtitleOption = ({ videoData, session }) => {
           You will be charged {videoCost} 💎 for this video
         </p>
       </div>
-    </>
+    </div>
   );
 };
 

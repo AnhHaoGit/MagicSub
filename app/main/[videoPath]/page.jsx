@@ -52,8 +52,8 @@ export default function VideoPage() {
           </div>
 
           {/* Sidebar settings */}
-          <div className="w-full md:w-1/3 h-auto md:h-[70vh] flex flex-col items-center justify-between p-5 bg-smoke rounded-4xl shadow-lg">
-            <div className="flex items-center justify-center top-3 shadow-lg gap-3 sm:gap-5 bg-white p-2 rounded-4xl">
+          <div className="w-full md:w-1/3 h-auto md:h-[70vh] flex flex-col items-center gap-7 justify-between p-5 bg-smoke rounded-4xl shadow-lg">
+            <div className="flex w-full items-center justify-center top-3 shadow-lg gap-3 sm:gap-5 bg-white p-2 rounded-4xl">
               <button
                 onClick={() => setOption("subtitle")}
                 className={`w-24 gap-2 sm:w-30 flex justify-center items-center sm:text-base black hover:bg-zinc-200 rounded-2xl py-1`}
