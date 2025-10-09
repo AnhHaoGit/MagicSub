@@ -15,17 +15,11 @@ export default function Page() {
   const [error, setError] = useState(null);
   const router = useRouter();
 
-  console.log(productsData);
-
-  console.log(session);
-
   const getSubscriptionStatus = (planName) => {
     if (!session?.user?.subscription) {
       return "Select Plan";
     } else {
-      if (
-        planName === session.user.subscription.data.attributes.product_name
-      ) {
+      if (planName === session.user.subscription.data.attributes.product_name) {
         return "Your Current Plan";
       } else {
         return "Select Plan";
@@ -195,7 +189,9 @@ function PlanCard({ product, status }) {
         href={product.checkoutUrl}
         className={`mt-auto inline-block rounded-lg px-5 py-2 text-center font-medium text-white transition ${
           popular ? "bg-iris hover:bg-violet" : "bg-black hover:bg-gray"
-        } ${status === "Your Current Plan" ? "pointer-events-none opacity-60" : ""}`}
+        } ${
+          status === "Your Current Plan" ? "pointer-events-none opacity-60" : ""
+        }`}
         target={status === "Your Current Plan" ? "_self" : "_blank"}
         rel="noreferrer"
       >
