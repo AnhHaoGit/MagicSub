@@ -15,7 +15,7 @@ import {
 } from "@/lib/local_storage_handlers";
 import Link from "next/link";
 
-const SubtitleOption = ({ videoData, session }) => {
+const SubtitleOption = ({ videoData, session, setLoading }) => {
   const [sourceLanguage, setSourceLanguage] = useState("en");
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -48,6 +48,7 @@ const SubtitleOption = ({ videoData, session }) => {
     }
 
     setIsProcessing(true);
+    setLoading(true);
     const res = await fetch("/api/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -66,6 +67,7 @@ const SubtitleOption = ({ videoData, session }) => {
     if (!res.ok) {
       toast.error(data.message);
       setIsProcessing(false);
+      setLoading(false);
       return;
     } else {
       add_subtitle_to_local_storage_by_video_id(
@@ -81,6 +83,7 @@ const SubtitleOption = ({ videoData, session }) => {
       );
     }
     setIsProcessing(false);
+    setLoading(false);
   };
 
   function getLanguageNameByCode(code) {

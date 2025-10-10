@@ -34,9 +34,9 @@ const LandingPageNavbar = () => {
                 <Link href="/history" className="hover:text-gray-600">
                   History
                 </Link>
-                <Link href="/pricing" className="hover:text-gray-600">
+                {/* <Link href="/pricing" className="hover:text-gray-600">
                   Pricing
-                </Link>
+                </Link> */}
                 {session.user.subscription && (
                   <Link href="/subscription" className="hover:text-gray-600">
                     Subscription
@@ -121,9 +121,9 @@ const LandingPageNavbar = () => {
               <Link href="/history" className="hover:text-gray-600">
                 History
               </Link>
-              <Link href="/pricing" className="hover:text-gray-600">
+              {/* <Link href="/pricing" className="hover:text-gray-600">
                 Pricing
-              </Link>
+              </Link> */}
               <button
                 onClick={handleSignout}
                 className="hover:text-gray-600 text-left"

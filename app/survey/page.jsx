@@ -16,6 +16,7 @@ const SurveyPage = () => {
 
   const options = [
     "Instagram",
+    "X",
     "Youtube",
     "Facebook",
     "TikTok",

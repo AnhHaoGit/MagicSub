@@ -17,6 +17,7 @@ export default function VideoPage() {
   const [videoData, setVideoData] = useState(null);
   const [userData, setUserData] = useState(null);
   const [option, setOption] = useState("summary");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -55,6 +56,7 @@ export default function VideoPage() {
           <div className="w-full md:w-1/3 h-auto md:h-[70vh] flex flex-col items-center gap-7 justify-between p-5 bg-smoke rounded-4xl shadow-lg">
             <div className="flex w-full items-center justify-center top-3 shadow-lg gap-3 sm:gap-5 bg-white p-2 rounded-4xl">
               <button
+                disabled={loading}
                 onClick={() => setOption("subtitle")}
                 className={`w-24 gap-2 sm:w-30 flex justify-center items-center sm:text-base black hover:bg-zinc-200 rounded-2xl py-1`}
               >
@@ -80,6 +82,7 @@ export default function VideoPage() {
                 <span className="text-xs">Subtitle</span>
               </button>
               <button
+                disabled={loading}
                 onClick={() => setOption("summary")}
                 className={`w-24 gap-2 sm:w-30 flex justify-center items-center sm:text-base black hover:bg-zinc-200 rounded-2xl py-1`}
               >
@@ -104,6 +107,7 @@ export default function VideoPage() {
                 <span className="text-xs">Summary</span>
               </button>
               <button
+                disabled={loading}
                 onClick={() => setOption("quizzes")}
                 className={`w-24 gap-2 sm:w-30 flex justify-center items-center sm:text-base black hover:bg-zinc-200 rounded-2xl py-1`}
               >
@@ -129,13 +133,25 @@ export default function VideoPage() {
               </button>
             </div>
             {option === "subtitle" && (
-              <SubtitleOption videoData={videoData} session={session} />
+              <SubtitleOption
+                videoData={videoData}
+                session={session}
+                setLoading={setLoading}
+              />
             )}
             {option === "summary" && (
-              <SummaryOption videoData={videoData} session={session} />
+              <SummaryOption
+                videoData={videoData}
+                session={session}
+                setLoading={setLoading}
+              />
             )}
             {option === "quizzes" && (
-              <QuizzesOption videoData={videoData} session={session} />
+              <QuizzesOption
+                videoData={videoData}
+                session={session}
+                setLoading={setLoading}
+              />
             )}
           </div>
         </div>

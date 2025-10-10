@@ -13,7 +13,7 @@ import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const SummaryOption = ({ videoData, session }) => {
+const SummaryOption = ({ videoData, session, setLoading }) => {
   const [summaryOption, setSummaryOption] = useState("short_summary");
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
@@ -44,6 +44,7 @@ const SummaryOption = ({ videoData, session }) => {
     }
 
     setIsProcessing(true);
+    setLoading(true);
     const res = await fetch("/api/summary", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -62,6 +63,7 @@ const SummaryOption = ({ videoData, session }) => {
     if (!res.ok) {
       toast.error(data.message);
       setIsProcessing(false);
+      setLoading(false);
       return;
     } else {
       update_gems(videoCost);
@@ -75,6 +77,7 @@ const SummaryOption = ({ videoData, session }) => {
       router.push(`/main/summary/${videoData._id}?summaryId=${data.summaryId}`);
     }
     setIsProcessing(false);
+    setLoading(false);
   };
 
   return (

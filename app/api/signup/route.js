@@ -55,7 +55,7 @@ export async function POST(req) {
         background_opacity: 55,
         margin_bottom: 15,
       },
-      gems: 0,
+      gems: 500,
       subscription: null,
     });
 
