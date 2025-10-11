@@ -3,6 +3,7 @@ import format_duration from "@/lib/format_duration";
 import Link from "next/link";
 
 const HistoryBox = ({ video, onDelete }) => {
+  console.log("Rendering HistoryBox for video:", video);
   const [showConfirm, setShowConfirm] = useState(false);
 
   function formatBytes(bytes) {
@@ -35,6 +36,29 @@ const HistoryBox = ({ video, onDelete }) => {
     setShowConfirm(false);
   };
 
+  function timeAgo(dateString) {
+    const now = new Date();
+    const created = new Date(dateString);
+    const diffMs = now - created;
+
+    const seconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    function pluralize(value, unit) {
+      return `${value} ${unit}${value !== 1 ? "s" : ""} ago`;
+    }
+
+    if (seconds < 60) return pluralize(seconds, "second");
+    if (minutes < 60) return pluralize(minutes, "minute");
+    if (hours < 24) return pluralize(hours, "hour");
+    if (days < 7) return pluralize(days, "day");
+    if (days < 30) return pluralize(Math.floor(days / 7), "week");
+    if (days < 365) return pluralize(Math.floor(days / 30), "month");
+    return pluralize(Math.floor(days / 365), "year");
+  }
+
   return (
     <>
       <Link
@@ -55,13 +79,14 @@ const HistoryBox = ({ video, onDelete }) => {
         <div className="p-3 flex flex-col gap-2">
           <p className="font-semibold text-sm line-clamp-2">{video.title}</p>
 
-          <div className="flex gap-1 items-center text-xs text-gray-500">
-            <p>Uploaded at {new Date(video.createdAt).toLocaleDateString()}</p>
-            <p>{format_duration(video.duration)}</p>
-          </div>
+          <p className="text-xs text-gray-500">
+            Uploaded {timeAgo(video.createdAt)}
+          </p>
+          <p className="text-xs text-gray-500">
+            Duration: {format_duration(video.duration)}
+          </p>
 
-          <div className="text-xs flex justify-between items-center text-gray-500">
-            <p>Size: {formatBytes(video.size)}</p>
+          <div className="text-xs flex justify-end items-center text-gray-500">
             <button
               onClick={handleDeleteClick}
               className="p-1 rounded-full hover:bg-gray-100"

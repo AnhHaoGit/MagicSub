@@ -434,21 +434,21 @@ bg-[${customize.background_color}]`;
             <div className="lg:h-1/5 w-full bg-smoke rounded-2xl flex flex-wrap sm:flex-nowrap items-center justify-center">
               <div className="flex justify-center items-end gap-3">
                 <button
-                  className="py-2 px-3 rounded-4xl text-xs sm:text-sm transition-colors bg-black white hover:bg-gray"
+                  className="py-2 px-3 rounded-4xl text-[9px] sm:text-[10px] md:text-xs lg:text-sm transition-colors bg-black white hover:bg-gray"
                   onClick={handleDownloadSrt}
                   disabled={isDownloadingSrt}
                 >
                   {isDownloadingSrt ? "Downloading..." : "Download .srt"}
                 </button>
                 <button
-                  className="py-2 px-3 rounded-4xl text-xs sm:text-sm transition-colors bg-black white hover:bg-gray"
+                  className="py-2 px-3 rounded-4xl text-[9px] sm:text-[10px] md:text-xs lg:text-sm transition-colors bg-black white hover:bg-gray"
                   onClick={handleDownloadAss}
                   disabled={isDownloadingAss}
                 >
                   {isDownloadingAss ? "Downloading..." : "Download .ass"}
                 </button>
                 <button
-                  className="py-2 px-3 rounded-4xl text-xs sm:text-sm transition-colors bg-black white hover:bg-gray"
+                  className="py-2 px-3 rounded-4xl text-[9px] sm:text-[10px] md:text-xs lg:text-sm transition-colors bg-black white hover:bg-gray"
                   onClick={handleDownloadTxt}
                   disabled={isDownloadingTxt}
                 >
@@ -456,7 +456,7 @@ bg-[${customize.background_color}]`;
                 </button>
                 <button
                   onClick={handleGenerateVideo}
-                  className="flex items-center gap-2 py-2 px-3 font-semibold rounded-4xl text-xs sm:text-sm transition-colors bg-iris text-white hover:bg-violet"
+                  className="flex items-center gap-2 py-2 px-3 font-semibold rounded-4xl text-[9px] sm:text-[10px] md:text-xs lg:text-sm transition-colors bg-iris text-white hover:bg-violet"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -473,7 +473,7 @@ bg-[${customize.background_color}]`;
                         viewBox="0 0 24 24"
                         strokeWidth={1.5}
                         stroke="currentColor"
-                        className="size-5"
+                        className="size-4 md:size-5"
                       >
                         <path
                           strokeLinecap="round"
@@ -485,12 +485,12 @@ bg-[${customize.background_color}]`;
                   )}
                 </button>
                 <div className="flex flex-col items-center">
-                  <span className="text-[10px] gray font-bold mb-1">
+                  <span className="hidden md:text-[10px] md:text-gray-500 md:font-bold md:mb-1 md:inline">
                     New Feature
                   </span>
                   <Link
                     href={`/main/live/${videoData._id}?subtitleId=${subtitleId}`}
-                    className="py-2 px-3 rounded-4xl text-xs sm:text-sm font-semibold transition-colors bg-iris text-white hover:bg-violet"
+                    className="py-2 px-3 rounded-4xl text-[9px] sm:text-[10px] md:text-xs lg:text-sm font-semibold transition-colors bg-iris text-white hover:bg-violet"
                   >
                     Stream Video
                   </Link>
@@ -538,15 +538,15 @@ bg-[${customize.background_color}]`;
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="size-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"
-                  />
-                </svg>
+                    stroke="currentColor"
+                    className="size-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"
+                    />
+                  </svg>
                 )}
                 <span className="text-xs">Style</span>
               </button>
