@@ -26,9 +26,9 @@ async function connectDB() {
   return db;
 }
 
-const formatLanguage = (code) => {
-  const lang = languages.find((l) => l.code === code);
-  return lang ? lang.name : code;
+const formatLanguage = (value) => {
+  const lang = languages.find((l) => l.value === value);
+  return lang ? lang.label : value;
 };
 
 const formatSrtFile = (data, lastSecond) => {

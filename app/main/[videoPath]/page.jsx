@@ -15,8 +15,7 @@ export default function VideoPage() {
   const { videoPath } = useParams();
   const { data: session, status } = useSession();
   const [videoData, setVideoData] = useState(null);
-  const [userData, setUserData] = useState(null);
-  const [option, setOption] = useState("summary");
+  const [option, setOption] = useState("subtitle");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -31,11 +30,6 @@ export default function VideoPage() {
     const found = video.find((v) => v._id === videoPath);
     setVideoData(found);
   }, [videoPath]);
-
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user")) || [];
-    setUserData(user);
-  }, []);
 
   return (
     <>

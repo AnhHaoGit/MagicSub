@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { useState } from "react";
 import calculateCost from "@/lib/calculateCost";
 import { useRouter } from "next/navigation";
+import SelectBox from "@/components/SelectBox";
 
 import {
   add_subtitle_to_local_storage_by_video_id,
@@ -86,12 +87,12 @@ const SubtitleOption = ({ videoData, session, setLoading }) => {
     setLoading(false);
   };
 
-  function getLanguageNameByCode(code) {
-    if (!code) return "Unknown";
+  function getLanguageNameByCode(value) {
+    if (!value) return "Unknown";
     const lang = languages.find(
-      (l) => l.code.toLowerCase() === code.toLowerCase()
+      (l) => l.value.toLowerCase() === value.toLowerCase()
     );
-    return lang ? lang.name : "Unknown";
+    return lang ? lang.label : "Unknown";
   }
 
   return (
@@ -119,24 +120,26 @@ const SubtitleOption = ({ videoData, session, setLoading }) => {
         </div>
       </div>
 
-      <div className="w-full">
-        <div className="flex flex-col items-center gap-1">
-          <LanguageSelect
-            title="Source Language"
-            language={sourceLanguage}
-            handleLanguageChange={handleSourceLanguageChange}
-            languagesList={source_languages}
+      <div className="w-full flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-1 w-full">
+          <SelectBox
+            options={source_languages}
+            label="Source Language"
+            value={sourceLanguage}
+            onValueChange={handleSourceLanguageChange}
+            placeholder="Select Source Language"
           />
-          <p className="gray text-xs">
+          <p className="gray text-[10px]">
             Choose source language for more accurate transcription
           </p>
         </div>
 
-        <LanguageSelect
-          title="Target Language"
-          language={targetLanguage}
-          handleLanguageChange={handleTargetLanguageChange}
-          languagesList={languages}
+        <SelectBox
+          options={languages}
+          label="Target Language"
+          value={targetLanguage}
+          onValueChange={handleTargetLanguageChange}
+          placeholder="Select Target Language"
         />
       </div>
 

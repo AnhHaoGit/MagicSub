@@ -12,11 +12,13 @@ import {
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { languages } from "@/lib/languages";
 
 const SummaryOption = ({ videoData, session, setLoading }) => {
   const [summaryOption, setSummaryOption] = useState("short_summary");
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
+  const [targetLanguage, setTargetLanguage] = useState("en");
 
   const videoCost = videoData
     ? calculateCost(videoData.size, videoData.duration)
@@ -24,6 +26,10 @@ const SummaryOption = ({ videoData, session, setLoading }) => {
 
   const handleSummaryOptionChange = (value) => {
     setSummaryOption(value);
+  };
+
+  const handleTargetLanguageChange = (value) => {
+    setTargetLanguage(value);
   };
 
   const handleTranslate = async () => {
@@ -56,6 +62,7 @@ const SummaryOption = ({ videoData, session, setLoading }) => {
         duration: videoData.duration,
         cost: videoCost,
         option: summaryOption,
+        targetLanguage,
       }),
     });
 
@@ -114,6 +121,14 @@ const SummaryOption = ({ videoData, session, setLoading }) => {
         value={summaryOption}
         onValueChange={handleSummaryOptionChange}
         placeholder="Select Summary Type"
+      />
+
+      <SelectBox
+        options={languages}
+        label="Target Language"
+        value={targetLanguage}
+        onValueChange={handleTargetLanguageChange}
+        placeholder="Select Target Language"
       />
 
       <div className="flex flex-col justify-between items-center gap-3 mt-6">

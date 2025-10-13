@@ -6,6 +6,7 @@ import { Readable } from "stream";
 import { spawn } from "child_process";
 import FormData from "form-data";
 import { MongoClient, ObjectId } from "mongodb";
+import { languages } from "@/lib/languages";
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -20,6 +21,11 @@ async function connectDB() {
   }
   return db;
 }
+
+const formatLanguage = (value) => {
+  const lang = languages.find((l) => l.value === value);
+  return lang ? lang.label : value;
+};
 
 async function extractAudioSegment(buffer, start, duration) {
   return new Promise((resolve, reject) => {
@@ -49,7 +55,7 @@ async function extractAudioSegment(buffer, start, duration) {
   });
 }
 
-async function summarizeTranscript(segments, option) {
+async function summarizeTranscript(segments, option, targetLanguage) {
   let styleInstruction = "";
 
   switch (option) {
@@ -74,10 +80,19 @@ Output still must follow the required JSON structure, but each point should be c
       styleInstruction = "Write a balanced structured summary.";
   }
 
+  // 👉 Dùng formatLanguage để chuyển value sang nhãn ngôn ngữ (label)
+  const targetLangLabel = formatLanguage(targetLanguage);
+
   const systemPrompt = `
-You are an expert video summarizer.
+You are an expert multilingual video summarizer.
 Your task is to summarize a video transcript into a structured, timestamped format.
+
 ${styleInstruction}
+
+🟢 VERY IMPORTANT:
+- The summary **must be written entirely in ${targetLangLabel}**.
+- Translate all section titles, points, and the conclusion into ${targetLangLabel}.
+- Keep the JSON structure and key names in English (title, sections, heading, points, text, timestamp, conclusion).
 
 Always return **valid JSON** only, with this exact structure:
 {
@@ -138,9 +153,18 @@ export async function POST(req) {
   const session = client.startSession();
 
   try {
-    const { cloudUrl, _id, userId, duration, cost, option } = await req.json();
+    const { cloudUrl, _id, userId, duration, cost, option, targetLanguage } =
+      await req.json();
 
-    if (!cloudUrl || !_id || !userId || !duration || !cost || !option) {
+    if (
+      !cloudUrl ||
+      !_id ||
+      !userId ||
+      !duration ||
+      !cost ||
+      !option ||
+      !targetLanguage
+    ) {
       return NextResponse.json(
         { message: "Missing parameters" },
         { status: 400 }
@@ -226,7 +250,11 @@ export async function POST(req) {
       console.log("Transcript saved to DB");
     }
 
-    const summaryText = await summarizeTranscript(segmentsAll, option);
+    const summaryText = await summarizeTranscript(
+      segmentsAll,
+      option,
+      targetLanguage
+    );
 
     let result;
     await session.withTransaction(async () => {

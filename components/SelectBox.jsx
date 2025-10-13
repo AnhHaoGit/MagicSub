@@ -19,6 +19,7 @@ const SelectItem = React.forwardRef(({ children, ...props }, forwardedRef) => (
 SelectItem.displayName = "SelectItem";
 
 const SelectBox = ({ label, value, onValueChange, options, placeholder }) => {
+
   return (
     <div className="w-full flex flex-col items-start">
       <span className="text-[10px] mb-1">{label}</span>
