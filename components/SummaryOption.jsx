@@ -32,6 +32,14 @@ const SummaryOption = ({ videoData, session, setLoading }) => {
     setTargetLanguage(value);
   };
 
+  function getLanguageNameByCode(value) {
+    if (!value) return "Unknown";
+    const lang = languages.find(
+      (l) => l.value.toLowerCase() === value.toLowerCase()
+    );
+    return lang ? lang.label : "Unknown";
+  }
+
   const handleTranslate = async () => {
     if (!session) {
       toast.error("Please login to continue the process.");
@@ -41,10 +49,14 @@ const SummaryOption = ({ videoData, session, setLoading }) => {
     // Nếu summary cùng loại option đã tồn tại thì không tạo lại
     if (
       videoData.summaries &&
-      videoData.summaries.find((sum) => sum.option === summaryOption)
+      videoData.summaries.find(
+        (sum) => sum.option === summaryOption && sum.language === targetLanguage
+      )
     ) {
       toast.error(
-        `Summary with "${summaryOption}" option already exists! Please choose another type or edit the existing one.`
+        `Summary with "${summaryOption}" option and language "${getLanguageNameByCode(
+          targetLanguage
+        )}" already exists! Please choose another type or edit the existing one.`
       );
       return;
     }
@@ -78,7 +90,8 @@ const SummaryOption = ({ videoData, session, setLoading }) => {
         videoData._id,
         data.summary,
         data.summaryId,
-        summaryOption
+        summaryOption,
+        targetLanguage
       );
       toast.success("Summary successfully generated!");
       router.push(`/main/summary/${videoData._id}?summaryId=${data.summaryId}`);
@@ -97,14 +110,19 @@ const SummaryOption = ({ videoData, session, setLoading }) => {
               <Link
                 href={`/main/summary/${videoData._id}?summaryId=${sum._id}`}
                 key={index}
-                className="text-sm w-full bg-gray-100 rounded-lg px-3 py-2 hover:bg-gray-200 transition-colors"
+                className="text-sm w-full bg-gray-100 rounded-lg px-3 py-2 flex flex-col gap-1 hover:bg-gray-200 transition-colors"
               >
                 <span className="font-medium">
                   {sum.summary?.title || "Untitled Summary"}
                 </span>
-                <span className="text-xs text-gray-500 ml-2">
-                  ({sum.option})
-                </span>
+                <div className="flex items-center">
+                  <span className="text-xs text-gray-500">
+                    ({sum.option})
+                  </span>
+                  <span className="text-xs text-gray-500 ml-2">
+                    {getLanguageNameByCode(sum.language)}
+                  </span>
+                </div>
               </Link>
             ))
           ) : (

@@ -270,6 +270,7 @@ export async function POST(req) {
           videoId: new ObjectId(_id),
           summary: summaryText,
           option: option,
+          language: targetLanguage,
           createdAt: new Date(),
         },
         { session }
