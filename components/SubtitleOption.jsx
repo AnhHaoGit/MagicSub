@@ -1,6 +1,5 @@
 "use client";
 
-import LanguageSelect from "@/components/LanguageSelect";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { languages } from "@/lib/languages";
 import { source_languages } from "@/lib/source_languages";

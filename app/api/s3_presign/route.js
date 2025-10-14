@@ -36,8 +36,6 @@ export async function POST(req) {
       style,
     } = body;
 
-    console.log(createdAt);
-
     if (!fileName || !fileType) {
       return NextResponse.json(
         { error: "Missing fileName or fileType" },

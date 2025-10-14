@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import SubtitleOption from "@/components/SubtitleOption";
 import SummaryOption from "@/components/SummaryOption";
 import QuizzesOption from "@/components/QuizzesOption";
+import SubbedOption from "@/components/SubbedOption";
 import { useRouter } from "next/navigation";
 import SuggestAFeature from "@/components/SuggestAFeature";
 
@@ -67,7 +68,7 @@ export default function VideoPage() {
                     viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
-                    className="size-4 sm:size-5"
+                    className="size-4"
                   >
                     <path
                       strokeLinecap="round"
@@ -76,7 +77,7 @@ export default function VideoPage() {
                     />
                   </svg>
                 )}
-                <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs lg:text-sm">
+                <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs">
                   Subtitle
                 </span>
               </button>
@@ -99,7 +100,7 @@ export default function VideoPage() {
                     viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
-                    className="size-4 sm:size-5"
+                    className="size-4"
                   >
                     <path
                       strokeLinecap="round"
@@ -108,7 +109,7 @@ export default function VideoPage() {
                     />
                   </svg>
                 )}
-                <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs lg:text-sm">
+                <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs">
                   Summary
                 </span>
               </button>
@@ -131,7 +132,7 @@ export default function VideoPage() {
                     viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
-                    className="size-4 sm:size-5"
+                    className="size-4"
                   >
                     <path
                       strokeLinecap="round"
@@ -140,8 +141,40 @@ export default function VideoPage() {
                     />
                   </svg>
                 )}
-                <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs lg:text-sm">
+                <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs">
                   Quizzes
+                </span>
+              </button>
+
+              <button
+                disabled={loading}
+                onClick={() => setOption("subbed")}
+                className={`w-24 sm:w-28 md:w-32 lg:w-36 flex gap-2 justify-center items-center hover:bg-zinc-200 rounded-3xl py-1 sm:py-2 md:py-3 ${
+                  option === "subbed"
+                    ? "font-semibold text-black"
+                    : "text-gray-700"
+                }`}
+              >
+                {option === "subbed" ? (
+                  <div className="h-[10px] w-[10px] rounded-full bg-iris"></div>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                    />
+                  </svg>
+                )}
+                <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs">
+                  Subbed
                 </span>
               </button>
             </div>
@@ -165,6 +198,12 @@ export default function VideoPage() {
                 videoData={videoData}
                 session={session}
                 setLoading={setLoading}
+              />
+            )}
+            {option === "subbed" && (
+              <SubbedOption
+                videoData={videoData}
+                session={session}
               />
             )}
           </div>

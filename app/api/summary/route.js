@@ -61,23 +61,34 @@ async function summarizeTranscript(segments, option, targetLanguage) {
   switch (option) {
     case "short_summary":
       styleInstruction = `
-Create a concise summary (around 3–5 key sections total) that captures only the main ideas of the video.
-Keep sentences short and easy to skim.`;
+Write a highly condensed, conceptual overview of the video.
+Focus on the *main themes, messages, or ideas* — not details.
+Use 1–3 short sections that summarize the entire video in a broad and insightful way.
+Avoid examples or deep explanations; highlight only what the video is fundamentally about.
+The tone should feel like a quick, high-level executive summary that captures the essence of the content.`;
       break;
+
     case "detailed_summary":
       styleInstruction = `
-Create a detailed, in-depth summary (5–7 sections) explaining the flow of ideas, arguments, or narrative.
-Include more context and clear timestamps to guide the reader.`;
+Write a thorough and structured summary with 5–7 sections.
+Each section should follow the natural flow of the video, explaining transitions, reasoning, and supporting points.
+Provide clear timestamps when possible to indicate content progression.
+The tone should feel like a well-organized outline for someone who hasn’t watched the video but wants to understand it fully.`;
       break;
+
     case "cheat_sheet":
       styleInstruction = `
-Create a "Cheat Sheet" style summary.
-Focus on key points, actionable insights, and practical takeaways.
-Use short bullet points (phrases or sentences).
-Output still must follow the required JSON structure, but each point should be concise and list-like.`;
+Create a practical and memorable "Cheat Sheet" summary.
+Focus on **key insights, facts, or actionable lessons** — short, powerful, and easy to recall.
+Use **short bullet points** or one-line sentences.
+Avoid filler words and long sentences.
+Imagine you're writing quick notes for revision or a pocket guide — simple, clear, and full of value.`;
       break;
+
     default:
-      styleInstruction = "Write a balanced structured summary.";
+      styleInstruction = `
+Write a clear, structured summary that balances conciseness and detail.
+Include logical sections and maintain clarity throughout.`;
   }
 
   // 👉 Dùng formatLanguage để chuyển value sang nhãn ngôn ngữ (label)
@@ -113,7 +124,7 @@ Always return **valid JSON** only, with this exact structure:
 
 Rules:
 - Output must be parseable JSON only (no markdown, no extra text).
-- 3–6 sections total.
+- 3–6 sections total (unless 'short_summary' which can be 1–3).
 - Each section must have 2–6 points.
 - Each timestamp must be an integer (seconds).
 - Base timestamps on the relevant content timing.
@@ -148,6 +159,7 @@ Rules:
 
   return jsonData;
 }
+
 
 export async function POST(req) {
   const session = client.startSession();

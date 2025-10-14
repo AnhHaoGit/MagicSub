@@ -103,7 +103,7 @@ const SummaryPage = () => {
         {/* Summary Content */}
         <Card className="overflow-y-auto max-h-[80vh] bg-white shadow-lg border border-gray-200">
           <CardHeader className="text-center space-y-2">
-            <p className="text-xs text-indigo-500 uppercase tracking-wide font-medium">
+            <p className="text-xs iris uppercase tracking-wide font-medium">
               {formatOption(option)}
             </p>
             <h2 className="text-2xl font-bold text-gray-800">{title}</h2>
@@ -113,7 +113,7 @@ const SummaryPage = () => {
             {sections?.length > 0 &&
               sections.map((section, index) => (
                 <div key={index}>
-                  <h3 className="text-lg font-semibold text-indigo-600 mb-2">
+                  <h3 className="text-lg font-semibold iris mb-2">
                     {section.heading}
                   </h3>
                   <ul className="list-disc list-inside space-y-1">

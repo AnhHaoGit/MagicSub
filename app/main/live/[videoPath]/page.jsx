@@ -19,7 +19,6 @@ const LivePage = () => {
   const animationFrameId = useRef(null);
   const [copied, setCopied] = useState(false);
 
-
   const syncLoop = useCallback(() => {
     if (videoRef.current) {
       const time = videoRef.current.currentTime;
@@ -64,21 +63,34 @@ const LivePage = () => {
     };
   }, [syncLoop]);
 
-  useEffect(() => {
-    const video = JSON.parse(localStorage.getItem("videos")) || [];
-    const found = video.find((v) => v._id === videoPath);
-    if (found) {
-      setVideoData(found);
-      const clonedSubtitles = JSON.parse(JSON.stringify(found.subtitles));
-      const clonedSubtitle = clonedSubtitles.find(
-        (sub) => sub._id === subtitleId
-      );
-      setSubtitle(clonedSubtitle.subtitle);
-      setCustomize(found.customize);
-    } else {
-      toast.error("Cannot find video data!");
+  const fetchData = async (videoId, subtitleId) => {
+    try {
+      const res = await fetch("/api/fetch_stream_data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ videoId, subtitleId }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch stream data");
+      }
+
+      const data = await res.json();
+      setVideoData(data.video);
+      setSubtitle(data.subtitle);
+      setCustomize(data.video.customize);
+    } catch (error) {
+      toast.error("Error fetching data:", error);
     }
-  }, [videoPath]);
+  };
+
+  useEffect(() => {
+    if (videoPath && subtitleId) {
+      fetchData(videoPath, subtitleId);
+    }
+  }, [videoPath, subtitleId]);
 
   let subtitleClasses = `${customize.is_bold ? "font-bold" : ""} ${
     customize.is_italic ? "italic" : ""
@@ -125,7 +137,9 @@ bg-[${customize.background_color}]`;
       </>
     );
   }
-
+  console.log("customize", customize);
+  console.log("videoData", videoData);
+  console.log("subtitle", subtitle);
   return (
     <>
       <main className="flex flex-col items-center justify-center h-screen sm:p-4 md:p-5">
