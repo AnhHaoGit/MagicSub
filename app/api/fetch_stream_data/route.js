@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { MongoClient, ObjectId } from "mongodb";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
 
 const client = new MongoClient(process.env.MONGODB_URI);
 let db;
@@ -15,11 +13,6 @@ async function connectDB() {
 }
 
 export async function POST(req) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
   const { videoId, subtitleId } = await req.json();
 
   try {
