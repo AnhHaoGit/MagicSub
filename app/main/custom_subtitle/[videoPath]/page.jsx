@@ -10,6 +10,7 @@ import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import SubtitleStylingBox from "@/components/SubtitleStylingBox";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import Link from "next/link";
+import { formatTime } from "@/lib/format_time";
 
 import { update_cloud_urls_to_local_storage_by_video_id } from "@/lib/local_storage_handlers";
 import { useSession } from "next-auth/react";
@@ -20,6 +21,7 @@ const Page = () => {
   const subtitleId = searchParams.get("subtitleId");
   const [videoData, setVideoData] = useState(null);
   const [subtitle, setSubtitle] = useState([]);
+  const [endpoints, setEndpoints] = useState([0, 0]);
   const [originalSubtitle, setOriginalSubtitle] = useState([]);
   const [customize, setCustomize] = useState({});
   const [originalCustomize, setOriginalCustomize] = useState({});
@@ -40,6 +42,37 @@ const Page = () => {
       router.push("/login");
     }
   }, [status, router]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !endpoints || endpoints.length !== 2) return;
+
+    const [start, end] = endpoints;
+
+    // Khi video sẵn sàng, đặt currentTime đến điểm bắt đầu
+    const handleLoadedMetadata = () => {
+      video.currentTime = start;
+    };
+
+    // Nếu người dùng tua ra ngoài phạm vi cho phép thì tự động đưa về lại
+    const handleTimeUpdate = () => {
+      if (video.currentTime < start) {
+        video.currentTime = start;
+      }
+      if (video.currentTime >= end) {
+        video.currentTime = end;
+        video.pause();
+      }
+    };
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("timeupdate", handleTimeUpdate);
+
+    return () => {
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+    };
+  }, [endpoints]);
 
   // can not use useEffect right here because we need to save reference whenever we run requestAnimationFrame.
   // if we use useEffect, the syncLoop will be recreated when calling requestAnimationFrame, resulting in bugs.
@@ -222,6 +255,7 @@ const Page = () => {
         (sub) => sub._id === subtitleId
       );
       setSubtitle(clonedSubtitle.subtitle);
+      setEndpoints(clonedSubtitle.endpoints);
       setCustomize(found.customize);
       setOriginalSubtitle(clonedSubtitle.subtitle);
       setOriginalCustomize(found.customize);
@@ -284,6 +318,7 @@ bg-[${customize.background_color}]`;
           cloudUrl: videoData.cloudUrl,
           videoId: videoData._id,
           userId: videoData.userId,
+          endpoints,
         }),
       });
 
@@ -385,6 +420,8 @@ bg-[${customize.background_color}]`;
 
     setIsDownloadingTxt(false);
   };
+
+  console.log(endpoints);
 
   return (
     <>
@@ -500,8 +537,8 @@ bg-[${customize.background_color}]`;
           </div>
 
           {/* Right section */}
-          <div className="w-full lg:w-2/5 flex flex-col relative justify-evenly items-center h-auto lg:h-full gap-4 bg-smoke rounded-2xl p-4 sm:p-5">
-            <div className="flex items-center justify-center absolute top-6 shadow-lg gap-3 sm:gap-5 bg-white p-2 rounded-4xl">
+          <div className="w-full lg:w-2/5 flex flex-col justify-evenly items-center h-auto lg:h-full gap-2 bg-smoke rounded-2xl p-4 sm:p-5">
+            <div className="flex items-center justify-center shadow-lg gap-3 sm:gap-5 bg-white p-2 rounded-4xl">
               <button
                 onClick={handleTranscriptButton}
                 className={`w-24 gap-2 sm:w-30 flex justify-center items-center sm:text-base black hover:bg-zinc-200 rounded-2xl py-1`}
@@ -552,6 +589,15 @@ bg-[${customize.background_color}]`;
               </button>
             </div>
 
+            {endpoints ? (
+              <p className="gray text-xs">
+                Trimmed from {formatTime(endpoints[0])} to{" "}
+                {formatTime(endpoints[1])}
+              </p>
+            ) : (
+              <p>loading...</p>
+            )}
+
             {isTranscript ? (
               <>
                 <SubtitleScrollBox
@@ -580,6 +626,7 @@ bg-[${customize.background_color}]`;
                   customize={customize}
                   setCustomize={setCustomize}
                 />
+
                 <button
                   className={`flex items-center gap-2 px-6 sm:px-10 py-1 text-white rounded-full shadow-2xl font-bold justify-center transition-colors ${
                     isCustomizeChanged

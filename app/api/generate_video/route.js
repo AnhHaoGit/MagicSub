@@ -32,16 +32,21 @@ async function connectDB() {
 
 // Ghi ffmpeg output ra file tạm mp4
 // Ghi ffmpeg output ra file tạm mp4
-async function generateTempMp4(cloudUrl, assPath, outputPath) {
+async function generateTempMp4(cloudUrl, assPath, outputPath, endpoints) {
   return new Promise((resolve, reject) => {
-    // Lấy đường dẫn tuyệt đối đến thư mục fonts
     const fontsDir = path.join(process.cwd(), "public", "fonts");
+    const [start, end] = endpoints; // lấy thời gian bắt đầu và kết thúc
+    const duration = end - start;
 
     const ffmpeg = spawn("ffmpeg", [
+      "-ss",
+      start.toString(), // bắt đầu từ điểm này
+      "-t",
+      duration.toString(), // độ dài đoạn cần giữ lại
       "-i",
-      cloudUrl,
+      cloudUrl, // video gốc
       "-vf",
-      `ass=${assPath}:fontsdir=${fontsDir}`,
+      `ass=${assPath}:fontsdir=${fontsDir}`, // chèn phụ đề
       "-c:v",
       "libx264",
       "-preset",
@@ -52,6 +57,8 @@ async function generateTempMp4(cloudUrl, assPath, outputPath) {
       "yuv420p",
       "-c:a",
       "aac",
+      "-movflags",
+      "+faststart", // tối ưu phát online
       "-f",
       "mp4",
       outputPath,
@@ -121,27 +128,23 @@ async function multipartUpload(
 
 export async function POST(req) {
   try {
-    const { subtitle, customize, cloudUrl, videoId, userId } = await req.json();
-    
-
-    if (!subtitle || !customize || !cloudUrl || !videoId || !userId) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+    const { subtitle, customize, cloudUrl, videoId, userId, endpoints } =
+      await req.json();
 
     const now = Date.now();
     const Key = `generated_videos/video_${now}.mp4`;
 
     // Tạo file ASS tạm
-    const assContent = generateASS(subtitle, customize);
+    const adjustedSubtitles = adjustSubtitleTimestamps(subtitle, endpoints[0]);
+    console.log(subtitle)
+    console.log(adjustedSubtitles)
+    const assContent = generateASS(adjustedSubtitles, customize);
     const assPath = path.join(os.tmpdir(), `sub_${now}.ass`);
     await fs.writeFile(assPath, assContent, { encoding: "utf8" });
 
     // Tạo file mp4 tạm
     const tempMp4 = path.join(os.tmpdir(), `video_${now}.mp4`);
-    await generateTempMp4(cloudUrl, assPath, tempMp4);
+    await generateTempMp4(cloudUrl, assPath, tempMp4, endpoints);
 
     // Multipart upload lên S3
     await multipartUpload(tempMp4, process.env.AWS_S3_BUCKET, Key);
@@ -228,11 +231,11 @@ function fontColor(color) {
 
 function borderColor(customize) {
   if (customize.border_style === "opaque_box") {
-    console.log(customize.background_opacity)
+    console.log(customize.background_opacity);
     const alpha = (255 - Math.round((customize.background_opacity / 100) * 255))
       .toString(16)
       .padStart(2, "0");
-    console.log(alpha)
+    console.log(alpha);
     const b = customize.background_color.substring(5, 7);
     const g = customize.background_color.substring(3, 5);
     const r = customize.background_color.substring(1, 3);
@@ -243,4 +246,37 @@ function borderColor(customize) {
     const r = customize.outline_color.substring(1, 3);
     return `&H${b}${g}${r}`.toUpperCase();
   }
+}
+
+function adjustSubtitleTimestamps(subtitles, startOffset) {
+  return subtitles.map((sub) => {
+    const startSeconds = timeToSeconds(sub.start) - startOffset;
+    const endSeconds = timeToSeconds(sub.end) - startOffset;
+
+    return {
+      ...sub,
+      start: secondsToAssTime(startSeconds),
+      end: secondsToAssTime(endSeconds),
+    };
+  });
+}
+
+function timeToSeconds(time) {
+  // chuyển từ "00:05:12,345" → 312.345 (giây)
+  const [hms, ms] = time.split(",");
+  const [h, m, s] = hms.split(":").map(Number);
+  return h * 3600 + m * 60 + s + parseInt(ms) / 1000;
+}
+
+function secondsToAssTime(seconds) {
+  if (seconds < 0) seconds = 0;
+
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const ms = Math.round((seconds % 1) * 1000); // phần thập phân của giây → mili giây
+
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(
+    s
+  ).padStart(2, "0")},${String(ms).padStart(3, "0")}`;
 }

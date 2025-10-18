@@ -15,7 +15,7 @@ import {
 } from "@/lib/local_storage_handlers";
 import Link from "next/link";
 
-const SubtitleOption = ({ videoData, session, setLoading }) => {
+const SubtitleOption = ({ videoData, session, setLoading, endpoints }) => {
   const [sourceLanguage, setSourceLanguage] = useState("en");
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -60,6 +60,7 @@ const SubtitleOption = ({ videoData, session, setLoading }) => {
         userId: session.user.id,
         duration: videoData.duration,
         cost: videoCost,
+        endpoints
       }),
     });
 
@@ -74,7 +75,8 @@ const SubtitleOption = ({ videoData, session, setLoading }) => {
         videoData._id,
         data.subtitle,
         data.subtitleId,
-        data.language
+        data.language,
+        endpoints
       );
       update_gems(videoCost);
       toast.success("Subtitle successfully generated!");

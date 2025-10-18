@@ -31,33 +31,29 @@ const formatLanguage = (value) => {
   return lang ? lang.label : value;
 };
 
-const formatSrtFile = (data, lastSecond) => {
+const formatSrtFile = (data, offset) => {
   const array = data.split("\n\n");
   const formattedData = [];
+
   for (let i = 0; i < array.length - 1; i++) {
     const items = array[i].split("\n");
+    if (items.length < 3) continue;
 
-    const updatedStart =
-      srtToSecondsTimestamp(items[1].split(" --> ")[0]) + lastSecond;
+    const startTime = srtToSecondsTimestamp(items[1].split(" --> ")[0]);
+    const endTime = srtToSecondsTimestamp(items[1].split(" --> ")[1]);
 
-    const updatedEnd =
-      srtToSecondsTimestamp(items[1].split(" --> ")[1]) + lastSecond;
+    const updatedStart = startTime + offset;
+    const updatedEnd = endTime + offset;
 
-    const segment = {
+    formattedData.push({
       index: uuidv4(),
       start: secondsToSrtTimestamp(updatedStart),
       end: secondsToSrtTimestamp(updatedEnd),
-      text: items[2],
-    };
-    formattedData.push(segment);
+      text: items.slice(2).join(" "), // gộp tất cả dòng text nếu nhiều hơn 1
+    });
   }
 
-  return {
-    formattedData,
-    lastSecond: srtToSecondsTimestamp(
-      formattedData[formattedData.length - 1].end
-    ),
-  };
+  return formattedData;
 };
 
 async function extractAudioSegment(buffer, start, duration) {
@@ -162,24 +158,9 @@ export async function POST(req) {
       sourceLanguage,
       targetLanguage,
       userId,
-      duration,
       cost,
+      endpoints,
     } = await req.json();
-
-    if (
-      !cloudUrl ||
-      !_id ||
-      !sourceLanguage ||
-      !targetLanguage ||
-      !userId ||
-      !duration ||
-      !cost
-    ) {
-      return NextResponse.json(
-        { message: "Missing parameters" },
-        { status: 400 }
-      );
-    }
 
     const db = await connectDB();
     const users = db.collection("users");
@@ -200,20 +181,23 @@ export async function POST(req) {
     const audioBuffer = Buffer.from(response.data);
 
     const segmentDuration = 240;
-    const totalDuration = duration;
+    const [startPoint, endPoint] = endpoints;
+    const totalDuration = endPoint - startPoint;
     const segments = [];
-    let lastSecond = 0;
 
-    for (let start = 0; start < totalDuration; start += segmentDuration) {
+    for (let offset = 0; offset < totalDuration; offset += segmentDuration) {
+      const segmentStart = startPoint + offset;
+      const segmentLength = Math.min(segmentDuration, totalDuration - offset);
+
       const segmentBuffer = await extractAudioSegment(
         audioBuffer,
-        start,
-        segmentDuration
+        segmentStart,
+        segmentLength
       );
 
       const form = new FormData();
       form.append("file", segmentBuffer, {
-        filename: `chunk_${start}.mp3`,
+        filename: `chunk_${segmentStart}.mp3`,
         contentType: "audio/mp3",
       });
       form.append("model", "whisper-1");
@@ -229,9 +213,8 @@ export async function POST(req) {
         },
       });
 
-      const formattedSrt = formatSrtFile(whisperRes.data, lastSecond);
-      lastSecond = formattedSrt.lastSecond;
-      segments.push(...formattedSrt.formattedData);
+      const formattedSrt = formatSrtFile(whisperRes.data, segmentStart);
+      segments.push(...formattedSrt);
     }
 
     const translatedSegments = await translateSegments(
@@ -253,6 +236,7 @@ export async function POST(req) {
           userId: new ObjectId(userId),
           videoId: new ObjectId(_id),
           subtitle: translatedSegments,
+          endpoints,
         },
         { session }
       );

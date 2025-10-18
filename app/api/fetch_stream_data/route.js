@@ -26,7 +26,7 @@ export async function POST(req) {
       .collection("subtitle")
       .findOne({ _id: new ObjectId(subtitleId) });
 
-    return NextResponse.json({ video, subtitle: subtitle.subtitle });
+    return NextResponse.json({ video, subtitle });
   } catch (error) {
     console.error("Error fetching stream data:", error);
     return NextResponse.json(

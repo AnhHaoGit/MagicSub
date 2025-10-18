@@ -12,6 +12,7 @@ const LivePage = () => {
   const subtitleId = searchParams.get("subtitleId");
   const [videoData, setVideoData] = useState(null);
   const [subtitle, setSubtitle] = useState([]);
+  const [endpoints, setEndpoints] = useState([0, 0]);
   const [customize, setCustomize] = useState({});
   const [currentSubtitle, setCurrentSubtitle] = useState(null);
   const videoRef = useRef(null);
@@ -23,7 +24,7 @@ const LivePage = () => {
     if (videoRef.current) {
       const time = videoRef.current.currentTime;
 
-      const active = subtitle.find(
+      const active = subtitle.subtitle.find(
         (item) =>
           srtToSecondsTimestamp(item.start) <= time &&
           srtToSecondsTimestamp(item.end) >= time
@@ -34,6 +35,37 @@ const LivePage = () => {
 
     animationFrameId.current = requestAnimationFrame(syncLoop);
   }, [subtitle]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !endpoints || endpoints.length !== 2) return;
+
+    const [start, end] = endpoints;
+
+    // Khi video sẵn sàng, đặt currentTime đến điểm bắt đầu
+    const handleLoadedMetadata = () => {
+      video.currentTime = start;
+    };
+
+    // Nếu người dùng tua ra ngoài phạm vi cho phép thì tự động đưa về lại
+    const handleTimeUpdate = () => {
+      if (video.currentTime < start) {
+        video.currentTime = start;
+      }
+      if (video.currentTime >= end) {
+        video.currentTime = end;
+        video.pause()
+      }
+    };
+
+    video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("timeupdate", handleTimeUpdate);
+
+    return () => {
+      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+    };
+  }, [endpoints]);
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -80,6 +112,7 @@ const LivePage = () => {
       const data = await res.json();
       setVideoData(data.video);
       setSubtitle(data.subtitle);
+      setEndpoints(data.subtitle.endpoints);
       setCustomize(data.video.customize);
     } catch (error) {
       toast.error("Error fetching data:", error);
@@ -137,9 +170,6 @@ bg-[${customize.background_color}]`;
       </>
     );
   }
-  console.log("customize", customize);
-  console.log("videoData", videoData);
-  console.log("subtitle", subtitle);
   return (
     <>
       <main className="flex flex-col items-center justify-center h-screen sm:p-4 md:p-5">

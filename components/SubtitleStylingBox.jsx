@@ -55,7 +55,7 @@ const SubtitleStylingBox = ({ customize, setCustomize }) => {
   };
 
   return (
-    <div className="flex flex-col w-full gap-3 bg-white shadow-lg h-full overflow-y-auto hide-scrollbar p-5 rounded-2xl mt-15 items-start">
+    <div className="flex flex-col w-full gap-2 bg-white shadow-lg overflow-y-auto hide-scrollbar p-5 rounded-2xl items-start">
       <div className="flex items-end justify-between w-full">
         <div className="w-1/3">
           <SelectBox
@@ -274,7 +274,7 @@ const SubtitleStylingBox = ({ customize, setCustomize }) => {
         </div>
       </div>
 
-      <div className="flex items-center justify-center w-full gap-5 mt-10">
+      <div className="flex items-center justify-center w-full gap-5 mt-5">
         <button
           className="px-5 py-1 rounded-4xl text-xs transition-colors bg-black white hover:bg-gray"
           onClick={resetToDefault}
