@@ -43,7 +43,6 @@ const Page = () => {
         return;
       }
 
-      // ✅ Cập nhật lại state và localStorage sau khi xoá thành công
       setVideoData((prev) => {
         const updated = prev.filter((v) => v._id !== videoId);
         localStorage.setItem("videos", JSON.stringify(updated));

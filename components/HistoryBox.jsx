@@ -6,17 +6,6 @@ const HistoryBox = ({ video, onDelete }) => {
   console.log("Rendering HistoryBox for video:", video);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  function formatBytes(bytes) {
-    if (bytes === 0) return "0 Bytes";
-    const MB = 1024 * 1024;
-    const GB = 1024 * MB;
-    if (bytes >= GB) {
-      return (bytes / GB).toFixed(2) + " GB";
-    } else {
-      return (bytes / MB).toFixed(2) + " MB";
-    }
-  }
-
   const handleDeleteClick = (e) => {
     e.preventDefault();
     e.stopPropagation();

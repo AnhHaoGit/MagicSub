@@ -185,6 +185,7 @@ export default function VideoPage() {
             {option === "subtitle" && (
               <SubtitleOption
                 videoData={videoData}
+                setVideoData={setVideoData}
                 session={session}
                 setLoading={setLoading}
                 endpoints={endpoints}
@@ -193,6 +194,7 @@ export default function VideoPage() {
             {option === "summary" && (
               <SummaryOption
                 videoData={videoData}
+                setVideoData={setVideoData}
                 session={session}
                 setLoading={setLoading}
               />
