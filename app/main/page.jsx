@@ -12,9 +12,15 @@ import {
 } from "@/lib/local_storage_handlers";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import fetch_data from "@/lib/fetch_data";
+import { useRef } from "react";
 
 const MainPage = () => {
   const { data: session, status } = useSession();
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [eta, setEta] = useState(null);
+  const [canCancel, setCanCancel] = useState(false);
+  const xhrRef = useRef(null);
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -22,10 +28,6 @@ const MainPage = () => {
     }
   }, [session, status]);
   const router = useRouter();
-
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [eta, setEta] = useState(null);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -59,28 +61,22 @@ const MainPage = () => {
       videoElement.onloadedmetadata = async () => {
         const duration = videoElement.duration;
 
-        const res = await fetch("/api/s3_presign", {
+        const presignRes = await fetch("/api/s3_presign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             fileName: file.name,
             fileType: file.type,
-            userId: session.user.id,
-            title,
-            size,
-            duration,
-            createdAt: date.toISOString(),
-            style: session.user.style,
           }),
         });
 
-        if (!res.ok) throw new Error("Failed to get presigned URL");
+        const { uploadUrl, fileUrl } = await presignRes.json();
 
-        const newVideo = await res.json();
+        setCanCancel(true);
 
-        // 2. Upload file directly to S3
         const xhr = new XMLHttpRequest();
-        xhr.open("PUT", newVideo.uploadUrl, true);
+        xhrRef.current = xhr;
+        xhr.open("PUT", uploadUrl, true);
         xhr.setRequestHeader("Content-Type", file.type);
 
         let startTime = Date.now();
@@ -99,8 +95,23 @@ const MainPage = () => {
         };
 
         xhr.onload = async () => {
+          setCanCancel(false);
           if (xhr.status === 200) {
-            toast.success("Upload successful!");
+            const saveRes = await fetch("/api/save_video_to_db", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: session.user.id,
+                cloudUrl: fileUrl,
+                title,
+                size,
+                duration,
+                createdAt: date.toISOString(),
+                style: session.user.style,
+              }),
+            });
+
+            const newVideo = await saveRes.json();
             add_video_to_local_storage(newVideo);
 
             try {
@@ -121,9 +132,10 @@ const MainPage = () => {
               }
             } catch (e) {
               console.error("Thumbnail API error:", e);
-              toast.error("Thumbnail generation failed");
             }
+
             router.push(`/main/${newVideo._id}`);
+            toast.success("Upload successful!");
           } else {
             toast.error("Upload failed!");
           }
@@ -132,6 +144,7 @@ const MainPage = () => {
 
         xhr.onerror = () => {
           toast.error("Upload failed (network error)!");
+          setCanCancel(false);
           setLoading(false);
         };
 
@@ -140,7 +153,20 @@ const MainPage = () => {
     } catch (err) {
       console.error("Upload error:", err);
       toast.error("Upload failed!");
+      setCanCancel(false);
       setLoading(false);
+    }
+  };
+
+  const handleCancelUpload = () => {
+    if (xhrRef.current) {
+      xhrRef.current.abort();
+      xhrRef.current = null;
+      setCanCancel(false);
+      setLoading(false);
+      setProgress(0);
+      setEta(null);
+      toast.info("Upload canceled");
     }
   };
 
@@ -202,16 +228,27 @@ const MainPage = () => {
           </div>
 
           {loading && (
-            <div className="mt-6 w-full max-w-xs sm:max-w-sm md:max-w-md">
-              <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4">
-                <div
-                  className="bg-iris h-3 sm:h-4 rounded-full transition-all"
-                  style={{ width: `${progress}%` }}
-                ></div>
+            <div className="mt-6 w-full gap-5 flex items-start max-w-xs sm:max-w-lg">
+              <div className="flex flex-col items-center gap-5 w-full">
+                <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4">
+                  <div
+                    className="bg-iris h-3 sm:h-4 rounded-full transition-all"
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+                <p className="text-center text-xs sm:text-sm">
+                  {progress}% {eta && `(~${eta}s left)`}
+                </p>
               </div>
-              <p className="text-center mt-2 text-xs sm:text-sm">
-                {progress}% {eta && `(~${eta}s left)`}
-              </p>
+
+              {canCancel && (
+                <button
+                  onClick={handleCancelUpload}
+                  className="black text-white text-xs sm:text-sm hover:iris rounded-full transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
             </div>
           )}
         </div>

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { MongoClient, ObjectId } from "mongodb";
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -11,30 +10,10 @@ const s3 = new S3Client({
   },
 });
 
-const client = new MongoClient(process.env.MONGODB_URI);
-let db;
-
-async function connectDB() {
-  if (!db) {
-    await client.connect();
-    db = client.db(process.env.MONGODB_DB_NAME || "magicsub_db");
-  }
-  return db;
-}
-
 export async function POST(req) {
   try {
     const body = await req.json();
-    const {
-      fileName,
-      fileType,
-      userId,
-      title,
-      size,
-      duration,
-      createdAt,
-      style,
-    } = body;
+    const { fileName, fileType } = body;
 
     if (!fileName || !fileType) {
       return NextResponse.json(
@@ -43,7 +22,8 @@ export async function POST(req) {
       );
     }
 
-    const key = `uploads/${Date.now()}`;
+    // ✅ chỉ tạo presign URL thôi, KHÔNG ghi DB
+    const key = `uploads/${Date.now()}_${fileName}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET,
@@ -51,31 +31,14 @@ export async function POST(req) {
       ContentType: fileType,
     });
 
-    const fileUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-
     const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
 
-    const db = await connectDB();
-    const result = await db.collection("videos").insertOne({
-      userId: new ObjectId(userId),
-      cloudUrl: fileUrl,
-      title,
-      size,
-      duration,
-      createdAt,
-      customize: style,
-    });
+    const fileUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 
     return NextResponse.json({
-      _id: result.insertedId,
       uploadUrl,
-      userId,
-      cloudUrl: fileUrl,
-      title,
-      size,
-      duration,
-      createdAt,
-      customize: style,
+      fileUrl,
+      key,
     });
   } catch (err) {
     console.error("Error creating presigned URL:", err);

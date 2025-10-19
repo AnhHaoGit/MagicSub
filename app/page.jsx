@@ -2,7 +2,7 @@
 
 import LandingPageNavbar from "@/components/LandingPageNavbar";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "react-toastify";
 import {
@@ -18,6 +18,9 @@ const LandingPage = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [eta, setEta] = useState(null);
+  const [canCancel, setCanCancel] = useState(false);
+  const xhrRef = useRef(null);
+
   const router = useRouter();
   const { data: session, status } = useSession();
 
@@ -26,11 +29,6 @@ const LandingPage = () => {
       fetch_data(session);
     }
   }, [session, status]);
-  // const [youtubeUrl, setYoutubeUrl] = useState("");
-
-  // const handleChange = (e) => {
-  //   setYoutubeUrl(e.target.value);
-  // };
 
   const handleFileUpload = async (e) => {
     const date = new Date();
@@ -57,26 +55,22 @@ const LandingPage = () => {
       videoElement.onloadedmetadata = async () => {
         const duration = videoElement.duration;
 
-        const res = await fetch("/api/s3_presign", {
+        const presignRes = await fetch("/api/s3_presign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             fileName: file.name,
             fileType: file.type,
-            userId: session.user.id,
-            title,
-            size,
-            duration,
-            createdAt: date.toISOString(),
-            style: session.user.style,
           }),
         });
 
-        const newVideo = await res.json();
+        const { uploadUrl, fileUrl } = await presignRes.json();
 
-        // 2. Upload file directly to S3
+        setCanCancel(true);
+
         const xhr = new XMLHttpRequest();
-        xhr.open("PUT", newVideo.uploadUrl, true);
+        xhrRef.current = xhr;
+        xhr.open("PUT", uploadUrl, true);
         xhr.setRequestHeader("Content-Type", file.type);
 
         let startTime = Date.now();
@@ -95,8 +89,23 @@ const LandingPage = () => {
         };
 
         xhr.onload = async () => {
+          setCanCancel(false);
           if (xhr.status === 200) {
-            toast.success("Upload successful!");
+            const saveRes = await fetch("/api/save_video_to_db", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                userId: session.user.id,
+                cloudUrl: fileUrl,
+                title,
+                size,
+                duration,
+                createdAt: date.toISOString(),
+                style: session.user.style,
+              }),
+            });
+
+            const newVideo = await saveRes.json();
             add_video_to_local_storage(newVideo);
 
             try {
@@ -118,7 +127,9 @@ const LandingPage = () => {
             } catch (e) {
               console.error("Thumbnail API error:", e);
             }
+
             router.push(`/main/${newVideo._id}`);
+            toast.success("Upload successful!");
           } else {
             toast.error("Upload failed!");
           }
@@ -127,6 +138,7 @@ const LandingPage = () => {
 
         xhr.onerror = () => {
           toast.error("Upload failed (network error)!");
+          setCanCancel(false);
           setLoading(false);
         };
 
@@ -135,86 +147,22 @@ const LandingPage = () => {
     } catch (err) {
       console.error("Upload error:", err);
       toast.error("Upload failed!");
+      setCanCancel(false);
       setLoading(false);
     }
   };
 
-  // const handleYoutubeUpload = async () => {
-  //   if (!youtubeUrl) {
-  //     toast.error("Please enter a YouTube URL");
-  //     return;
-  //   }
-
-  //   if (!session) {
-  //     toast.error("Please login to upload videos");
-  //     return;
-  //   }
-
-  //   setLoading(true);
-  //   setProgress(0);
-  //   setEta(null);
-
-  //   const date = new Date();
-
-  //   try {
-  //     const res = await fetch("/api/youtube_upload", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         youtubeUrl: youtubeUrl,
-  //         userId: session.user.id,
-  //         createdAt: date.toISOString(),
-  //         style: session.user.style,
-  //       }),
-  //     });
-
-  //     if (!res.ok) {
-  //       const error = await res.json();
-  //       toast.error(error.error || "Failed to process YouTube video");
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     const newVideo = await res.json();
-
-  //     // ✅ Nếu server đang tải và upload video từ YouTube (quá trình lâu)
-  //     // em có thể poll API để cập nhật tiến trình
-  //     // ở đây anh giả định backend xử lý nhanh
-  //     toast.success("YouTube video uploaded successfully!");
-
-  //     // Cập nhật local storage
-  //     add_video_to_local_storage(newVideo);
-
-  //     // Tạo thumbnail cho video
-  //     try {
-  //       const thumbRes = await fetch("/api/generate_thumbnail", {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           videoId: newVideo._id,
-  //           cloudUrl: newVideo.cloudUrl,
-  //         }),
-  //       });
-
-  //       if (thumbRes.ok) {
-  //         const { thumbnailUrl } = await thumbRes.json();
-  //         update_video_in_local_storage(newVideo._id, thumbnailUrl);
-  //       } else {
-  //         console.warn("⚠️ Failed to generate thumbnail");
-  //       }
-  //     } catch (e) {
-  //       console.error("Thumbnail API error:", e);
-  //     }
-
-  //     // Chuyển đến trang video
-  //     router.push(`/main/${newVideo._id}`);
-  //   } catch (err) {
-  //     console.error("YouTube upload error:", err);
-  //     toast.error("Upload failed!");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const handleCancelUpload = () => {
+    if (xhrRef.current) {
+      xhrRef.current.abort();
+      xhrRef.current = null;
+      setCanCancel(false);
+      setLoading(false);
+      setProgress(0);
+      setEta(null);
+      toast.info("Upload canceled");
+    }
+  };
 
   return (
     <>
@@ -234,33 +182,6 @@ const LandingPage = () => {
 
         {session && status === "authenticated" ? (
           <>
-            {/* <div className="bg-white flex items-center p-3 w-8/10 justify-between mt-10 shadow-2xl rounded-4xl">
-              <input
-                type="text"
-                placeholder="Enter Youtube video URL"
-                className="w-9/10 border-none outline-none p-2 rounded-4xl"
-                onChange={handleChange}
-              />
-              <button
-                onClick={handleYoutubeUpload}
-                className="flex w-10 h-10 white items-center justify-center bg-iris hover:bg-violet p-3 rounded-full"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="size-4"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-                  />
-                </svg>
-              </button>
-            </div> */}
             <label className="flex gap-3 items-center bg-iris text-white rounded-full py-3 px-6 sm:py-4 sm:px-12 lg:px-20 shadow-2xl mt-6 font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm sm:text-base">
               <input
                 type="file"
@@ -298,16 +219,27 @@ const LandingPage = () => {
         )}
 
         {loading && (
-          <div className="mt-6 w-full max-w-xs sm:max-w-md">
-            <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4">
-              <div
-                className="bg-iris h-3 sm:h-4 rounded-full transition-all"
-                style={{ width: `${progress}%` }}
-              ></div>
+          <div className="mt-6 w-full gap-5 flex items-start max-w-xs sm:max-w-lg">
+            <div className="flex flex-col items-center gap-5 w-full">
+              <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4">
+                <div
+                  className="bg-iris h-3 sm:h-4 rounded-full transition-all"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <p className="text-center text-xs sm:text-sm">
+                {progress}% {eta && `(~${eta}s left)`}
+              </p>
             </div>
-            <p className="text-center mt-2 text-xs sm:text-sm">
-              {progress}% {eta && `(~${eta}s left)`}
-            </p>
+
+            {canCancel && (
+              <button
+                onClick={handleCancelUpload}
+                className="black text-white text-xs sm:text-sm hover:iris rounded-full transition-colors"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         )}
         <div className="mt-6 w-full flex justify-center">
