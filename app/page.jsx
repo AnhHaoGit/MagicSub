@@ -49,7 +49,9 @@ const LandingPage = () => {
 
       const videoElement = document.createElement("video");
       videoElement.preload = "metadata";
-      videoElement.src = URL.createObjectURL(file);
+      const videoURL = URL.createObjectURL(file);
+      videoElement.src = videoURL;
+      window.lastVideoURL = videoURL;
 
       videoElement.onloadedmetadata = async () => {
         const duration = videoElement.duration;
@@ -155,12 +157,23 @@ const LandingPage = () => {
     if (xhrRef.current) {
       xhrRef.current.abort();
       xhrRef.current = null;
-      setCanCancel(false);
-      setLoading(false);
-      setProgress(0);
-      setEta(null);
-      toast.info("Upload canceled");
     }
+
+    // Reset toàn bộ state
+    setCanCancel(false);
+    setLoading(false);
+    setProgress(0);
+    setEta(null);
+
+    // Reset file input (rất quan trọng)
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) fileInput.value = "";
+
+    // Giải phóng URL object nếu có
+    URL.revokeObjectURL(window.lastVideoURL);
+    window.lastVideoURL = null;
+
+    toast.info("Upload canceled");
   };
 
   return (
@@ -229,7 +242,7 @@ const LandingPage = () => {
 
         {/* Upload Progress */}
         {loading && (
-          <div className="mt-6 w-full gap-5 flex items-start max-w-xs sm:max-w-lg">
+          <div className="mt-10 w-full gap-5 flex items-start max-w-xs sm:max-w-lg">
             <div className="flex flex-col items-center gap-5 w-full">
               <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4">
                 <div
