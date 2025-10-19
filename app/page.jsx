@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import fetch_data from "@/lib/fetch_data";
+import DemoBox from "@/components/DemoBox";
 
 const LandingPage = () => {
   const [loading, setLoading] = useState(false);
@@ -193,8 +194,8 @@ const LandingPage = () => {
 
         {/* Subheadline */}
         <p className="mt-6 text-base sm:text-sm md:text-md text-gray-700 max-w-3xl leading-relaxed">
-          Powered by <span className="font-semibold iris">AI</span>, MagicSub
-          turns any video into a{" "}
+          Powered by <span className="font-semibold">AI</span>, MagicSub turns
+          any video into a{" "}
           <span className="font-semibold text-iris">
             multilingual experience
           </span>{" "}
@@ -271,6 +272,22 @@ const LandingPage = () => {
           <SuggestAFeature />
         </div>
       </main>
+
+      <section className="w-full m-auto p-15 flex items-center justify-center">
+        <video
+          controls
+          className="w-8/10 rounded-4xl"
+          src="https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/preview.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+        ></video>
+      </section>
+
+      <section className="m-auto w-9/10">
+        <DemoBox />
+      </section>
     </>
   );
 };

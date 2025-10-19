@@ -8,7 +8,7 @@ import ColorPickerBox from "./ColorPickerBox";
 import GenericSlider from "@/components/GenericSlider";
 import { toast } from "react-toastify";
 
-const SubtitleStylingBox = ({ customize, setCustomize }) => {
+const SubtitleStylingBox = ({ customize, setCustomize, demo }) => {
   const updateCustomizeObject = (change) => {
     setCustomize((prev) => ({ ...prev, ...change }));
   };
@@ -153,7 +153,9 @@ const SubtitleStylingBox = ({ customize, setCustomize }) => {
         </div>
       </div>
 
-      <p className="gray text-[10px]">Select the right font family of your subtitle language.</p>
+      <p className="gray text-[10px]">
+        Select the right font family of your subtitle language.
+      </p>
 
       <div className="flex justify-between w-full mt-5">
         <div className="flex items-center gap-2">
@@ -274,20 +276,22 @@ const SubtitleStylingBox = ({ customize, setCustomize }) => {
         </div>
       </div>
 
-      <div className="flex items-center justify-center w-full gap-5 mt-5">
-        <button
-          className="px-5 py-1 rounded-4xl text-xs transition-colors bg-black white hover:bg-gray"
-          onClick={resetToDefault}
-        >
-          Reset to Default
-        </button>
-        <button
-          className="px-5 py-1 rounded-4xl text-xs transition-colors bg-black white hover:bg-gray"
-          onClick={saveAsDefault}
-        >
-          Save as Default
-        </button>
-      </div>
+      {!demo && (
+        <div className="flex items-center justify-center w-full gap-5 mt-5">
+          <button
+            className="px-5 py-1 rounded-4xl text-xs transition-colors bg-black white hover:bg-gray"
+            onClick={resetToDefault}
+          >
+            Reset to Default
+          </button>
+          <button
+            className="px-5 py-1 rounded-4xl text-xs transition-colors bg-black white hover:bg-gray"
+            onClick={saveAsDefault}
+          >
+            Save as Default
+          </button>
+        </div>
+      )}
     </div>
   );
 };
