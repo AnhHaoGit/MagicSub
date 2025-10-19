@@ -11,7 +11,7 @@ import SubtitleStylingBox from "@/components/SubtitleStylingBox";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import Link from "next/link";
 import { formatTime } from "@/lib/format_time";
-
+import fetch_data from "@/lib/fetch_data";
 import { update_cloud_urls_to_local_storage_by_video_id } from "@/lib/local_storage_handlers";
 import { useSession } from "next-auth/react";
 
@@ -35,6 +35,12 @@ const Page = () => {
   const [isDownloadingTxt, setIsDownloadingTxt] = useState(false);
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    if (session && status === "authenticated") {
+      fetch_data(session);
+    }
+  }, [session, status]);
 
   useEffect(() => {
     if (status === "loading") return;

@@ -11,9 +11,16 @@ import {
   update_video_in_local_storage,
 } from "@/lib/local_storage_handlers";
 import SuggestAFeature from "@/components/SuggestAFeature";
+import fetch_data from "@/lib/fetch_data";
 
 const MainPage = () => {
   const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (session && status === "authenticated") {
+      fetch_data(session);
+    }
+  }, [session, status]);
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);

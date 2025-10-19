@@ -12,6 +12,7 @@ import {
 import Link from "next/link";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import RotatingTexts from "@/components/RotatingTexts";
+import fetch_data from "@/lib/fetch_data";
 
 const LandingPage = () => {
   const [loading, setLoading] = useState(false);
@@ -19,38 +20,17 @@ const LandingPage = () => {
   const [eta, setEta] = useState(null);
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [youtubeUrl, setYoutubeUrl] = useState("");
-
-  const handleChange = (e) => {
-    setYoutubeUrl(e.target.value);
-  };
 
   useEffect(() => {
     if (session && status === "authenticated") {
-      fetchData();
+      fetch_data(session);
     }
   }, [session, status]);
+  // const [youtubeUrl, setYoutubeUrl] = useState("");
 
-  const fetchData = async () => {
-    try {
-      const response = await fetch("/api/fetch_data", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: session.user.id }),
-      });
-
-      if (!response.ok)
-        throw new Error(`HTTP error! Status: ${response.status}`);
-
-      const data = await response.json();
-      localStorage.setItem("videos", JSON.stringify(data));
-      localStorage.setItem("user", JSON.stringify(session.user));
-    } catch (error) {
-      toast.error("Failed to fetch data:", error);
-    }
-  };
+  // const handleChange = (e) => {
+  //   setYoutubeUrl(e.target.value);
+  // };
 
   const handleFileUpload = async (e) => {
     const date = new Date();
@@ -159,82 +139,82 @@ const LandingPage = () => {
     }
   };
 
-  const handleYoutubeUpload = async () => {
-    if (!youtubeUrl) {
-      toast.error("Please enter a YouTube URL");
-      return;
-    }
+  // const handleYoutubeUpload = async () => {
+  //   if (!youtubeUrl) {
+  //     toast.error("Please enter a YouTube URL");
+  //     return;
+  //   }
 
-    if (!session) {
-      toast.error("Please login to upload videos");
-      return;
-    }
+  //   if (!session) {
+  //     toast.error("Please login to upload videos");
+  //     return;
+  //   }
 
-    setLoading(true);
-    setProgress(0);
-    setEta(null);
+  //   setLoading(true);
+  //   setProgress(0);
+  //   setEta(null);
 
-    const date = new Date();
+  //   const date = new Date();
 
-    try {
-      const res = await fetch("/api/youtube_upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          youtubeUrl: youtubeUrl,
-          userId: session.user.id,
-          createdAt: date.toISOString(),
-          style: session.user.style,
-        }),
-      });
+  //   try {
+  //     const res = await fetch("/api/youtube_upload", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         youtubeUrl: youtubeUrl,
+  //         userId: session.user.id,
+  //         createdAt: date.toISOString(),
+  //         style: session.user.style,
+  //       }),
+  //     });
 
-      if (!res.ok) {
-        const error = await res.json();
-        toast.error(error.error || "Failed to process YouTube video");
-        setLoading(false);
-        return;
-      }
+  //     if (!res.ok) {
+  //       const error = await res.json();
+  //       toast.error(error.error || "Failed to process YouTube video");
+  //       setLoading(false);
+  //       return;
+  //     }
 
-      const newVideo = await res.json();
+  //     const newVideo = await res.json();
 
-      // ✅ Nếu server đang tải và upload video từ YouTube (quá trình lâu)
-      // em có thể poll API để cập nhật tiến trình
-      // ở đây anh giả định backend xử lý nhanh
-      toast.success("YouTube video uploaded successfully!");
+  //     // ✅ Nếu server đang tải và upload video từ YouTube (quá trình lâu)
+  //     // em có thể poll API để cập nhật tiến trình
+  //     // ở đây anh giả định backend xử lý nhanh
+  //     toast.success("YouTube video uploaded successfully!");
 
-      // Cập nhật local storage
-      add_video_to_local_storage(newVideo);
+  //     // Cập nhật local storage
+  //     add_video_to_local_storage(newVideo);
 
-      // Tạo thumbnail cho video
-      try {
-        const thumbRes = await fetch("/api/generate_thumbnail", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            videoId: newVideo._id,
-            cloudUrl: newVideo.cloudUrl,
-          }),
-        });
+  //     // Tạo thumbnail cho video
+  //     try {
+  //       const thumbRes = await fetch("/api/generate_thumbnail", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({
+  //           videoId: newVideo._id,
+  //           cloudUrl: newVideo.cloudUrl,
+  //         }),
+  //       });
 
-        if (thumbRes.ok) {
-          const { thumbnailUrl } = await thumbRes.json();
-          update_video_in_local_storage(newVideo._id, thumbnailUrl);
-        } else {
-          console.warn("⚠️ Failed to generate thumbnail");
-        }
-      } catch (e) {
-        console.error("Thumbnail API error:", e);
-      }
+  //       if (thumbRes.ok) {
+  //         const { thumbnailUrl } = await thumbRes.json();
+  //         update_video_in_local_storage(newVideo._id, thumbnailUrl);
+  //       } else {
+  //         console.warn("⚠️ Failed to generate thumbnail");
+  //       }
+  //     } catch (e) {
+  //       console.error("Thumbnail API error:", e);
+  //     }
 
-      // Chuyển đến trang video
-      router.push(`/main/${newVideo._id}`);
-    } catch (err) {
-      console.error("YouTube upload error:", err);
-      toast.error("Upload failed!");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     // Chuyển đến trang video
+  //     router.push(`/main/${newVideo._id}`);
+  //   } catch (err) {
+  //     console.error("YouTube upload error:", err);
+  //     toast.error("Upload failed!");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <>

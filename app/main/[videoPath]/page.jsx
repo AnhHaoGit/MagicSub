@@ -10,6 +10,7 @@ import QuizzesOption from "@/components/OptionBox/QuizzesOption";
 import SubbedOption from "@/components/OptionBox/SubbedOption";
 import { useRouter } from "next/navigation";
 import VideoTrimmer from "@/components/VideoTrimmer";
+import fetch_data from "@/lib/fetch_data";
 
 export default function VideoPage() {
   const router = useRouter();
@@ -20,6 +21,12 @@ export default function VideoPage() {
   const [loading, setLoading] = useState(false);
   const [endpoints, setEndpoints] = useState([0, 0]);
   const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (session && status === "authenticated") {
+      fetch_data(session);
+    }
+  }, [session, status]);
 
   useEffect(() => {
     if (status === "loading") return;

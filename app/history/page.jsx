@@ -7,11 +7,18 @@ import SuggestAFeature from "@/components/SuggestAFeature";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import fetch_data from "@/lib/fetch_data";
 
 const Page = () => {
   const [videoData, setVideoData] = useState(null);
   const { data: session, status } = useSession();
   const router = useRouter();
+
+  useEffect(() => {
+    if (session && status === "authenticated") {
+      fetch_data(session);
+    }
+  }, [session, status]);
 
   useEffect(() => {
     if (status === "loading") return;

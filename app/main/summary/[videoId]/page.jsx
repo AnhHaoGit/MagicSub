@@ -6,18 +6,33 @@ import MainNavbar from "@/components/MainNavbar";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import SuggestAFeature from "@/components/SuggestAFeature";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import fetch_data from "@/lib/fetch_data";
 
 const SummaryPage = () => {
   const { videoId } = useParams();
   const searchParams = useSearchParams();
-
   const summaryId = searchParams.get("summaryId");
-
   const [summaryData, setSummaryData] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
   const [option, setOption] = useState(null);
-
   const videoRef = useRef(null);
+  const router = useRouter()
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (session && status === "authenticated") {
+      fetch_data(session);
+    }
+  }, [session, status]);
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated" || !session) {
+      router.push("/login");
+    }
+  }, [status, router]);
 
   useEffect(() => {
     if (!videoId || !summaryId) return;

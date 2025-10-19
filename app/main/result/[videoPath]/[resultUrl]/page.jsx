@@ -6,6 +6,7 @@ import MainNavbar from "@/components/MainNavbar";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import fetch_data from "@/lib/fetch_data";
 
 const Page = () => {
   const [cloudUrl, setCloudUrl] = useState(null);
@@ -14,6 +15,12 @@ const Page = () => {
   const router = useRouter();
 
   const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (session && status === "authenticated") {
+      fetch_data(session);
+    }
+  }, [session, status]);
 
   useEffect(() => {
     if (status === "loading") return;

@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
+import fetch_data from "@/lib/fetch_data";
 
 export default function Page() {
   const [productsData, setProductsData] = useState([]);
@@ -14,6 +15,12 @@ export default function Page() {
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState(null);
   const router = useRouter();
+
+  useEffect(() => {
+    if (session && status === "authenticated") {
+      fetch_data(session);
+    }
+  }, [session, status]);
 
   const getSubscriptionStatus = (planName) => {
     if (!session?.user?.subscription) {
