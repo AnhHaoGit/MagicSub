@@ -11,7 +11,6 @@ import {
 } from "@/lib/local_storage_handlers";
 import Link from "next/link";
 import SuggestAFeature from "@/components/SuggestAFeature";
-import RotatingTexts from "@/components/RotatingTexts";
 import fetch_data from "@/lib/fetch_data";
 
 const LandingPage = () => {
@@ -167,22 +166,35 @@ const LandingPage = () => {
   return (
     <>
       <LandingPageNavbar />
-      <main className="flex flex-col items-center gap-6 justify-center min-h-screen px-4 text-center">
-        <div>
-          <RotatingTexts />
+      <main
+        className="flex flex-col items-center justify-center min-h-screen px-6 py-10 text-center 
+      bg-gradient-to-b from-white via-[#f7f4ff] to-[#e4d9ff] text-black"
+      >
+        {/* Headline */}
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight max-w-5xl leading-tight">
+          👋 Wave goodbye to{" "}
+          <span className="block iris  bg-clip-text text-transparent mt-2">
+            “can someone explain” comments
+          </span>
+        </h1>
 
-          <div
-            className="flex flex-col sm:flex-row items-center justify-center font-bold mt-4 
-  text-lg sm:text-3xl md:text-4xl lg:text-5xl"
-          >
-            <h1 className="">in</h1>
-            <h1 className="iris sm:ml-3 mt-2 sm:mt-0">any language</h1>
-          </div>
-        </div>
+        {/* Subheadline */}
+        <p className="mt-6 text-base sm:text-sm md:text-md text-gray-700 max-w-3xl leading-relaxed">
+          Powered by <span className="font-semibold iris">AI</span>, MagicSub
+          turns any video into a{" "}
+          <span className="font-semibold text-iris">
+            multilingual experience
+          </span>{" "}
+          — helping <span className="font-semibold">creators</span> share their
+          voice with the world and{" "}
+          <span className="font-semibold">viewers</span> finally understand
+          what’s going on.
+        </p>
 
+        {/* Upload Section */}
         {session && status === "authenticated" ? (
           <>
-            <label className="flex gap-3 items-center bg-iris text-white rounded-full py-3 px-6 sm:py-4 sm:px-12 lg:px-20 shadow-2xl mt-6 font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm sm:text-base">
+            <label className="flex gap-3 items-center bg-iris text-white rounded-full py-3 px-6 sm:py-4 sm:px-12 lg:px-20 shadow-2xl mt-10 font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm sm:text-base">
               <input
                 type="file"
                 accept="video/*"
@@ -205,9 +217,6 @@ const LandingPage = () => {
               </svg>
               Upload your Video
             </label>
-            <p className="text-xs gray max-w-xs sm:max-w-md mt-2">
-              Download Youtube, Instagram, Tiktok videos before uploading.
-            </p>
           </>
         ) : (
           <Link
@@ -218,6 +227,7 @@ const LandingPage = () => {
           </Link>
         )}
 
+        {/* Upload Progress */}
         {loading && (
           <div className="mt-6 w-full gap-5 flex items-start max-w-xs sm:max-w-lg">
             <div className="flex flex-col items-center gap-5 w-full">
@@ -242,7 +252,9 @@ const LandingPage = () => {
             )}
           </div>
         )}
-        <div className="mt-6 w-full flex justify-center">
+
+        {/* Suggest Feature */}
+        <div className="mt-12">
           <SuggestAFeature />
         </div>
       </main>
