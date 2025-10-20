@@ -369,20 +369,12 @@ const DemoBox = () => {
   const videoRef = useRef(null);
   const animationFrameId = useRef(null);
   const { data: session, status } = useSession();
-  const router = useRouter();
 
   useEffect(() => {
     if (session && status === "authenticated") {
       fetch_data(session);
     }
   }, [session, status]);
-
-  useEffect(() => {
-    if (status === "loading") return;
-    if (status === "unauthenticated" || !session) {
-      router.push("/login");
-    }
-  }, [status, router]);
 
   // can not use useEffect right here because we need to save reference whenever we run requestAnimationFrame.
   // if we use useEffect, the syncLoop will be recreated when calling requestAnimationFrame, resulting in bugs.
