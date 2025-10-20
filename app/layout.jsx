@@ -2,7 +2,6 @@ import SessionWrapper from "@/components/SessionWraper";
 import { ToastContainer } from "react-toastify";
 import Script from "next/script";
 import "./globals.css";
-import AnalyticsListener from "@/components/AnalyticsListener";
 
 export const metadata = {
   title: "MagicSub",
@@ -75,10 +74,7 @@ export default function RootLayout({ children }) {
         </Script>
       </head>
       <body>
-        <SessionWrapper>
-          <AnalyticsListener />
-          {children}
-        </SessionWrapper>
+        <SessionWrapper>{children}</SessionWrapper>
         <ToastContainer position="top-center" autoClose={3000} />
       </body>
     </html>
