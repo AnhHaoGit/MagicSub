@@ -513,7 +513,7 @@ const LandingPage = () => {
         <div className="flex flex-col-reverse md:flex-row bg-violet rounded-3xl p-6 sm:p-10 w-[90%] md:w-2/3 items-center gap-8 md:gap-10 md:self-end md:mr-40">
           <div className="w-full md:w-2/3">
             <img
-              src="/unlimited_storage.png"
+              src="https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/unlimited_storage.png"
               alt="Unlimited Storage"
               className="rounded-2xl w-full"
             />
