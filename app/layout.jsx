@@ -1,6 +1,8 @@
 import SessionWrapper from "@/components/SessionWraper";
 import { ToastContainer } from "react-toastify";
+import Script from "next/script";
 import "./globals.css";
+import AnalyticsListener from "@/components/AnalyticsListener";
 
 export const metadata = {
   title: "MagicSub",
@@ -56,9 +58,27 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100..900&display=swap"
           rel="stylesheet"
         ></link>
+
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="ga-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', {
+              page_path: window.location.pathname,
+            });
+          `}
+        </Script>
       </head>
       <body>
-        <SessionWrapper>{children}</SessionWrapper>
+        <SessionWrapper>
+          <AnalyticsListener />
+          {children}
+        </SessionWrapper>
         <ToastContainer position="top-center" autoClose={3000} />
       </body>
     </html>
