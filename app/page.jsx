@@ -182,12 +182,12 @@ const LandingPage = () => {
       <LandingPageNavbar />
       <main
         className="flex flex-col items-center justify-center min-h-screen px-6 py-10 text-center 
-      bg-gradient-to-b from-white to-[#f7f4ff] text-black"
+      bg-gradient-to-b from-white via-white to-[#836fff] text-black"
       >
         {/* Headline */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight max-w-5xl leading-tight">
           👋 Wave goodbye to{" "}
-          <span className="block iris  bg-clip-text text-transparent mt-2">
+          <span className="block iris bg-clip-text text-transparent mt-2">
             “can someone explain” comments
           </span>
         </h1>
@@ -275,21 +275,21 @@ const LandingPage = () => {
 
       {/* ===== Preview Section ===== */}
       <section className="flex flex-col w-full lg:flex-row items-center justify-center gap-14 px-6 py-20 text-black">
-        <div className="max-w-xl w-1/2">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-6 text-center">
+        <div className="max-w-xl w-1/3 lg:ml-20">
+          <h2 className="text-3xl sm:text-4xl w-full block font-extrabold black mb-6 text-center">
             🎥 See MagicSub in Action
           </h2>
-          <p className="text-gray-600 text-base sm:text-lg leading-relaxed mb-4 text-center">
+          <p className="gray hidden lg:inline-block text-base sm:text-md leading-relaxed mb-4 text-center">
             Watch how MagicSub automatically generates multilingual subtitles
             and lets you customize them with just a few clicks.
           </p>
-          <p className="text-gray-600 text-base sm:text-lg leading-relaxed text-center">
+          <p className="gray hidden lg:inline-block text-base sm:text-md leading-relaxed text-center">
             Experience the power of AI subtitles — precise, fast, and
             beautifully styled for your content.
           </p>
         </div>
 
-        <div className="w-1/2 flex justify-center">
+        <div className="w-2/3 flex justify-center">
           <video
             controls
             className="w-full sm:w-4/5 lg:w-[80%] rounded-[2rem] shadow-2xl border border-gray-200"
@@ -302,21 +302,10 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ===== Demo Section ===== */}
-      <section className="mt-20 flex flex-col items-center justify-center max-h-screen gap-5 px-6 py-20 text-center text-black">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
-          Try the Interactive Demo
-        </h2>
-
-        <div className="w-full">
-          <DemoBox />
-        </div>
-      </section>
-
       {/* Features Section */}
-      <section className="w-full py-20 bg-[#f7f4ff]">
+      <section className="w-full py-20 bg-violet">
         <div className="max-w-6xl mx-auto px-6 text-center">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-12">
+          <h2 className="text-3xl sm:text-4xl font-extrabold white text-gray-900 mb-12">
             ✨ Discover the outstanding features of MagicSub
           </h2>
 
@@ -481,6 +470,85 @@ const LandingPage = () => {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Demo Section ===== */}
+      <section className="mt-20 flex flex-col items-center justify-center gap-5 px-6 text-center text-black">
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+          Try the Interactive Demo
+        </h2>
+
+        <div className="w-full">
+          <DemoBox />
+        </div>
+      </section>
+
+      <section className="w-full flex flex-col items-center justify-between mt-20 gap-20 pb-20">
+        {/* === 1️⃣ Video Trimmer === */}
+        <div className="flex flex-col md:flex-row bg-violet rounded-3xl p-6 sm:p-10 w-[90%] md:w-2/3 items-center gap-8 md:gap-10 md:self-start md:ml-40">
+          <div className="w-full md:w-1/3 flex flex-col text-left">
+            <p className="font-semibold text-2xl sm:text-3xl text-white mb-3">
+              Video Trimmer
+            </p>
+            <p className="text-gray-200 text-sm sm:text-base leading-relaxed">
+              Easily trim, cut, and focus on the best moments of your video —
+              all within seconds.
+            </p>
+          </div>
+          <div className="w-full md:w-2/3">
+            <video
+              className="w-full rounded-2xl"
+              autoPlay
+              loop
+              muted
+              playsInline
+              src="https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/video_trimmer.mp4"
+            ></video>
+          </div>
+        </div>
+
+        {/* === 2️⃣ Unlimited Storage === */}
+        <div className="flex flex-col-reverse md:flex-row bg-violet rounded-3xl p-6 sm:p-10 w-[90%] md:w-2/3 items-center gap-8 md:gap-10 md:self-end md:mr-40">
+          <div className="w-full md:w-2/3">
+            <img
+              src="/unlimited_storage.png"
+              alt="Unlimited Storage"
+              className="rounded-2xl w-full"
+            />
+          </div>
+          <div className="w-full md:w-1/3 flex flex-col text-left md:text-right">
+            <p className="font-semibold text-2xl sm:text-3xl text-white mb-3">
+              Unlimited Storage
+            </p>
+            <p className="text-gray-200 text-sm sm:text-base leading-relaxed">
+              Store all your projects securely in the cloud with no size
+              limitations.
+            </p>
+          </div>
+        </div>
+
+        {/* === 3️⃣ AI-powered language detection === */}
+        <div className="flex flex-col md:flex-row bg-violet rounded-3xl p-6 sm:p-10 w-[90%] md:w-2/3 items-center gap-8 md:gap-10 md:self-start md:ml-40">
+          <div className="w-full md:w-1/3 flex flex-col text-left">
+            <p className="font-semibold text-2xl sm:text-3xl text-white mb-3">
+              AI-powered language detection
+            </p>
+            <p className="text-gray-200 text-sm sm:text-base leading-relaxed">
+              Instantly detect the spoken language in your video and auto-set
+              the correct transcription.
+            </p>
+          </div>
+          <div className="w-full md:w-2/3">
+            <video
+              className="w-full rounded-2xl"
+              autoPlay
+              loop
+              muted
+              playsInline
+              src="https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/ai_powered_language+detection.mp4"
+            ></video>
           </div>
         </div>
       </section>
