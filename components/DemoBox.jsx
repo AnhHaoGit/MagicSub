@@ -471,9 +471,9 @@ bg-[${customize.background_color}]`;
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row justify-between h-[700px] items-center w-full flex-1 p-5 gap-5">
+      <div className="flex flex-col lg:flex-row justify-between items-center w-full flex-1 p-5 gap-5">
         {/* Left section */}
-        <div className="flex flex-col h-full w-full lg:w-3/5 gap-5">
+        <div className="flex flex-col w-full lg:w-3/5 gap-5 h-[600px]">
           <div className="flex flex-col relative items-center justify-center w-full bg-black rounded-2xl h-full">
             <video
               ref={videoRef}
@@ -511,7 +511,7 @@ bg-[${customize.background_color}]`;
         </div>
 
         {/* Right section */}
-        <div className="w-full lg:w-2/5 flex flex-col h-full items-center gap-10 bg-smoke rounded-2xl p-4 sm:p-5">
+        <div className="w-full lg:w-2/5 h-[600px] flex flex-col items-center gap-10 bg-smoke rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-center shadow-lg gap-3 sm:gap-5 bg-white p-2 rounded-4xl">
             <button
               onClick={handleTranscriptButton}

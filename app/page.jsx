@@ -182,7 +182,7 @@ const LandingPage = () => {
       <LandingPageNavbar />
       <main
         className="flex flex-col items-center justify-center min-h-screen px-6 py-10 text-center 
-      bg-gradient-to-b from-white via-[#f7f4ff] to-[#e4d9ff] text-black"
+      bg-gradient-to-b from-white to-[#f7f4ff] text-black"
       >
         {/* Headline */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight max-w-5xl leading-tight">
@@ -273,20 +273,216 @@ const LandingPage = () => {
         </div>
       </main>
 
-      <section className="w-full m-auto p-15 flex items-center justify-center">
-        <video
-          controls
-          className="w-8/10 rounded-4xl"
-          src="https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/preview.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-        ></video>
+      {/* ===== Preview Section ===== */}
+      <section className="flex flex-col w-full lg:flex-row items-center justify-center gap-14 px-6 py-20 text-black">
+        <div className="max-w-xl w-1/2">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-6 text-center">
+            🎥 See MagicSub in Action
+          </h2>
+          <p className="text-gray-600 text-base sm:text-lg leading-relaxed mb-4 text-center">
+            Watch how MagicSub automatically generates multilingual subtitles
+            and lets you customize them with just a few clicks.
+          </p>
+          <p className="text-gray-600 text-base sm:text-lg leading-relaxed text-center">
+            Experience the power of AI subtitles — precise, fast, and
+            beautifully styled for your content.
+          </p>
+        </div>
+
+        <div className="w-1/2 flex justify-center">
+          <video
+            controls
+            className="w-full sm:w-4/5 lg:w-[80%] rounded-[2rem] shadow-2xl border border-gray-200"
+            src="https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/preview.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+          ></video>
+        </div>
       </section>
 
-      <section className="m-auto w-9/10">
-        <DemoBox />
+      {/* ===== Demo Section ===== */}
+      <section className="mt-20 flex flex-col items-center justify-center max-h-screen gap-5 px-6 py-20 text-center text-black">
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
+          Try the Interactive Demo
+        </h2>
+
+        <div className="w-full">
+          <DemoBox />
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="w-full py-20 bg-[#f7f4ff]">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-12">
+            ✨ Discover the outstanding features of MagicSub
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* 1️⃣ Fast and accurate subtitle creation */}
+            <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div className="bg-smoke p-2 rounded-lg">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="size-10 iris"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-xl font-semibold text-left mb-2">
+                  Fast and Accurate
+                </h3>
+                <p className="text-gray-600 text-left text-sm">
+                  MagicSub uses AI to automatically generate subtitles in
+                  seconds, ensuring high accuracy and perfect synchronization
+                  with your video.
+                </p>
+              </div>
+            </div>
+
+            {/* 2️⃣ Multilingual Transcription & Translation */}
+            <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div className="bg-smoke p-2 rounded-lg">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="size-10 iris"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M9 2.25a.75.75 0 0 1 .75.75v1.506a49.384 49.384 0 0 1 5.343.371.75.75 0 1 1-.186 1.489c-.66-.083-1.323-.151-1.99-.206a18.67 18.67 0 0 1-2.97 6.323c.318.384.65.753 1 1.107a.75.75 0 0 1-1.07 1.052A18.902 18.902 0 0 1 9 13.687a18.823 18.823 0 0 1-5.656 4.482.75.75 0 0 1-.688-1.333 17.323 17.323 0 0 0 5.396-4.353A18.72 18.72 0 0 1 5.89 8.598a.75.75 0 0 1 1.388-.568A17.21 17.21 0 0 0 9 11.224a17.168 17.168 0 0 0 2.391-5.165 48.04 48.04 0 0 0-8.298.307.75.75 0 0 1-.186-1.489 49.159 49.159 0 0 1 5.343-.371V3A.75.75 0 0 1 9 2.25ZM15.75 9a.75.75 0 0 1 .68.433l5.25 11.25a.75.75 0 1 1-1.36.634l-1.198-2.567h-6.744l-1.198 2.567a.75.75 0 0 1-1.36-.634l5.25-11.25A.75.75 0 0 1 15.75 9Zm-2.672 8.25h5.344l-2.672-5.726-2.672 5.726Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-xl font-semibold text-left mb-2">
+                  Multilingual
+                </h3>
+                <p className="text-gray-600 text-left text-sm">
+                  Supports speech recognition in over 50 languages and can
+                  translate subtitles into most major languages worldwide.
+                </p>
+              </div>
+            </div>
+
+            {/* 3️⃣ Subtitle customization & styling */}
+            <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div className="bg-smoke p-2 rounded-lg">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="size-10 iris"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M20.599 1.5c-.376 0-.743.111-1.055.32l-5.08 3.385a18.747 18.747 0 0 0-3.471 2.987 10.04 10.04 0 0 1 4.815 4.815 18.748 18.748 0 0 0 2.987-3.472l3.386-5.079A1.902 1.902 0 0 0 20.599 1.5Zm-8.3 14.025a18.76 18.76 0 0 0 1.896-1.207 8.026 8.026 0 0 0-4.513-4.513A18.75 18.75 0 0 0 8.475 11.7l-.278.5a5.26 5.26 0 0 1 3.601 3.602l.502-.278ZM6.75 13.5A3.75 3.75 0 0 0 3 17.25a1.5 1.5 0 0 1-1.601 1.497.75.75 0 0 0-.7 1.123 5.25 5.25 0 0 0 9.8-2.62 3.75 3.75 0 0 0-3.75-3.75Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-xl font-semibold text-left mb-2">
+                  Subtitle customization
+                </h3>
+                <p className="text-gray-600 text-left text-sm">
+                  Choose your font, color, size, position, and background to
+                  make subtitles look great and match your brand’s style.
+                </p>
+              </div>
+            </div>
+
+            {/* 4️⃣ Hardcode subtitles */}
+            <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div className="bg-smoke p-2 rounded-lg">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="size-10 iris"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-xl font-semibold text-left mb-2">
+                  Hardcode subtitles
+                </h3>
+                <p className="text-gray-600 text-left text-sm">
+                  Create a complete video with embedded subtitles — perfect for
+                  sharing and displaying on any platform.
+                </p>
+              </div>
+            </div>
+
+            {/* 5️⃣ Easy video sharing */}
+            <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div className="bg-smoke p-2 rounded-lg">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="size-10 iris"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M15.75 4.5a3 3 0 1 1 .825 2.066l-8.421 4.679a3.002 3.002 0 0 1 0 1.51l8.421 4.679a3 3 0 1 1-.729 1.31l-8.421-4.678a3 3 0 1 1 0-4.132l8.421-4.679a3 3 0 0 1-.096-.755Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-xl font-semibold text-left mb-2">
+                  Easy video sharing
+                </h3>
+                <p className="text-gray-600 text-left text-sm">
+                  Get a direct link or download your video to share instantly
+                  with friends, your community, or on social media — all in one
+                  click.
+                </p>
+              </div>
+            </div>
+
+            {/* 6️⃣ Video content summarization */}
+            <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div className="bg-smoke p-2 rounded-lg">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="size-10 iris"
+                >
+                  <path d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625Z" />
+                  <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+                </svg>
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-xl font-semibold text-left mb-2">
+                  Video content summarization
+                </h3>
+                <p className="text-gray-600 text-left text-sm">
+                  MagicSub’s AI automatically analyzes and summarizes your
+                  video, helping you grasp the key ideas in just a few lines.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </>
   );
