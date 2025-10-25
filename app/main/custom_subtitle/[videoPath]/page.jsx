@@ -55,12 +55,10 @@ const Page = () => {
 
     const [start, end] = endpoints;
 
-    // Khi video sẵn sàng, đặt currentTime đến điểm bắt đầu
     const handleLoadedMetadata = () => {
       video.currentTime = start;
     };
 
-    // Nếu người dùng tua ra ngoài phạm vi cho phép thì tự động đưa về lại
     const handleTimeUpdate = () => {
       if (video.currentTime < start) {
         video.currentTime = start;
@@ -433,7 +431,7 @@ bg-[${customize.background_color}]`;
 
       <main className="flex flex-col lg:flex-row justify-between h-screen items-center w-full flex-1 gap-5 pt-25 p-5">
         <div className="flex flex-col h-full w-full lg:w-3/5 gap-5">
-          <div className="relative flex items-center justify-center w-full bg-black rounded-2xl max-h-4/5">
+          <div className="relative flex items-center justify-center w-full bg-black rounded-2xl h-4/5">
             <video
               ref={videoRef}
               controls

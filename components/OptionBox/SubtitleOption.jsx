@@ -23,15 +23,13 @@ const SubtitleOption = ({
   setLoading,
   endpoints,
 }) => {
-  const [sourceLanguage, setSourceLanguage] = useState("en");
+  const [sourceLanguage, setSourceLanguage] = useState("auto");
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
   const videoCost = videoData
     ? calculateCost(videoData.size, videoData.duration)
     : 0;
-  const [abortController, setAbortController] = useState(null);
-
   const handleSourceLanguageChange = (value) => {
     setSourceLanguage(value);
   };
@@ -55,11 +53,6 @@ const SubtitleOption = ({
       return;
     }
 
-    if (abortController) abortController.abort();
-
-    const controller = new AbortController();
-    setAbortController(controller);
-
     setIsProcessing(true);
     setLoading(true);
 
@@ -77,7 +70,6 @@ const SubtitleOption = ({
           cost: videoCost,
           endpoints,
         }),
-        signal: controller.signal,
       });
 
       const data = await res.json();
@@ -99,16 +91,11 @@ const SubtitleOption = ({
         );
       }
     } catch (err) {
-      if (err.name === "AbortError") {
-        toast.info("Translation cancelled.");
-      } else {
-        toast.error("An unexpected error occurred.");
-        console.error(err);
-      }
+      toast.error("An unexpected error occurred.");
+      console.error(err);
     } finally {
       setIsProcessing(false);
       setLoading(false);
-      setAbortController(null);
     }
   };
 
@@ -257,18 +244,6 @@ const SubtitleOption = ({
             </>
           )}
         </button>
-        {isProcessing && (
-          <button
-            onClick={() => {
-              if (abortController) {
-                abortController.abort();
-              }
-            }}
-            className="text-xs iris hover:violet"
-          >
-            cancel
-          </button>
-        )}
         <p className="text-xs text-center">
           You will be charged {videoCost} 💎 for this video
         </p>

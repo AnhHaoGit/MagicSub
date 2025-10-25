@@ -244,7 +244,7 @@ export async function POST(req) {
         const formattedSrt = formatSrtFile(whisperRes.data, segmentStart);
         segments.push(...formattedSrt);
       } catch (err) {
-        console.error(`❌ Error processing segment ${offset / 240 + 1}:`, err);
+        console.error(`Error processing segment ${offset / 240 + 1}:`, err);
       } finally {
         if (segmentAudioPath && fs.existsSync(segmentAudioPath)) {
           fs.unlinkSync(segmentAudioPath);
@@ -256,10 +256,13 @@ export async function POST(req) {
       fs.unlinkSync(tempVideoPath);
     }
 
-    const translatedSegments = await translateSegments(
-      segments,
-      targetLanguage
-    );
+    let translatedSegments;
+
+    if (targetLanguage === sourceLanguage) {
+      translatedSegments = segments;
+    } else {
+      translatedSegments = await translateSegments(segments, targetLanguage);
+    }
 
     let result;
     await session.withTransaction(async () => {
@@ -288,7 +291,6 @@ export async function POST(req) {
       language: targetLanguage,
     });
   } catch (err) {
-    console.error("❌ Error processing video:", err);
     return NextResponse.json(
       { message: "Check your Internet connection" },
       { status: 500 }
