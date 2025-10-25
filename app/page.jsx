@@ -33,6 +33,7 @@ const LandingPage = () => {
   const [canCancel, setCanCancel] = useState(false);
   const xhrRef = useRef(null);
   const [currentVideo, setCurrentVideo] = useState(0);
+  const [statusStep, setStatusStep] = useState("");
 
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -56,6 +57,7 @@ const LandingPage = () => {
     setLoading(true);
     setProgress(0);
     setEta(null);
+    setStatusStep("Initializing upload...");
 
     try {
       const size = file.size;
@@ -70,6 +72,7 @@ const LandingPage = () => {
       videoElement.onloadedmetadata = async () => {
         const duration = videoElement.duration;
 
+        setStatusStep("Requesting presigned URL...");
         const presignRes = await fetch("/api/s3_presign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -80,9 +83,9 @@ const LandingPage = () => {
         });
 
         const { uploadUrl, fileUrl } = await presignRes.json();
+        setStatusStep("Uploading video to cloud...");
 
         setCanCancel(true);
-
         const xhr = new XMLHttpRequest();
         xhrRef.current = xhr;
         xhr.open("PUT", uploadUrl, true);
@@ -93,11 +96,9 @@ const LandingPage = () => {
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
             const percent = Math.round((event.loaded / event.total) * 100);
-
             const elapsed = (Date.now() - startTime) / 1000;
             const speed = event.loaded / elapsed;
             const remaining = (event.total - event.loaded) / speed;
-
             setProgress(percent);
             setEta(remaining.toFixed(1));
           }
@@ -106,12 +107,34 @@ const LandingPage = () => {
         xhr.onload = async () => {
           setCanCancel(false);
           if (xhr.status === 200) {
+            setStatusStep("Extracting audio...");
+            let audioUrl = null;
+
+            try {
+              const extractRes = await fetch("/api/extract_audio", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ fileUrl }),
+              });
+
+              if (extractRes.ok) {
+                const data = await extractRes.json();
+                audioUrl = data.audioUrl;
+              } else {
+                toast.error("Failed to extract audio");
+              }
+            } catch (err) {
+              toast.error("Audio extraction error:", err);
+            }
+
+            setStatusStep("Saving data to database...");
             const saveRes = await fetch("/api/save_video_to_db", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 userId: session.user.id,
                 cloudUrl: fileUrl,
+                audioUrl,
                 title,
                 size,
                 duration,
@@ -123,6 +146,7 @@ const LandingPage = () => {
             const newVideo = await saveRes.json();
             add_video_to_local_storage(newVideo);
 
+            setStatusStep("Generating thumbnail...");
             try {
               const thumbRes = await fetch("/api/generate_thumbnail", {
                 method: "POST",
@@ -143,16 +167,19 @@ const LandingPage = () => {
               console.error("Thumbnail API error:", e);
             }
 
+            setStatusStep("Upload complete!");
             router.push(`/main/${newVideo._id}`);
             toast.success("Upload successful!");
           } else {
             toast.error("Upload failed!");
+            setStatusStep("Upload failed!");
           }
           setLoading(false);
         };
 
         xhr.onerror = () => {
           toast.error("Upload failed (network error)!");
+          setStatusStep("Upload failed (network error)");
           setCanCancel(false);
           setLoading(false);
         };
@@ -162,6 +189,7 @@ const LandingPage = () => {
     } catch (err) {
       console.error("Upload error:", err);
       toast.error("Upload failed!");
+      setStatusStep("Unexpected error");
       setCanCancel(false);
       setLoading(false);
     }
@@ -173,17 +201,14 @@ const LandingPage = () => {
       xhrRef.current = null;
     }
 
-    // Reset toàn bộ state
     setCanCancel(false);
     setLoading(false);
     setProgress(0);
     setEta(null);
 
-    // Reset file input (rất quan trọng)
     const fileInput = document.querySelector('input[type="file"]');
     if (fileInput) fileInput.value = "";
 
-    // Giải phóng URL object nếu có
     URL.revokeObjectURL(window.lastVideoURL);
     window.lastVideoURL = null;
 
@@ -264,9 +289,16 @@ const LandingPage = () => {
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
+
               <p className="text-center text-xs sm:text-sm">
                 {progress}% {eta && `(~${eta}s left)`}
               </p>
+
+              {statusStep && (
+                <p className="text-sm text-iris font-medium animate-pulse mt-2">
+                  {statusStep}
+                </p>
+              )}
             </div>
 
             {canCancel && (

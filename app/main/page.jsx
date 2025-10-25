@@ -21,6 +21,7 @@ const MainPage = () => {
   const [eta, setEta] = useState(null);
   const [canCancel, setCanCancel] = useState(false);
   const xhrRef = useRef(null);
+  const [statusStep, setStatusStep] = useState("");
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -49,6 +50,7 @@ const MainPage = () => {
     setLoading(true);
     setProgress(0);
     setEta(null);
+    setStatusStep("Initializing upload...");
 
     try {
       const size = file.size;
@@ -56,11 +58,14 @@ const MainPage = () => {
 
       const videoElement = document.createElement("video");
       videoElement.preload = "metadata";
-      videoElement.src = URL.createObjectURL(file);
+      const videoURL = URL.createObjectURL(file);
+      videoElement.src = videoURL;
+      window.lastVideoURL = videoURL;
 
       videoElement.onloadedmetadata = async () => {
         const duration = videoElement.duration;
 
+        setStatusStep("Requesting presigned URL...");
         const presignRes = await fetch("/api/s3_presign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -71,9 +76,9 @@ const MainPage = () => {
         });
 
         const { uploadUrl, fileUrl } = await presignRes.json();
+        setStatusStep("Uploading video to cloud...");
 
         setCanCancel(true);
-
         const xhr = new XMLHttpRequest();
         xhrRef.current = xhr;
         xhr.open("PUT", uploadUrl, true);
@@ -84,11 +89,9 @@ const MainPage = () => {
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
             const percent = Math.round((event.loaded / event.total) * 100);
-
             const elapsed = (Date.now() - startTime) / 1000;
             const speed = event.loaded / elapsed;
             const remaining = (event.total - event.loaded) / speed;
-
             setProgress(percent);
             setEta(remaining.toFixed(1));
           }
@@ -97,12 +100,34 @@ const MainPage = () => {
         xhr.onload = async () => {
           setCanCancel(false);
           if (xhr.status === 200) {
+            setStatusStep("Extracting audio...");
+            let audioUrl = null;
+
+            try {
+              const extractRes = await fetch("/api/extract_audio", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ fileUrl }),
+              });
+
+              if (extractRes.ok) {
+                const data = await extractRes.json();
+                audioUrl = data.audioUrl;
+              } else {
+                toast.error("Failed to extract audio");
+              }
+            } catch (err) {
+              toast.error("Audio extraction error:", err);
+            }
+
+            setStatusStep("Saving data to database...");
             const saveRes = await fetch("/api/save_video_to_db", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 userId: session.user.id,
                 cloudUrl: fileUrl,
+                audioUrl,
                 title,
                 size,
                 duration,
@@ -114,6 +139,7 @@ const MainPage = () => {
             const newVideo = await saveRes.json();
             add_video_to_local_storage(newVideo);
 
+            setStatusStep("Generating thumbnail...");
             try {
               const thumbRes = await fetch("/api/generate_thumbnail", {
                 method: "POST",
@@ -134,16 +160,19 @@ const MainPage = () => {
               console.error("Thumbnail API error:", e);
             }
 
+            setStatusStep("Upload complete!");
             router.push(`/main/${newVideo._id}`);
             toast.success("Upload successful!");
           } else {
             toast.error("Upload failed!");
+            setStatusStep("Upload failed!");
           }
           setLoading(false);
         };
 
         xhr.onerror = () => {
           toast.error("Upload failed (network error)!");
+          setStatusStep("Upload failed (network error)");
           setCanCancel(false);
           setLoading(false);
         };
@@ -153,6 +182,7 @@ const MainPage = () => {
     } catch (err) {
       console.error("Upload error:", err);
       toast.error("Upload failed!");
+      setStatusStep("Unexpected error");
       setCanCancel(false);
       setLoading(false);
     }
@@ -236,9 +266,16 @@ const MainPage = () => {
                     style={{ width: `${progress}%` }}
                   ></div>
                 </div>
-                <p className="text-center text-xs sm:text-sm">
-                  {progress}% {eta && `(~${eta}s left)`}
-                </p>
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-center text-xs sm:text-sm">
+                    {progress}% {eta && `(~${eta}s left)`}
+                  </p>
+                  {statusStep && (
+                    <p className="text-xs text-iris font-medium animate-pulse">
+                      {statusStep}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {canCancel && (

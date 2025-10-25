@@ -15,7 +15,7 @@ async function connectDB() {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { userId, cloudUrl, title, size, duration, createdAt, style } = body;
+    const { userId, cloudUrl, audioUrl, title, size, duration, createdAt, style } = body;
 
     if (!userId || !cloudUrl) {
       return NextResponse.json(
@@ -28,6 +28,7 @@ export async function POST(req) {
     const result = await db.collection("videos").insertOne({
       userId: new ObjectId(userId),
       cloudUrl,
+      audioUrl,
       title,
       size,
       duration,
@@ -39,6 +40,7 @@ export async function POST(req) {
       _id: result.insertedId,
       userId,
       cloudUrl,
+      audioUrl,
       title,
       size,
       duration,

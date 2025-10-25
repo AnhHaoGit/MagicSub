@@ -22,7 +22,6 @@ export async function POST(req) {
       );
     }
 
-    // ✅ chỉ tạo presign URL thôi, KHÔNG ghi DB
     const key = `uploads/${Date.now()}`;
 
     const command = new PutObjectCommand({
