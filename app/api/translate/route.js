@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import { secondsToSrtTimestamp } from "@/lib/second_to_srt";
 import { languages } from "@/lib/languages";
+import crypto from "crypto"; // thêm ở đầu file nếu chưa có
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -56,7 +57,10 @@ const formatSrtFile = (data, offset) => {
 };
 
 async function extractAudioSegment(filePath, start, duration) {
-  const tempAudioPath = path.join("/tmp", `segment_${start}.mp3`);
+  const tempAudioPath = path.join(
+    "/tmp",
+    `segment_${start}_${uuidv4()}_${crypto.randomBytes(4).toString("hex")}.mp3`
+  );
 
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn("ffmpeg", [
@@ -186,7 +190,14 @@ export async function POST(req) {
       );
     }
 
-    tempVideoPath = path.join("/tmp", `temp_${Date.now()}.mp4`);
+    // Tạo file video tạm cực kỳ unique
+    tempVideoPath = path.join(
+      "/tmp",
+      `temp_${Date.now()}_${uuidv4()}_${crypto
+        .randomBytes(4)
+        .toString("hex")}.mp4`
+    );
+
     const videoResponse = await axios.get(cloudUrl, {
       responseType: "arraybuffer",
     });
