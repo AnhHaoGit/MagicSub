@@ -4,7 +4,6 @@ import { MongoClient, ObjectId } from "mongodb";
 const client = new MongoClient(process.env.MONGODB_URI);
 let db;
 
-// Kết nối đến database
 async function connectDB() {
   if (!db) {
     await client.connect();
@@ -25,20 +24,34 @@ export async function DELETE(req) {
     }
 
     const db = await connectDB();
-    const collection = db.collection("videos");
 
-    // Xoá video khớp cả userId và _id
-    const result = await collection.deleteOne({
+    const videosCol = db.collection("videos");
+    const subtitlesCol = db.collection("subtitle");
+    const summariesCol = db.collection("summary");
+
+    // Xoá video
+    const videoResult = await videosCol.deleteOne({
       _id: new ObjectId(videoId),
       userId: new ObjectId(userId),
     });
 
-    if (result.deletedCount === 0) {
+    if (videoResult.deletedCount === 0) {
       return NextResponse.json(
         { message: "Video not found or not owned by user" },
         { status: 404 }
       );
     }
+
+    await Promise.all([
+      subtitlesCol.deleteMany({
+        videoId: new ObjectId(videoId),
+        userId: new ObjectId(userId),
+      }),
+      summariesCol.deleteMany({
+        videoId: new ObjectId(videoId),
+        userId: new ObjectId(userId),
+      }),
+    ]);
 
     return NextResponse.json(
       { message: "Video deleted successfully" },
