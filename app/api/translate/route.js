@@ -2,8 +2,9 @@
 
 import { NextResponse } from "next/server";
 import axios from "axios";
-import { Readable } from "stream";
 import { spawn } from "child_process";
+import fs from "fs";
+import path from "path";
 import FormData from "form-data";
 import { MongoClient, ObjectId } from "mongodb";
 import { v4 as uuidv4 } from "uuid";
@@ -12,9 +13,7 @@ import { secondsToSrtTimestamp } from "@/lib/second_to_srt";
 import { languages } from "@/lib/languages";
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
-
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
 const client = new MongoClient(process.env.MONGODB_URI);
 let db;
 
@@ -49,42 +48,49 @@ const formatSrtFile = (data, offset) => {
       index: uuidv4(),
       start: secondsToSrtTimestamp(updatedStart),
       end: secondsToSrtTimestamp(updatedEnd),
-      text: items.slice(2).join(" "), // gộp tất cả dòng text nếu nhiều hơn 1
+      text: items.slice(2).join(" "),
     });
   }
 
   return formattedData;
 };
 
-async function extractAudioSegment(buffer, start, duration) {
+async function extractAudioSegment(filePath, start, duration) {
+  const tempAudioPath = path.join("/tmp", `segment_${start}.mp3`);
+
   return new Promise((resolve, reject) => {
     const ffmpeg = spawn("ffmpeg", [
-      "-i",
-      "pipe:0",
       "-ss",
       start.toString(),
       "-t",
       duration.toString(),
-      "-f",
-      "mp3",
+      "-i",
+      filePath,
+      "-vn",
       "-acodec",
       "libmp3lame",
-      "pipe:1",
+      "-b:a",
+      "320k",
+      "-ar",
+      "48000",
+      "-q:a",
+      "2",
+      "-f",
+      "mp3",
+      tempAudioPath,
     ]);
-    const chunks = [];
-    ffmpeg.stdout.on("data", (chunk) => chunks.push(chunk));
+
     ffmpeg.stderr.on("data", (d) => console.log("ffmpeg:", d.toString()));
     ffmpeg.on("error", reject);
     ffmpeg.on("close", (code) => {
-      if (code === 0) resolve(Buffer.concat(chunks));
+      if (code === 0) resolve(tempAudioPath);
       else reject(new Error(`ffmpeg exited with code ${code}`));
     });
-    Readable.from(buffer).pipe(ffmpeg.stdin);
   });
 }
 
 async function translateSegments(segments, targetLanguage) {
-  const batchSize = 40; // số câu mỗi lần gửi, tùy chỉnh theo nhu cầu
+  const batchSize = 40;
   const result = [];
 
   for (let i = 0; i < segments.length; i += batchSize) {
@@ -122,13 +128,14 @@ async function translateSegments(segments, targetLanguage) {
 
     let translatedArray;
     try {
-      translatedArray = JSON.parse(res.data.choices[0].message.content.trim());
+      translatedArray = JSON.parse(
+        res.data.choices[0].message.content.trim().replace(/```json|```/g, "")
+      );
     } catch (e) {
       console.error("Error parsing translation:", e);
       throw new Error("Failed to parse translation response");
     }
 
-    // Nếu thiếu phần tử, tự chèn câu gốc cho đủ
     if (translatedArray.length !== batch.length) {
       console.warn(
         `Mismatch: expected ${batch.length}, got ${translatedArray.length}`
@@ -151,6 +158,8 @@ async function translateSegments(segments, targetLanguage) {
 
 export async function POST(req) {
   const session = client.startSession();
+  let tempVideoPath = null;
+
   try {
     const {
       cloudUrl,
@@ -177,8 +186,11 @@ export async function POST(req) {
       );
     }
 
-    const response = await axios.get(cloudUrl, { responseType: "arraybuffer" });
-    const audioBuffer = Buffer.from(response.data);
+    tempVideoPath = path.join("/tmp", `temp_${Date.now()}.mp4`);
+    const videoResponse = await axios.get(cloudUrl, {
+      responseType: "arraybuffer",
+    });
+    fs.writeFileSync(tempVideoPath, videoResponse.data);
 
     const segmentDuration = 240;
     const [startPoint, endPoint] = endpoints;
@@ -189,14 +201,15 @@ export async function POST(req) {
       const segmentStart = startPoint + offset;
       const segmentLength = Math.min(segmentDuration, totalDuration - offset);
 
-      const segmentBuffer = await extractAudioSegment(
-        audioBuffer,
+      const segmentAudioPath = await extractAudioSegment(
+        tempVideoPath,
         segmentStart,
         segmentLength
       );
 
+      const audioBuffer = fs.readFileSync(segmentAudioPath);
       const form = new FormData();
-      form.append("file", segmentBuffer, {
+      form.append("file", audioBuffer, {
         filename: `chunk_${segmentStart}.mp3`,
         contentType: "audio/mp3",
       });
@@ -215,6 +228,12 @@ export async function POST(req) {
 
       const formattedSrt = formatSrtFile(whisperRes.data, segmentStart);
       segments.push(...formattedSrt);
+
+      fs.unlinkSync(segmentAudioPath);
+    }
+
+    if (tempVideoPath && fs.existsSync(tempVideoPath)) {
+      fs.unlinkSync(tempVideoPath);
     }
 
     const translatedSegments = await translateSegments(
@@ -249,9 +268,15 @@ export async function POST(req) {
       language: targetLanguage,
     });
   } catch (err) {
-    console.error("Error processing video:", err);
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
+    console.error("❌ Error processing video:", err);
+    return NextResponse.json(
+      { message: "Check your Internet connection" },
+      { status: 500 }
+    );
   } finally {
     await session.endSession();
+    if (tempVideoPath && fs.existsSync(tempVideoPath)) {
+      fs.unlinkSync(tempVideoPath);
+    }
   }
 }

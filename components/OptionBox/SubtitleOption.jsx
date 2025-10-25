@@ -30,6 +30,7 @@ const SubtitleOption = ({
   const videoCost = videoData
     ? calculateCost(videoData.size, videoData.duration)
     : 0;
+  const [abortController, setAbortController] = useState(null);
 
   const handleSourceLanguageChange = (value) => {
     setSourceLanguage(value);
@@ -54,45 +55,61 @@ const SubtitleOption = ({
       return;
     }
 
+    if (abortController) abortController.abort();
+
+    const controller = new AbortController();
+    setAbortController(controller);
+
     setIsProcessing(true);
     setLoading(true);
-    const res = await fetch("/api/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        cloudUrl: videoData.cloudUrl,
-        _id: videoData._id,
-        sourceLanguage: sourceLanguage,
-        targetLanguage: targetLanguage,
-        userId: session.user.id,
-        duration: videoData.duration,
-        cost: videoCost,
-        endpoints,
-      }),
-    });
 
-    const data = await res.json();
-    if (!res.ok) {
-      toast.error(data.message);
+    try {
+      const res = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cloudUrl: videoData.cloudUrl,
+          _id: videoData._id,
+          sourceLanguage,
+          targetLanguage,
+          userId: session.user.id,
+          duration: videoData.duration,
+          cost: videoCost,
+          endpoints,
+        }),
+        signal: controller.signal,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.message || "Error during translation.");
+      } else {
+        add_subtitle_to_local_storage_by_video_id(
+          videoData._id,
+          data.subtitle,
+          data.subtitleId,
+          data.language,
+          endpoints
+        );
+        update_gems(videoCost);
+        toast.success("Subtitle successfully generated!");
+        router.push(
+          `/main/custom_subtitle/${videoData._id}?subtitleId=${data.subtitleId}`
+        );
+      }
+    } catch (err) {
+      if (err.name === "AbortError") {
+        toast.info("Translation cancelled.");
+      } else {
+        toast.error("An unexpected error occurred.");
+        console.error(err);
+      }
+    } finally {
       setIsProcessing(false);
       setLoading(false);
-      return;
-    } else {
-      add_subtitle_to_local_storage_by_video_id(
-        videoData._id,
-        data.subtitle,
-        data.subtitleId,
-        data.language,
-        endpoints
-      );
-      update_gems(videoCost);
-      toast.success("Subtitle successfully generated!");
-      router.push(
-        `/main/custom_subtitle/${videoData._id}?subtitleId=${data.subtitleId}`
-      );
+      setAbortController(null);
     }
-    setIsProcessing(false);
-    setLoading(false);
   };
 
   function getLanguageNameByCode(value) {
@@ -240,6 +257,18 @@ const SubtitleOption = ({
             </>
           )}
         </button>
+        {isProcessing && (
+          <button
+            onClick={() => {
+              if (abortController) {
+                abortController.abort();
+              }
+            }}
+            className="text-xs iris hover:violet"
+          >
+            cancel
+          </button>
+        )}
         <p className="text-xs text-center">
           You will be charged {videoCost} 💎 for this video
         </p>

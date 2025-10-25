@@ -63,6 +63,10 @@ body {
   color: #4C3BCF;
 }
 
+.hover\:violet:hover {
+  color: #836fff;
+}
+
 .hover\:bg-violet:hover {
   background-color: #836fff;
 }
@@ -222,6 +226,7 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
