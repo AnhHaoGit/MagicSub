@@ -443,7 +443,7 @@ bg-[${customize.background_color}]`;
                 className={subtitleClasses}
                 style={{
                   color: customize.font_color,
-                  bottom: `${customize.margin_bottom}px`,
+                  bottom: `${customize.margin_bottom * 1.6 + 45}px`,
                   fontSize: `${customize.font_size + 6}px`,
                   backgroundColor: `${
                     customize.border_style === "text_outline"

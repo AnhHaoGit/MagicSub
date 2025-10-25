@@ -14,12 +14,25 @@ import SuggestAFeature from "@/components/SuggestAFeature";
 import fetch_data from "@/lib/fetch_data";
 import DemoBox from "@/components/DemoBox";
 
+const demoVideos = [
+  {
+    src: "https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/hard_subbed_demo_english.mp4",
+  },
+  {
+    src: "https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/hard_subbed_demo_korean.mp4",
+  },
+  {
+    src: "https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/hard_subbed_demo_russian.mp4",
+  },
+];
+
 const LandingPage = () => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [eta, setEta] = useState(null);
   const [canCancel, setCanCancel] = useState(false);
   const xhrRef = useRef(null);
+  const [currentVideo, setCurrentVideo] = useState(0);
 
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -550,6 +563,76 @@ const LandingPage = () => {
               src="https://magicsub-storage.s3.ap-southeast-2.amazonaws.com/ai_powered_language+detection.mp4"
             ></video>
           </div>
+        </div>
+      </section>
+
+      {/* === Demo Videos Carousel === */}
+      <section className="flex flex-col items-center justify-center w-full py-20 bg-gradient-to-b from-white to-violet/10">
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-10">
+          🎬 Hard-Subbed Videos
+        </h2>
+
+        {/* === Carousel Container === */}
+        <div className="w-full flex items-center justify-center gap-5">
+          {/* === Left Button === */}
+          <button
+            onClick={() =>
+              setCurrentVideo((prev) =>
+                prev === 0 ? demoVideos.length - 1 : prev - 1
+              )
+            }
+            className="z-10 bg-white rounded-full shadow-lg hover:bg-gray-100 p-3 transition"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="w-6 h-6 text-gray-700"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 19.5L8.25 12l7.5-7.5"
+              />
+            </svg>
+          </button>
+
+          {/* === Video Display === */}
+          <div className="overflow-hidden rounded-3xl h-[700px] bg-black border border-gray-200 w-[85%] shadow-[0_0_25px_5px_rgba(131,111,255,0.6)]">
+            <video
+              key={demoVideos[currentVideo].src}
+              src={demoVideos[currentVideo].src}
+              className="w-full rounded-3xl"
+              controls
+            ></video>
+          </div>
+
+          {/* === Right Button === */}
+          <button
+            onClick={() =>
+              setCurrentVideo((prev) =>
+                prev === demoVideos.length - 1 ? 0 : prev + 1
+              )
+            }
+            className="z-10 bg-white rounded-full shadow-lg hover:bg-gray-100 p-3 transition"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="w-6 h-6 text-gray-700"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8.25 4.5l7.5 7.5-7.5 7.5"
+              />
+            </svg>
+          </button>
         </div>
       </section>
     </>

@@ -40,25 +40,27 @@ async function generateTempMp4(cloudUrl, assPath, outputPath, endpoints) {
 
     const ffmpeg = spawn("ffmpeg", [
       "-ss",
-      start.toString(), // bắt đầu từ điểm này
+      start.toString(),
       "-t",
-      duration.toString(), // độ dài đoạn cần giữ lại
+      duration.toString(),
       "-i",
-      cloudUrl, // video gốc
+      cloudUrl,
       "-vf",
-      `ass=${assPath}:fontsdir=${fontsDir}`, // chèn phụ đề
+      `ass=${assPath}:fontsdir=${fontsDir}`,
       "-c:v",
       "libx264",
       "-preset",
-      "fast",
+      "veryfast",
       "-crf",
-      "23",
+      "21",
       "-pix_fmt",
       "yuv420p",
       "-c:a",
       "aac",
+      "-b:a",
+      "192k",
       "-movflags",
-      "+faststart", // tối ưu phát online
+      "+faststart",
       "-f",
       "mp4",
       outputPath,
@@ -136,8 +138,6 @@ export async function POST(req) {
 
     // Tạo file ASS tạm
     const adjustedSubtitles = adjustSubtitleTimestamps(subtitle, endpoints[0]);
-    console.log(subtitle)
-    console.log(adjustedSubtitles)
     const assContent = generateASS(adjustedSubtitles, customize);
     const assPath = path.join(os.tmpdir(), `sub_${now}.ass`);
     await fs.writeFile(assPath, assContent, { encoding: "utf8" });
@@ -231,11 +231,9 @@ function fontColor(color) {
 
 function borderColor(customize) {
   if (customize.border_style === "opaque_box") {
-    console.log(customize.background_opacity);
     const alpha = (255 - Math.round((customize.background_opacity / 100) * 255))
       .toString(16)
       .padStart(2, "0");
-    console.log(alpha);
     const b = customize.background_color.substring(5, 7);
     const g = customize.background_color.substring(3, 5);
     const r = customize.background_color.substring(1, 3);
