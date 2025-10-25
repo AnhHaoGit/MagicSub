@@ -57,13 +57,13 @@ const Page = () => {
   return (
     <>
       <MainNavbar />
-      <main className="flex flex-col items-center justify-center h-screen w-full p-4 sm:p-6 lg:p-10">
+      <main className="flex flex-col items-center justify-center h-screen w-full p-30">
         {/* Video box */}
-        <div className="w-full max-w-5xl flex justify-center mt-10">
+        <div className="w-full max-w-5xl h-9/10 flex bg-black justify-center rounded-2xl shadow-xl">
           <video
             src={cloudUrl}
             controls
-            className="shadow-xl w-full h-auto rounded-2xl"
+            className="shadow-xl w-full max-h-full rounded-2xl"
           />
         </div>
 

@@ -33,7 +33,7 @@ const SubbedOption = ({ videoData, session }) => {
   return (
     <div className="w-full h-full flex flex-col items-center max-h-[60vh] border border-gray-300 rounded-xl p-4 bg-white shadow-sm">
       <h2 className="text-lg font-semibold mb-3">Hard-Subbed Videos</h2>
-      <div className="w-full overflow-y-auto space-y-2 flex flex-col max-h-[80px]">
+      <div className="w-full overflow-y-auto space-y-2 flex flex-col max-h-[55vh]">
         {cloudUrls && cloudUrls.length > 0 ? (
           cloudUrls.map((url, index) => (
             <Link

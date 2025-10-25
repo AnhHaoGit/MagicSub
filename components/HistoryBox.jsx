@@ -56,16 +56,16 @@ const HistoryBox = ({ video, onDelete }) => {
         className="w-full bg-white rounded-2xl shadow-md overflow-hidden flex flex-col hover:shadow-lg transition-shadow relative"
       >
         {/* Thumbnail */}
-        <div className="relative w-full aspect-video bg-gray-200">
+        <div className="flex items-center justify-center w-full max-h-[200px] aspect-video">
           <img
             src={video.thumbnailUrl}
             alt={video.title}
-            className="w-full h-full object-cover"
+            className="max-w-full max-h-full object-cover rounded-2xl"
           />
         </div>
 
         {/* Nội dung */}
-        <div className="p-3 flex flex-col gap-2">
+        <div className="p-3 flex max-h-3/5 flex-col gap-2">
           <p className="font-semibold text-sm line-clamp-2">{video.title}</p>
 
           <p className="text-xs text-gray-500">
