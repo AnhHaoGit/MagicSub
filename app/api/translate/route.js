@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import { secondsToSrtTimestamp } from "@/lib/second_to_srt";
 import { languages } from "@/lib/languages";
-import crypto from "crypto"; // thêm ở đầu file nếu chưa có
+import crypto from "crypto";
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -162,6 +162,7 @@ async function translateSegments(segments, targetLanguage) {
 
 export async function POST(req) {
   const session = client.startSession();
+  const tempFiles = [];
   let tempVideoPath = null;
 
   try {
@@ -190,13 +191,13 @@ export async function POST(req) {
       );
     }
 
-    // Tạo file video tạm cực kỳ unique
     tempVideoPath = path.join(
       "/tmp",
       `temp_${Date.now()}_${uuidv4()}_${crypto
         .randomBytes(4)
         .toString("hex")}.mp4`
     );
+    tempFiles.push(tempVideoPath);
 
     const videoResponse = await axios.get(cloudUrl, {
       responseType: "arraybuffer",
@@ -212,35 +213,43 @@ export async function POST(req) {
       const segmentStart = startPoint + offset;
       const segmentLength = Math.min(segmentDuration, totalDuration - offset);
 
-      const segmentAudioPath = await extractAudioSegment(
-        tempVideoPath,
-        segmentStart,
-        segmentLength
-      );
+      let segmentAudioPath = null;
+      try {
+        segmentAudioPath = await extractAudioSegment(
+          tempVideoPath,
+          segmentStart,
+          segmentLength
+        );
+        tempFiles.push(segmentAudioPath);
 
-      const audioBuffer = fs.readFileSync(segmentAudioPath);
-      const form = new FormData();
-      form.append("file", audioBuffer, {
-        filename: `chunk_${segmentStart}.mp3`,
-        contentType: "audio/mp3",
-      });
-      form.append("model", "whisper-1");
-      form.append("response_format", "srt");
-      if (sourceLanguage !== "auto") {
-        form.append("language", sourceLanguage);
+        const audioBuffer = fs.readFileSync(segmentAudioPath);
+        const form = new FormData();
+        form.append("file", audioBuffer, {
+          filename: `chunk_${segmentStart}.mp3`,
+          contentType: "audio/mp3",
+        });
+        form.append("model", "whisper-1");
+        form.append("response_format", "srt");
+        if (sourceLanguage !== "auto") {
+          form.append("language", sourceLanguage);
+        }
+
+        const whisperRes = await axios.post(WHISPER_API_URL, form, {
+          headers: {
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
+            ...form.getHeaders(),
+          },
+        });
+
+        const formattedSrt = formatSrtFile(whisperRes.data, segmentStart);
+        segments.push(...formattedSrt);
+      } catch (err) {
+        console.error(`❌ Error processing segment ${offset / 240 + 1}:`, err);
+      } finally {
+        if (segmentAudioPath && fs.existsSync(segmentAudioPath)) {
+          fs.unlinkSync(segmentAudioPath);
+        }
       }
-
-      const whisperRes = await axios.post(WHISPER_API_URL, form, {
-        headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-          ...form.getHeaders(),
-        },
-      });
-
-      const formattedSrt = formatSrtFile(whisperRes.data, segmentStart);
-      segments.push(...formattedSrt);
-
-      fs.unlinkSync(segmentAudioPath);
     }
 
     if (tempVideoPath && fs.existsSync(tempVideoPath)) {
@@ -286,8 +295,8 @@ export async function POST(req) {
     );
   } finally {
     await session.endSession();
-    if (tempVideoPath && fs.existsSync(tempVideoPath)) {
-      fs.unlinkSync(tempVideoPath);
+    for (const filePath of tempFiles) {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
     }
   }
 }
