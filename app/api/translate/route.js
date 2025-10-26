@@ -2,14 +2,57 @@
 
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { spawn } from "child_process";
+import fs from "fs";
+import path from "path";
 import FormData from "form-data";
 import { ObjectId } from "mongodb";
+import { v4 as uuidv4 } from "uuid";
 import { connectDB } from "@/lib/connect_db";
 import { formatLanguage } from "@/lib/format_language";
 import { formatSrtFile } from "@/lib/format_srt_file";
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+async function sliceAudioBuffer(buffer, start, duration) {
+  const inputPath = path.join("/tmp", `input_${uuidv4()}.mp3`);
+  const outputPath = path.join("/tmp", `segment_${start}_${uuidv4()}.mp3`);
+  fs.writeFileSync(inputPath, buffer);
+
+  return new Promise((resolve, reject) => {
+    const ffmpeg = spawn("ffmpeg", [
+      "-ss",
+      start.toString(),
+      "-t",
+      duration.toString(),
+      "-i",
+      inputPath,
+      "-acodec",
+      "libmp3lame",
+      "-b:a",
+      "320k",
+      "-ar",
+      "48000",
+      "-q:a",
+      "2",
+      "-f",
+      "mp3",
+      outputPath,
+    ]);
+
+    ffmpeg.stderr.on("data", (d) => console.log("ffmpeg:", d.toString()));
+    ffmpeg.on("error", (err) => {
+      fs.unlinkSync(inputPath);
+      reject(err);
+    });
+    ffmpeg.on("close", (code) => {
+      fs.unlinkSync(inputPath);
+      if (code === 0) resolve(outputPath);
+      else reject(new Error(`ffmpeg exited with code ${code}`));
+    });
+  });
+}
 
 async function translateSegments(segments, targetLanguage) {
   const batchSize = 40;
@@ -77,6 +120,7 @@ async function translateSegments(segments, targetLanguage) {
 export async function POST(req) {
   const client = await connectDB();
   const session = client.client.startSession();
+  const tempFiles = [];
 
   try {
     const {
@@ -102,34 +146,33 @@ export async function POST(req) {
         { status: 400 }
       );
 
-    // 🔹 tải audio trực tiếp
     const audioResponse = await axios.get(audioUrl, {
       responseType: "arraybuffer",
     });
     const audioBuffer = Buffer.from(audioResponse.data);
 
-    // 🔹 thiết lập chia nhỏ buffer
-    const segmentDuration = 240; // giây
+    const segmentDuration = 240;
     const [startPoint, endPoint] = endpoints;
     const totalDuration = endPoint - startPoint;
-    const bytesPerSecond = (128 * 1000) / 8; // giả định 128kbps ≈ 16000 byte/s
     const segments = [];
 
     for (let offset = 0; offset < totalDuration; offset += segmentDuration) {
       const segmentStart = startPoint + offset;
       const segmentLength = Math.min(segmentDuration, totalDuration - offset);
 
-      // chia buffer
-      const startByte = Math.floor(segmentStart * bytesPerSecond);
-      const endByte = Math.min(
-        Math.floor((segmentStart + segmentLength) * bytesPerSecond),
-        audioBuffer.length
-      );
-      const segmentBuffer = audioBuffer.subarray(startByte, endByte);
-
+      let segmentAudioPath = null;
       try {
+        segmentAudioPath = await sliceAudioBuffer(
+          audioBuffer,
+          segmentStart,
+          segmentLength
+        );
+
+        tempFiles.push(segmentAudioPath);
+
+        const chunkBuffer = fs.readFileSync(segmentAudioPath);
         const form = new FormData();
-        form.append("file", segmentBuffer, {
+        form.append("file", chunkBuffer, {
           filename: `chunk_${segmentStart}.mp3`,
           contentType: "audio/mp3",
         });
@@ -151,16 +194,17 @@ export async function POST(req) {
           { message: `Error processing segment ${offset / 240 + 1}` },
           { status: 500 }
         );
+      } finally {
+        if (segmentAudioPath && fs.existsSync(segmentAudioPath))
+          fs.unlinkSync(segmentAudioPath);
       }
     }
 
-    // 🔹 dịch phụ đề nếu cần
     const translatedSegments =
       targetLanguage === sourceLanguage
         ? segments
         : await translateSegments(segments, targetLanguage);
 
-    // 🔹 trừ gem + lưu DB
     let result;
     await session.withTransaction(async () => {
       await users.updateOne(
@@ -194,5 +238,8 @@ export async function POST(req) {
     );
   } finally {
     await session.endSession();
+    for (const filePath of tempFiles) {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
   }
 }

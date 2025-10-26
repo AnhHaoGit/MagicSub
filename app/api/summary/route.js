@@ -2,37 +2,72 @@
 
 import { NextResponse } from "next/server";
 import axios from "axios";
+import fs from "fs";
+import path from "path";
+import { spawn } from "child_process";
 import FormData from "form-data";
 import { ObjectId } from "mongodb";
+import { v4 as uuidv4 } from "uuid";
 import { connectDB } from "@/lib/connect_db";
 import { formatLanguage } from "@/lib/format_language";
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
+async function extractAudioSegment(inputPath, start, duration) {
+  const outputPath = path.join("/tmp", `segment_${start}_${uuidv4()}.mp3`);
+
+  return new Promise((resolve, reject) => {
+    const ffmpeg = spawn("ffmpeg", [
+      "-ss",
+      start.toString(),
+      "-t",
+      duration.toString(),
+      "-i",
+      inputPath,
+      "-acodec",
+      "libmp3lame",
+      "-b:a",
+      "128k",
+      "-ar",
+      "44100",
+      "-f",
+      "mp3",
+      outputPath,
+    ]);
+
+    ffmpeg.stderr.on("data", (d) => console.log("ffmpeg:", d.toString()));
+    ffmpeg.on("error", reject);
+    ffmpeg.on("close", (code) => {
+      if (code === 0) resolve(outputPath);
+      else reject(new Error(`ffmpeg exited with code ${code}`));
+    });
+  });
+}
+
 export async function POST(req) {
-  const session = client.startSession();
+  const client = await connectDB();
+  const session = client.client.startSession();
+  const tempFiles = [];
 
   try {
     const { audioUrl, _id, userId, duration, cost, option, targetLanguage } =
       await req.json();
 
-    const db = await connectDB();
+    const db = client;
     const users = db.collection("users");
     const videos = db.collection("videos");
     const summaries = db.collection("summary");
 
     const user = await users.findOne({ _id: new ObjectId(userId) });
-    if (!user) {
+    if (!user)
       return NextResponse.json({ message: "User not found!" }, { status: 404 });
-    }
 
-    if ((user.gems || 0) < cost) {
+    if ((user.gems || 0) < cost)
       return NextResponse.json(
         { message: "Not enough gems to process request!" },
         { status: 400 }
       );
-    }
 
     const videoDoc = await videos.findOne({ _id: new ObjectId(_id) });
     let segmentsAll = [];
@@ -40,26 +75,32 @@ export async function POST(req) {
     if (videoDoc && videoDoc.transcript && videoDoc.transcript.length > 0) {
       segmentsAll = videoDoc.transcript;
     } else {
+
       const response = await axios.get(audioUrl, {
         responseType: "arraybuffer",
       });
       const audioBuffer = Buffer.from(response.data);
 
+      const tempInputPath = path.join("/tmp", `input_${uuidv4()}.mp3`);
+      fs.writeFileSync(tempInputPath, audioBuffer);
+      tempFiles.push(tempInputPath);
+
       const segmentDuration = 240;
       const totalDuration = duration;
 
-      const bytesPerSecond = (128 * 1000) / 8;
-
       for (let start = 0; start < totalDuration; start += segmentDuration) {
-        const startByte = Math.floor(start * bytesPerSecond);
-        const endByte = Math.min(
-          Math.floor((start + segmentDuration) * bytesPerSecond),
-          audioBuffer.length
-        );
-        const segmentBuffer = audioBuffer.subarray(startByte, endByte);
+        const segmentLength = Math.min(segmentDuration, totalDuration - start);
 
+        const segmentPath = await extractAudioSegment(
+          tempInputPath,
+          start,
+          segmentLength
+        );
+        tempFiles.push(segmentPath);
+
+        const chunkBuffer = fs.readFileSync(segmentPath);
         const form = new FormData();
-        form.append("file", segmentBuffer, {
+        form.append("file", chunkBuffer, {
           filename: `chunk_${start}.mp3`,
           contentType: "audio/mp3",
         });
@@ -134,6 +175,9 @@ export async function POST(req) {
     );
   } finally {
     await session.endSession();
+    for (const filePath of tempFiles) {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
   }
 }
 
@@ -235,7 +279,6 @@ Rules:
   try {
     jsonData = JSON.parse(res.data.choices[0].message.content.trim());
   } catch (err) {
-    console.error("Error parsing JSON summary:", err);
     throw new Error("Failed to parse structured summary from model.");
   }
 
