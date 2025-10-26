@@ -83,7 +83,7 @@ const LandingPage = () => {
         });
 
         const { uploadUrl, fileUrl } = await presignRes.json();
-        setStatusStep("Uploading video to cloud...");
+        setStatusStep("Uploading video...");
 
         setCanCancel(true);
         const xhr = new XMLHttpRequest();

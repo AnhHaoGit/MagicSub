@@ -2,7 +2,18 @@
 
 import { useRef, useEffect } from "react";
 
-const SubtitleScrollBox = ({ subtitle, setSubtitle, activeSubtitleIndex }) => {
+const timeToSeconds = (timeStr) => {
+  const [hms, ms] = timeStr.split(",");
+  const [h, m, s] = hms.split(":").map(Number);
+  return h * 3600 + m * 60 + s + (ms ? parseInt(ms) / 1000 : 0);
+};
+
+const SubtitleScrollBox = ({
+  subtitle,
+  setSubtitle,
+  activeSubtitleIndex,
+  videoRef,
+}) => {
   const itemRefs = useRef([]);
 
   const updateSubtitle = (indexToUpdate, newData) => {
@@ -43,11 +54,20 @@ const SubtitleScrollBox = ({ subtitle, setSubtitle, activeSubtitleIndex }) => {
     }
   }, [activeSubtitleIndex, subtitle]);
 
+  const handleClick = (item) => {
+    if (videoRef?.current && item.start) {
+      const seconds = timeToSeconds(item.start);
+      videoRef.current.currentTime = seconds;
+      videoRef.current.play();
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3 bg-light-gray shadow-lg h-[60vh] overflow-y-auto p-3 rounded-2xl">
       {subtitle.map((item, index) => (
         <div key={index} ref={(el) => (itemRefs.current[index] = el)}>
           <div
+            onClick={() => handleClick(item)}
             className={`flex bg-white gray flex-col items-start justify-items-start w-full p-3 gap-2 rounded-lg shadow-md transition-colors ${
               item.index === activeSubtitleIndex ? "border-iris" : ""
             }`}

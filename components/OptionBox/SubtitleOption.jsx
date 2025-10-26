@@ -61,7 +61,7 @@ const SubtitleOption = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cloudUrl: videoData.cloudUrl,
+          audioUrl: videoData.audioUrl,
           _id: videoData._id,
           sourceLanguage,
           targetLanguage,

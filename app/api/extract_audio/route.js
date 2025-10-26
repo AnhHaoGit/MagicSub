@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import https from "https";
+import fs from "fs";
+import path from "path";
+import os from "os";
 import { spawn } from "child_process";
 
 const s3 = new S3Client({
@@ -12,28 +15,38 @@ const s3 = new S3Client({
 });
 
 export async function POST(req) {
+  let tempVideoPath = null;
+  let tempAudioPath = null;
+
   try {
     const { fileUrl } = await req.json();
     if (!fileUrl) {
       return NextResponse.json({ error: "Missing fileUrl" }, { status: 400 });
     }
 
-    const videoBuffer = await new Promise((resolve, reject) => {
-      const chunks = [];
-      https.get(fileUrl, (res) => {
-        res.on("data", (chunk) => chunks.push(chunk));
-        res.on("end", () => {
-          const buffer = Buffer.concat(chunks);
-          resolve(buffer);
+    tempVideoPath = path.join(os.tmpdir(), `video_${Date.now()}.mp4`);
+    tempAudioPath = path.join(os.tmpdir(), `audio_${Date.now()}.mp3`);
+
+    await new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(tempVideoPath);
+      https
+        .get(fileUrl, (res) => {
+          if (res.statusCode !== 200) {
+            reject(new Error(`Download failed with status ${res.statusCode}`));
+            return;
+          }
+          res.pipe(file);
+          file.on("finish", () => file.close(resolve));
+        })
+        .on("error", (err) => {
+          fs.unlink(tempVideoPath, () => reject(err));
         });
-        res.on("error", reject);
-      });
     });
 
-    const audioBuffer = await new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       const ffmpeg = spawn("ffmpeg", [
         "-i",
-        "pipe:0",
+        tempVideoPath,
         "-vn",
         "-acodec",
         "libmp3lame",
@@ -41,32 +54,27 @@ export async function POST(req) {
         "192k",
         "-f",
         "mp3",
-        "pipe:1",
+        tempAudioPath,
       ]);
 
-      const chunks = [];
-
-      ffmpeg.stdout.on("data", (chunk) => chunks.push(chunk));
       ffmpeg.stderr.on("data", (data) =>
         console.log("FFmpeg log:", data.toString())
       );
+
       ffmpeg.on("error", (err) => {
         console.error("FFmpeg spawn error:", err);
         reject(err);
       });
-      ffmpeg.on("close", (code) => {
-        if (code === 0) {
-          resolve(Buffer.concat(chunks));
-        } else {
-          reject(new Error("FFmpeg failed to extract audio"));
-        }
-      });
 
-      ffmpeg.stdin.write(videoBuffer);
-      ffmpeg.stdin.end();
+      ffmpeg.on("close", (code) => {
+        if (code === 0) resolve();
+        else reject(new Error("FFmpeg failed to extract audio"));
+      });
     });
 
+    const audioBuffer = fs.readFileSync(tempAudioPath);
     const audioKey = `audio/${Date.now()}`;
+
     const uploadAudio = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET,
       Key: audioKey,
@@ -85,5 +93,16 @@ export async function POST(req) {
       { error: "Failed to extract audio" },
       { status: 500 }
     );
+  } finally {
+    try {
+      if (tempVideoPath && fs.existsSync(tempVideoPath)) {
+        fs.unlinkSync(tempVideoPath);
+      }
+      if (tempAudioPath && fs.existsSync(tempAudioPath)) {
+        fs.unlinkSync(tempAudioPath);
+      }
+    } catch (cleanupErr) {
+      console.warn("Cleanup warning:", cleanupErr.message);
+    }
   }
 }

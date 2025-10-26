@@ -272,8 +272,9 @@ const Page = () => {
     customize.is_italic ? "italic" : ""
   } ${customize.is_underline ? "underline" : ""}  text-[${
     customize.font_color
-  }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block max-w-full 
+  }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block w-[90%]
 bg-[${customize.background_color}]`;
+
   const strokeLayers = [];
   const steps = 64;
   const radius = customize.outline_width;
@@ -295,17 +296,6 @@ bg-[${customize.background_color}]`;
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
-  }
-
-  if (!videoData) {
-    return (
-      <>
-        <MainNavbar />
-        <main className="flex items-center justify-center h-screen">
-          <p className="text-lg text-gray-600">Loading video data...</p>
-        </main>
-      </>
-    );
   }
 
   const handleGenerateVideo = async () => {
@@ -425,13 +415,24 @@ bg-[${customize.background_color}]`;
     setIsDownloadingTxt(false);
   };
 
+  if (!videoData) {
+    return (
+      <>
+        <MainNavbar />
+        <main className="flex items-center justify-center h-screen">
+          <p className="text-lg text-gray-600">Loading video data...</p>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <MainNavbar />
 
       <main className="flex flex-col lg:flex-row justify-between h-screen items-center w-full flex-1 gap-5 pt-25 p-5">
-        <div className="flex flex-col h-full w-full lg:w-3/5 gap-5">
-          <div className="relative flex items-center justify-center w-full bg-black rounded-2xl h-4/5">
+        <div className="flex flex-col items-center justify-evenly bg-smoke rounded-2xl h-full w-full lg:w-3/5 gap-5">
+          <div className="relative flex items-center justify-center w-full rounded-2xl">
             <video
               ref={videoRef}
               controls
@@ -443,8 +444,10 @@ bg-[${customize.background_color}]`;
                 className={subtitleClasses}
                 style={{
                   color: customize.font_color,
-                  bottom: `${customize.margin_bottom * 1.6 + 45}px`,
-                  fontSize: `${customize.font_size + 6}px`,
+                  bottom: `calc(${
+                    (Math.min(customize.margin_bottom, 240) / 240) * 80
+                  }%)`,
+                  fontSize: `calc(${customize.font_size / 13}vw)`,
                   backgroundColor: `${
                     customize.border_style === "text_outline"
                       ? "transparent"
@@ -467,7 +470,7 @@ bg-[${customize.background_color}]`;
           </div>
 
           {/* Buttons row */}
-          <div className="lg:h-1/5 w-full bg-smoke rounded-2xl flex flex-wrap sm:flex-nowrap items-center justify-center">
+          <div className="py-5 w-9/10 bg-white rounded-2xl flex flex-wrap sm:flex-nowrap items-center justify-center">
             <div className="flex justify-center items-end gap-3">
               <button
                 className="py-2 px-3 rounded-4xl text-[9px] sm:text-[10px] md:text-xs lg:text-sm transition-colors bg-black white hover:bg-gray"
@@ -509,7 +512,7 @@ bg-[${customize.background_color}]`;
                       viewBox="0 0 24 24"
                       strokeWidth={1.5}
                       stroke="currentColor"
-                      className="size-4 md:size-5"
+                      className="size-4"
                     >
                       <path
                         strokeLinecap="round"
@@ -605,6 +608,7 @@ bg-[${customize.background_color}]`;
                 activeSubtitleIndex={
                   currentSubtitle ? currentSubtitle.index : null
                 }
+                videoRef={videoRef}
               />
 
               <button

@@ -2,96 +2,14 @@
 
 import { NextResponse } from "next/server";
 import axios from "axios";
-import { spawn } from "child_process";
-import fs from "fs";
-import path from "path";
 import FormData from "form-data";
-import { MongoClient, ObjectId } from "mongodb";
-import { v4 as uuidv4 } from "uuid";
-import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
-import { secondsToSrtTimestamp } from "@/lib/second_to_srt";
-import { languages } from "@/lib/languages";
-import crypto from "crypto";
+import { ObjectId } from "mongodb";
+import { connectDB } from "@/lib/connect_db";
+import { formatLanguage } from "@/lib/format_language";
+import { formatSrtFile } from "@/lib/format_srt_file";
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const client = new MongoClient(process.env.MONGODB_URI);
-let db;
-
-async function connectDB() {
-  if (!db) {
-    await client.connect();
-    db = client.db(process.env.MONGODB_DB_NAME || "magicsub_db");
-  }
-  return db;
-}
-
-const formatLanguage = (value) => {
-  const lang = languages.find((l) => l.value === value);
-  return lang ? lang.label : value;
-};
-
-const formatSrtFile = (data, offset) => {
-  const array = data.split("\n\n");
-  const formattedData = [];
-
-  for (let i = 0; i < array.length - 1; i++) {
-    const items = array[i].split("\n");
-    if (items.length < 3) continue;
-
-    const startTime = srtToSecondsTimestamp(items[1].split(" --> ")[0]);
-    const endTime = srtToSecondsTimestamp(items[1].split(" --> ")[1]);
-
-    const updatedStart = startTime + offset;
-    const updatedEnd = endTime + offset;
-
-    formattedData.push({
-      index: uuidv4(),
-      start: secondsToSrtTimestamp(updatedStart),
-      end: secondsToSrtTimestamp(updatedEnd),
-      text: items.slice(2).join(" "),
-    });
-  }
-
-  return formattedData;
-};
-
-async function extractAudioSegment(filePath, start, duration) {
-  const tempAudioPath = path.join(
-    "/tmp",
-    `segment_${start}_${uuidv4()}_${crypto.randomBytes(4).toString("hex")}.mp3`
-  );
-
-  return new Promise((resolve, reject) => {
-    const ffmpeg = spawn("ffmpeg", [
-      "-ss",
-      start.toString(),
-      "-t",
-      duration.toString(),
-      "-i",
-      filePath,
-      "-vn",
-      "-acodec",
-      "libmp3lame",
-      "-b:a",
-      "320k",
-      "-ar",
-      "48000",
-      "-q:a",
-      "2",
-      "-f",
-      "mp3",
-      tempAudioPath,
-    ]);
-
-    ffmpeg.stderr.on("data", (d) => console.log("ffmpeg:", d.toString()));
-    ffmpeg.on("error", reject);
-    ffmpeg.on("close", (code) => {
-      if (code === 0) resolve(tempAudioPath);
-      else reject(new Error(`ffmpeg exited with code ${code}`));
-    });
-  });
-}
 
 async function translateSegments(segments, targetLanguage) {
   const batchSize = 40;
@@ -135,15 +53,11 @@ async function translateSegments(segments, targetLanguage) {
       translatedArray = JSON.parse(
         res.data.choices[0].message.content.trim().replace(/```json|```/g, "")
       );
-    } catch (e) {
-      console.error("Error parsing translation:", e);
+    } catch {
       throw new Error("Failed to parse translation response");
     }
 
     if (translatedArray.length !== batch.length) {
-      console.warn(
-        `Mismatch: expected ${batch.length}, got ${translatedArray.length}`
-      );
       while (translatedArray.length < batch.length) {
         translatedArray.push(batch[translatedArray.length].text);
       }
@@ -161,13 +75,12 @@ async function translateSegments(segments, targetLanguage) {
 }
 
 export async function POST(req) {
-  const session = client.startSession();
-  const tempFiles = [];
-  let tempVideoPath = null;
+  const client = await connectDB();
+  const session = client.client.startSession();
 
   try {
     const {
-      cloudUrl,
+      audioUrl,
       _id,
       sourceLanguage,
       targetLanguage,
@@ -176,63 +89,53 @@ export async function POST(req) {
       endpoints,
     } = await req.json();
 
-    const db = await connectDB();
+    const db = client;
     const users = db.collection("users");
     const subtitles = db.collection("subtitle");
 
     const user = await users.findOne({ _id: new ObjectId(userId) });
-    if (!user) {
+    if (!user)
       return NextResponse.json({ message: "User not found!" }, { status: 404 });
-    }
-    if ((user.gems || 0) < cost) {
+    if ((user.gems || 0) < cost)
       return NextResponse.json(
         { message: "Not enough gems to process request!" },
         { status: 400 }
       );
-    }
 
-    tempVideoPath = path.join(
-      "/tmp",
-      `temp_${Date.now()}_${uuidv4()}_${crypto
-        .randomBytes(4)
-        .toString("hex")}.mp4`
-    );
-    tempFiles.push(tempVideoPath);
-
-    const videoResponse = await axios.get(cloudUrl, {
+    // 🔹 tải audio trực tiếp
+    const audioResponse = await axios.get(audioUrl, {
       responseType: "arraybuffer",
     });
-    fs.writeFileSync(tempVideoPath, videoResponse.data);
+    const audioBuffer = Buffer.from(audioResponse.data);
 
-    const segmentDuration = 240;
+    // 🔹 thiết lập chia nhỏ buffer
+    const segmentDuration = 240; // giây
     const [startPoint, endPoint] = endpoints;
     const totalDuration = endPoint - startPoint;
+    const bytesPerSecond = (128 * 1000) / 8; // giả định 128kbps ≈ 16000 byte/s
     const segments = [];
 
     for (let offset = 0; offset < totalDuration; offset += segmentDuration) {
       const segmentStart = startPoint + offset;
       const segmentLength = Math.min(segmentDuration, totalDuration - offset);
 
-      let segmentAudioPath = null;
-      try {
-        segmentAudioPath = await extractAudioSegment(
-          tempVideoPath,
-          segmentStart,
-          segmentLength
-        );
-        tempFiles.push(segmentAudioPath);
+      // chia buffer
+      const startByte = Math.floor(segmentStart * bytesPerSecond);
+      const endByte = Math.min(
+        Math.floor((segmentStart + segmentLength) * bytesPerSecond),
+        audioBuffer.length
+      );
+      const segmentBuffer = audioBuffer.subarray(startByte, endByte);
 
-        const audioBuffer = fs.readFileSync(segmentAudioPath);
+      try {
         const form = new FormData();
-        form.append("file", audioBuffer, {
+        form.append("file", segmentBuffer, {
           filename: `chunk_${segmentStart}.mp3`,
           contentType: "audio/mp3",
         });
         form.append("model", "whisper-1");
         form.append("response_format", "srt");
-        if (sourceLanguage !== "auto") {
-          form.append("language", sourceLanguage);
-        }
+        if (sourceLanguage !== "auto") form.append("language", sourceLanguage);
 
         const whisperRes = await axios.post(WHISPER_API_URL, form, {
           headers: {
@@ -243,27 +146,21 @@ export async function POST(req) {
 
         const formattedSrt = formatSrtFile(whisperRes.data, segmentStart);
         segments.push(...formattedSrt);
-      } catch (err) {
-        console.error(`Error processing segment ${offset / 240 + 1}:`, err);
-      } finally {
-        if (segmentAudioPath && fs.existsSync(segmentAudioPath)) {
-          fs.unlinkSync(segmentAudioPath);
-        }
+      } catch {
+        return NextResponse.json(
+          { message: `Error processing segment ${offset / 240 + 1}` },
+          { status: 500 }
+        );
       }
     }
 
-    if (tempVideoPath && fs.existsSync(tempVideoPath)) {
-      fs.unlinkSync(tempVideoPath);
-    }
+    // 🔹 dịch phụ đề nếu cần
+    const translatedSegments =
+      targetLanguage === sourceLanguage
+        ? segments
+        : await translateSegments(segments, targetLanguage);
 
-    let translatedSegments;
-
-    if (targetLanguage === sourceLanguage) {
-      translatedSegments = segments;
-    } else {
-      translatedSegments = await translateSegments(segments, targetLanguage);
-    }
-
+    // 🔹 trừ gem + lưu DB
     let result;
     await session.withTransaction(async () => {
       await users.updateOne(
@@ -290,15 +187,12 @@ export async function POST(req) {
       subtitleId: result.insertedId,
       language: targetLanguage,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { message: "Check your Internet connection" },
       { status: 500 }
     );
   } finally {
     await session.endSession();
-    for (const filePath of tempFiles) {
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    }
   }
 }

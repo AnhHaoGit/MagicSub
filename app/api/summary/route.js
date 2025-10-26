@@ -2,57 +2,139 @@
 
 import { NextResponse } from "next/server";
 import axios from "axios";
-import { Readable } from "stream";
-import { spawn } from "child_process";
 import FormData from "form-data";
-import { MongoClient, ObjectId } from "mongodb";
-import { languages } from "@/lib/languages";
+import { ObjectId } from "mongodb";
+import { connectDB } from "@/lib/connect_db";
+import { formatLanguage } from "@/lib/format_language";
 
 const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const client = new MongoClient(process.env.MONGODB_URI);
-let db;
+export async function POST(req) {
+  const session = client.startSession();
 
-async function connectDB() {
-  if (!db) {
-    await client.connect();
-    db = client.db(process.env.MONGODB_DB_NAME || "magicsub_db");
-  }
-  return db;
-}
+  try {
+    const { audioUrl, _id, userId, duration, cost, option, targetLanguage } =
+      await req.json();
 
-const formatLanguage = (value) => {
-  const lang = languages.find((l) => l.value === value);
-  return lang ? lang.label : value;
-};
+    const db = await connectDB();
+    const users = db.collection("users");
+    const videos = db.collection("videos");
+    const summaries = db.collection("summary");
 
-async function extractAudioSegment(buffer, start, duration) {
-  return new Promise((resolve, reject) => {
-    const ffmpeg = spawn("ffmpeg", [
-      "-i",
-      "pipe:0",
-      "-ss",
-      start.toString(),
-      "-t",
-      duration.toString(),
-      "-f",
-      "mp3",
-      "-acodec",
-      "libmp3lame",
-      "pipe:1",
-    ]);
+    const user = await users.findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+      return NextResponse.json({ message: "User not found!" }, { status: 404 });
+    }
 
-    const chunks = [];
-    ffmpeg.stdout.on("data", (chunk) => chunks.push(chunk));
-    ffmpeg.stderr.on("data", (d) => console.log("ffmpeg:", d.toString()));
-    ffmpeg.on("error", reject);
-    ffmpeg.on("close", (code) => {
-      if (code === 0) resolve(Buffer.concat(chunks));
-      else reject(new Error(`ffmpeg exited with code ${code}`));
+    if ((user.gems || 0) < cost) {
+      return NextResponse.json(
+        { message: "Not enough gems to process request!" },
+        { status: 400 }
+      );
+    }
+
+    const videoDoc = await videos.findOne({ _id: new ObjectId(_id) });
+    let segmentsAll = [];
+
+    if (videoDoc && videoDoc.transcript && videoDoc.transcript.length > 0) {
+      segmentsAll = videoDoc.transcript;
+    } else {
+      const response = await axios.get(audioUrl, {
+        responseType: "arraybuffer",
+      });
+      const audioBuffer = Buffer.from(response.data);
+
+      const segmentDuration = 240;
+      const totalDuration = duration;
+
+      const bytesPerSecond = (128 * 1000) / 8;
+
+      for (let start = 0; start < totalDuration; start += segmentDuration) {
+        const startByte = Math.floor(start * bytesPerSecond);
+        const endByte = Math.min(
+          Math.floor((start + segmentDuration) * bytesPerSecond),
+          audioBuffer.length
+        );
+        const segmentBuffer = audioBuffer.subarray(startByte, endByte);
+
+        const form = new FormData();
+        form.append("file", segmentBuffer, {
+          filename: `chunk_${start}.mp3`,
+          contentType: "audio/mp3",
+        });
+        form.append("model", "whisper-1");
+        form.append("response_format", "verbose_json");
+
+        const whisperRes = await axios.post(WHISPER_API_URL, form, {
+          headers: {
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
+            ...form.getHeaders(),
+          },
+        });
+
+        const parsed =
+          typeof whisperRes.data === "string"
+            ? JSON.parse(whisperRes.data)
+            : whisperRes.data;
+
+        if (parsed.segments && Array.isArray(parsed.segments)) {
+          parsed.segments.forEach((seg) => {
+            segmentsAll.push({
+              start: seg.start + start,
+              end: seg.end + start,
+              text: seg.text.trim(),
+            });
+          });
+        }
+      }
+
+      await videos.updateOne(
+        { _id: new ObjectId(_id) },
+        { $set: { transcript: segmentsAll } }
+      );
+    }
+
+    const summaryText = await summarizeTranscript(
+      segmentsAll,
+      option,
+      targetLanguage
+    );
+
+    let result;
+    await session.withTransaction(async () => {
+      await users.updateOne(
+        { _id: new ObjectId(userId) },
+        { $inc: { gems: -cost } },
+        { session }
+      );
+
+      result = await summaries.insertOne(
+        {
+          userId: new ObjectId(userId),
+          videoId: new ObjectId(_id),
+          summary: summaryText,
+          option: option,
+          language: targetLanguage,
+          createdAt: new Date(),
+        },
+        { session }
+      );
     });
-    Readable.from(buffer).pipe(ffmpeg.stdin);
-  });
+
+    return NextResponse.json({
+      message: "Summary created successfully",
+      summaryId: result.insertedId,
+      summary: summaryText,
+    });
+  } catch (err) {
+    return NextResponse.json(
+      { message: "Check your Internet connection" },
+      { status: 500 }
+    );
+  } finally {
+    await session.endSession();
+  }
 }
 
 async function summarizeTranscript(segments, option, targetLanguage) {
@@ -158,146 +240,4 @@ Rules:
   }
 
   return jsonData;
-}
-
-
-export async function POST(req) {
-  const session = client.startSession();
-
-  try {
-    const { cloudUrl, _id, userId, duration, cost, option, targetLanguage } =
-      await req.json();
-
-    if (
-      !cloudUrl ||
-      !_id ||
-      !userId ||
-      !duration ||
-      !cost ||
-      !option ||
-      !targetLanguage
-    ) {
-      return NextResponse.json(
-        { message: "Missing parameters" },
-        { status: 400 }
-      );
-    }
-
-    const db = await connectDB();
-    const users = db.collection("users");
-    const videos = db.collection("videos");
-    const summaries = db.collection("summary");
-
-    const user = await users.findOne({ _id: new ObjectId(userId) });
-    if (!user) {
-      return NextResponse.json({ message: "User not found!" }, { status: 404 });
-    }
-
-    if ((user.gems || 0) < cost) {
-      return NextResponse.json(
-        { message: "Not enough gems to process request!" },
-        { status: 400 }
-      );
-    }
-
-    const videoDoc = await videos.findOne({ _id: new ObjectId(_id) });
-    let segmentsAll = [];
-
-    if (videoDoc && videoDoc.transcript && videoDoc.transcript.length > 0) {
-      console.log("Using existing transcript from DB");
-      segmentsAll = videoDoc.transcript;
-    } else {
-      console.log("No transcript found, generating new...");
-
-      const response = await axios.get(cloudUrl, {
-        responseType: "arraybuffer",
-      });
-      const audioBuffer = Buffer.from(response.data);
-
-      const segmentDuration = 240;
-      const totalDuration = duration;
-
-      for (let start = 0; start < totalDuration; start += segmentDuration) {
-        const segmentBuffer = await extractAudioSegment(
-          audioBuffer,
-          start,
-          segmentDuration
-        );
-
-        const form = new FormData();
-        form.append("file", segmentBuffer, {
-          filename: `chunk_${start}.mp3`,
-          contentType: "audio/mp3",
-        });
-        form.append("model", "whisper-1");
-        form.append("response_format", "verbose_json");
-
-        const whisperRes = await axios.post(WHISPER_API_URL, form, {
-          headers: {
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-            ...form.getHeaders(),
-          },
-        });
-
-        const parsed =
-          typeof whisperRes.data === "string"
-            ? JSON.parse(whisperRes.data)
-            : whisperRes.data;
-
-        if (parsed.segments && Array.isArray(parsed.segments)) {
-          parsed.segments.forEach((seg) => {
-            segmentsAll.push({
-              start: seg.start + start,
-              end: seg.end + start,
-              text: seg.text.trim(),
-            });
-          });
-        }
-      }
-
-      await videos.updateOne(
-        { _id: new ObjectId(_id) },
-        { $set: { transcript: segmentsAll } }
-      );
-      console.log("Transcript saved to DB");
-    }
-
-    const summaryText = await summarizeTranscript(
-      segmentsAll,
-      option,
-      targetLanguage
-    );
-
-    let result;
-    await session.withTransaction(async () => {
-      await users.updateOne(
-        { _id: new ObjectId(userId) },
-        { $inc: { gems: -cost } },
-        { session }
-      );
-
-      result = await summaries.insertOne(
-        {
-          userId: new ObjectId(userId),
-          videoId: new ObjectId(_id),
-          summary: summaryText,
-          option: option,
-          language: targetLanguage,
-          createdAt: new Date(),
-        },
-        { session }
-      );
-    });
-
-    return NextResponse.json({
-      message: "Summary created successfully",
-      summaryId: result.insertedId,
-      summary: summaryText,
-    });
-  } catch (err) {
-    console.error("Error processing video summary:", err);
-    return NextResponse.json({ message: "Server error" }, { status: 500 });
-  } finally {
-    await session.endSession();
-  }
 }
