@@ -272,12 +272,12 @@ const Page = () => {
     customize.is_italic ? "italic" : ""
   } ${customize.is_underline ? "underline" : ""}  text-[${
     customize.font_color
-  }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block w-[90%]
+  }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block max-w-full
 bg-[${customize.background_color}] ${
-    customize.position === "bottom" && "bottom-10"
+    customize.position === "bottom" && "bottom-15"
   } ${
     customize.position === "middle" && "top-1/2 transform -translate-y-1/2"
-  } ${customize.position === "top" && "top-10"}`;
+  } ${customize.position === "top" && "top-15"}`;
 
   const strokeLayers = [];
   const steps = 64;
@@ -448,7 +448,7 @@ bg-[${customize.background_color}] ${
                 className={subtitleClasses}
                 style={{
                   color: customize.font_color,
-                  fontSize: `calc(${customize.font_size / 13}vw)`,
+                  fontSize: `calc(${customize.font_size / 12}vw)`,
                   backgroundColor: `${
                     customize.border_style === "text_outline"
                       ? "transparent"

@@ -129,8 +129,12 @@ const LivePage = () => {
     customize.is_italic ? "italic" : ""
   } ${customize.is_underline ? "underline" : ""}  text-[${
     customize.font_color
-  }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block max-w-full 
-bg-[${customize.background_color}]`;
+  }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block max-w-full
+bg-[${customize.background_color}] ${
+    customize.position === "bottom" && "bottom-10"
+  } ${
+    customize.position === "middle" && "top-1/2 transform -translate-y-1/2"
+  } ${customize.position === "top" && "top-10"}`;
 
   const strokeLayers = [];
   const steps = 64;
@@ -189,8 +193,7 @@ bg-[${customize.background_color}]`;
               className={subtitleClasses}
               style={{
                 color: customize.font_color,
-                bottom: `${customize.margin_bottom}px`,
-                fontSize: `${customize.font_size + 6}px`,
+                fontSize: `calc(${customize.font_size / 8}vw)`,
                 backgroundColor:
                   customize.border_style === "text_outline"
                     ? "transparent"
