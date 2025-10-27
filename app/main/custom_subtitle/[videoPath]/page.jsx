@@ -26,7 +26,7 @@ const Page = () => {
   const [customize, setCustomize] = useState({});
   const [originalCustomize, setOriginalCustomize] = useState({});
   const [currentSubtitle, setCurrentSubtitle] = useState(null);
-  const [isTranscript, setIsTranscript] = useState(true);
+  const [isTranscript, setIsTranscript] = useState(false);
   const videoRef = useRef(null);
   const animationFrameId = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -273,7 +273,11 @@ const Page = () => {
   } ${customize.is_underline ? "underline" : ""}  text-[${
     customize.font_color
   }] absolute left-1/2 transform -translate-x-1/2 text-center leading-tight break-words inline-block w-[90%]
-bg-[${customize.background_color}]`;
+bg-[${customize.background_color}] ${
+    customize.position === "bottom" && "bottom-10"
+  } ${
+    customize.position === "middle" && "top-1/2 transform -translate-y-1/2"
+  } ${customize.position === "top" && "top-10"}`;
 
   const strokeLayers = [];
   const steps = 64;
@@ -432,7 +436,7 @@ bg-[${customize.background_color}]`;
 
       <main className="flex flex-col lg:flex-row justify-between h-screen items-center w-full flex-1 gap-5 pt-25 p-5">
         <div className="flex flex-col items-center justify-evenly bg-smoke rounded-2xl h-full w-full lg:w-3/5 gap-5">
-          <div className="relative flex items-center justify-center w-full rounded-2xl">
+          <div className="relative flex items-center bg-black justify-center h-4/5 w-full rounded-2xl">
             <video
               ref={videoRef}
               controls
@@ -444,9 +448,6 @@ bg-[${customize.background_color}]`;
                 className={subtitleClasses}
                 style={{
                   color: customize.font_color,
-                  bottom: `calc(${
-                    (Math.min(customize.margin_bottom, 240) / 240) * 80
-                  }%)`,
                   fontSize: `calc(${customize.font_size / 13}vw)`,
                   backgroundColor: `${
                     customize.border_style === "text_outline"

@@ -39,7 +39,7 @@ const CircleFilled = ({
 );
 
 const Ellipsis = ({
-  size = 24,
+  size = 20,
   ...props
 }) => {
   return (

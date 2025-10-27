@@ -79,7 +79,7 @@ export const authOptions = {
               border_style: "opaque_box",
               background_color: "#000000",
               background_opacity: 55,
-              margin_bottom: 15,
+              position: 'bottom'
             },
             gems: 500,
             subscription: null,
@@ -138,7 +138,7 @@ export const authOptions = {
           border_style: "opaque_box",
           background_color: "#000000",
           background_opacity: 55,
-          margin_bottom: 15,
+          margin_bottom: 'bottom',
         };
       }
 

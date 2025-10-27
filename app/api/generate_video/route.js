@@ -198,7 +198,13 @@ Style: ${styleName},${customize.font_family},${customize.font_size},${fontColor(
     customize.is_underline ? -1 : 0
   },0,100,100,0,0,${customize.border_style === "opaque_box" ? 3 : 1},${
     customize.outline_width
-  },0,2,10,10,${customize.margin_bottom},1
+  },0,2,10,10,${
+    customize.position === "top"
+      ? "240"
+      : customize.position === "middle"
+      ? "127"
+      : "15"
+  },1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;

@@ -258,21 +258,67 @@ const SubtitleStylingBox = ({ customize, setCustomize, demo }) => {
         </div>
       </div>
 
-      <div className="flex flex-col w-full mt-5">
+      <div className="flex items-center gap-3 w-full mt-5">
         <p className="text-[10px]">Position</p>
         <div className="flex items-center justify-between gap-4">
-          <GenericSlider
-            min={0}
-            max={240}
-            step={1}
-            value={customize.margin_bottom}
-            onValueChange={(value) =>
-              updateCustomizeObject({ margin_bottom: value })
-            }
-          />
-          <p className="w-10 text-center text-xs">
-            {customize.margin_bottom}px
-          </p>
+          <button
+            onClick={() => updateCustomizeObject({ position: "bottom" })}
+            className={`${
+              customize.position === "bottom" && "bg-iris"
+            } h-[30px] w-[40px] flex items-end border-1 border-black rounded-sm p-1`}
+          >
+            <div className="flex flex-col gap-[2px]">
+              <div
+                className={`h-[1px] w-[30px] ${
+                  customize.position === "bottom" ? "bg-white" : "bg-black"
+                }`}
+              ></div>
+              <div
+                className={`h-[1px] w-[30px] ${
+                  customize.position === "bottom" ? "bg-white" : "bg-black"
+                }`}
+              ></div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => updateCustomizeObject({ position: "middle" })}
+            className={`${
+              customize.position === "middle" && "bg-iris"
+            } h-[30px] w-[40px] flex items-center border-1 border-black rounded-sm p-1`}
+          >
+            <div className="flex flex-col gap-[2px]">
+              <div
+                className={`h-[1px] w-[30px] ${
+                  customize.position === "middle" ? "bg-white" : "bg-black"
+                }`}
+              ></div>
+              <div
+                className={`h-[1px] w-[30px] ${
+                  customize.position === "middle" ? "bg-white" : "bg-black"
+                }`}
+              ></div>
+            </div>
+          </button>
+          <button
+            onClick={() => updateCustomizeObject({ position: "top" })}
+            className={`${
+              customize.position === "top" ? "bg-iris" : "bg-white"
+            } h-[30px] w-[40px] flex items-start border-1 border-black rounded-sm p-1`}
+          >
+            <div className="flex flex-col gap-[2px]">
+              <div
+                className={`h-[1px] w-[30px] ${
+                  customize.position === "top" ? "bg-white" : "bg-black"
+                }`}
+              ></div>
+              <div
+                className={`h-[1px] w-[30px] ${
+                  customize.position === "top" ? "bg-white" : "bg-black"
+                }`}
+              ></div>
+            </div>
+          </button>
         </div>
       </div>
 
