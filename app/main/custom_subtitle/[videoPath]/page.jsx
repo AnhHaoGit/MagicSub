@@ -493,7 +493,7 @@ bg-[${customize.background_color}]`;
               >
                 {isDownloadingTxt ? "Downloading..." : "Download .txt"}
               </button>
-              {/* <button
+              <button
                 onClick={handleGenerateVideo}
                 className="flex items-center gap-2 py-2 px-3 font-semibold rounded-4xl text-[9px] sm:text-[10px] md:text-xs lg:text-sm transition-colors bg-iris text-white hover:bg-violet"
                 disabled={isLoading}
@@ -522,7 +522,7 @@ bg-[${customize.background_color}]`;
                     </svg>
                   </>
                 )}
-              </button> */}
+              </button>
               <div className="flex flex-col items-center">
                 <span className="hidden md:text-[10px] md:text-gray-500 md:font-bold md:mb-1 md:inline">
                   New Feature
