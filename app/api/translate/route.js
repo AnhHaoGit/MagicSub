@@ -233,7 +233,7 @@ export async function POST(req) {
     });
   } catch {
     return NextResponse.json(
-      { message: "Check your Internet connection" },
+      { message: "Check your Internet connection. Try again later." },
       { status: 500 }
     );
   } finally {

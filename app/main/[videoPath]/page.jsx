@@ -11,6 +11,7 @@ import SubbedOption from "@/components/OptionBox/SubbedOption";
 import { useRouter } from "next/navigation";
 import VideoTrimmer from "@/components/VideoTrimmer";
 import fetch_data from "@/lib/fetch_data";
+import { toast } from "react-toastify";
 
 export default function VideoPage() {
   const router = useRouter();
@@ -38,8 +39,13 @@ export default function VideoPage() {
   useEffect(() => {
     const video = JSON.parse(localStorage.getItem("videos")) || [];
     const found = video.find((v) => v._id === videoPath);
+    if (found) {
     setVideoData(found);
     setEndpoints([0, found.duration]);
+    } else {
+      toast.error('Cannot find this video!')
+    }
+
   }, [videoPath]);
 
   return (

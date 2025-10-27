@@ -65,6 +65,7 @@ const MainPage = () => {
       videoElement.onloadedmetadata = async () => {
         const duration = videoElement.duration;
 
+        // API presigned URL
         setStatusStep("Requesting presigned URL...");
         const presignRes = await fetch("/api/s3_presign", {
           method: "POST",
@@ -75,16 +76,31 @@ const MainPage = () => {
           }),
         });
 
-        const { uploadUrl, fileUrl } = await presignRes.json();
-        setStatusStep("Uploading video to cloud...");
+        if (!presignRes.ok) {
+          toast.error("Failed to get presigned URL!");
+          setStatusStep("Presign failed");
+          setLoading(false);
+          return;
+        }
 
+        const { uploadUrl, fileUrl } = await presignRes.json();
+        if (!uploadUrl || !fileUrl) {
+          toast.error("Invalid presign response!");
+          setStatusStep("Presign response invalid");
+          setLoading(false);
+          return;
+        }
+
+        // Upload file
+        setStatusStep("Uploading video to cloud...");
         setCanCancel(true);
+
         const xhr = new XMLHttpRequest();
         xhrRef.current = xhr;
         xhr.open("PUT", uploadUrl, true);
         xhr.setRequestHeader("Content-Type", file.type);
 
-        let startTime = Date.now();
+        const startTime = Date.now();
 
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
@@ -99,74 +115,93 @@ const MainPage = () => {
 
         xhr.onload = async () => {
           setCanCancel(false);
-          if (xhr.status === 200) {
-            setStatusStep("Extracting audio...");
-            let audioUrl = null;
 
-            try {
-              const extractRes = await fetch("/api/extract_audio", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ fileUrl }),
-              });
+          if (xhr.status !== 200) {
+            toast.error("Upload failed!");
+            setStatusStep("Upload failed!");
+            setLoading(false);
+            return;
+          }
 
-              if (extractRes.ok) {
-                const data = await extractRes.json();
-                audioUrl = data.audioUrl;
-              } else {
-                toast.error("Failed to extract audio");
-              }
-            } catch (err) {
-              toast.error("Audio extraction error:", err);
-            }
+          // API extract audio
+          setStatusStep("Extracting audio...");
+          let audioUrl = null;
 
-            setStatusStep("Saving data to database...");
-            const saveRes = await fetch("/api/save_video_to_db", {
+          const extractRes = await fetch("/api/extract_audio", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileUrl }),
+          });
+
+          if (!extractRes.ok) {
+            toast.error("Failed to extract audio!");
+            setStatusStep("Audio extraction failed");
+            setLoading(false);
+            return;
+          }
+
+          const data = await extractRes.json();
+          if (!data.audioUrl) {
+            toast.error("Audio extraction response invalid!");
+            setStatusStep("Audio extraction failed");
+            setLoading(false);
+            return;
+          }
+
+          audioUrl = data.audioUrl;
+
+          // Save data to DB
+          setStatusStep("Saving data to database...");
+          const saveRes = await fetch("/api/save_video_to_db", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: session.user.id,
+              cloudUrl: fileUrl,
+              audioUrl,
+              title,
+              size,
+              duration,
+              createdAt: date.toISOString(),
+              style: session.user.style,
+            }),
+          });
+
+          if (!saveRes.ok) {
+            toast.error("Failed to save video to database!");
+            setStatusStep("Database save failed");
+            setLoading(false);
+            return;
+          }
+
+          const newVideo = await saveRes.json();
+          add_video_to_local_storage(newVideo);
+
+          // Generate thumbnail
+          setStatusStep("Generating thumbnail...");
+          try {
+            const thumbRes = await fetch("/api/generate_thumbnail", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                userId: session.user.id,
-                cloudUrl: fileUrl,
-                audioUrl,
-                title,
-                size,
-                duration,
-                createdAt: date.toISOString(),
-                style: session.user.style,
+                videoId: newVideo._id,
+                cloudUrl: newVideo.cloudUrl,
               }),
             });
 
-            const newVideo = await saveRes.json();
-            add_video_to_local_storage(newVideo);
-
-            setStatusStep("Generating thumbnail...");
-            try {
-              const thumbRes = await fetch("/api/generate_thumbnail", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  videoId: newVideo._id,
-                  cloudUrl: newVideo.cloudUrl,
-                }),
-              });
-
-              if (thumbRes.ok) {
-                const { thumbnailUrl } = await thumbRes.json();
-                update_video_in_local_storage(newVideo._id, thumbnailUrl);
-              } else {
-                console.warn("⚠️ Failed to generate thumbnail");
-              }
-            } catch (e) {
-              console.error("Thumbnail API error:", e);
+            if (thumbRes.ok) {
+              const { thumbnailUrl } = await thumbRes.json();
+              update_video_in_local_storage(newVideo._id, thumbnailUrl);
+            } else {
+              console.warn("Failed to generate thumbnail");
             }
-
-            setStatusStep("Upload complete!");
-            router.push(`/main/${newVideo._id}`);
-            toast.success("Upload successful!");
-          } else {
-            toast.error("Upload failed!");
-            setStatusStep("Upload failed!");
+          } catch (e) {
+            console.error("Thumbnail API error:", e);
           }
+
+          setStatusStep("Upload complete!");
+          router.push(`/main/${newVideo._id}`);
+          toast.success("Upload successful!");
           setLoading(false);
         };
 
