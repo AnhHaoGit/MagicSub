@@ -15,7 +15,18 @@ async function connectDB() {
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { userId, cloudUrl, audioUrl, title, size, duration, createdAt, style } = body;
+    const {
+      userId,
+      cloudUrl,
+      audioUrl,
+      title,
+      size,
+      duration,
+      createdAt,
+      style,
+      audioKey,
+      uploadKey,
+    } = body;
 
     if (!userId || !cloudUrl) {
       return NextResponse.json(
@@ -34,6 +45,8 @@ export async function POST(req) {
       duration,
       createdAt,
       customize: style,
+      audioKey,
+      uploadKey,
     });
 
     return NextResponse.json({
@@ -46,6 +59,8 @@ export async function POST(req) {
       duration,
       createdAt,
       customize: style,
+      audioKey,
+      uploadKey,
     });
   } catch (err) {
     console.error("Error saving video:", err);

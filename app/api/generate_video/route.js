@@ -10,6 +10,7 @@ import {
   CompleteMultipartUploadCommand,
 } from "@aws-sdk/client-s3";
 import { MongoClient, ObjectId } from "mongodb";
+import { v4 as uuidv4 } from "uuid";
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -30,12 +31,10 @@ async function connectDB() {
   return db;
 }
 
-// Ghi ffmpeg output ra file tạm mp4
-// Ghi ffmpeg output ra file tạm mp4
 async function generateTempMp4(cloudUrl, assPath, outputPath, endpoints) {
   return new Promise((resolve, reject) => {
     const fontsDir = path.join(process.cwd(), "public", "fonts");
-    const [start, end] = endpoints; // lấy thời gian bắt đầu và kết thúc
+    const [start, end] = endpoints;
     const duration = end - start;
 
     const ffmpeg = spawn("ffmpeg", [
@@ -75,7 +74,6 @@ async function generateTempMp4(cloudUrl, assPath, outputPath, endpoints) {
   });
 }
 
-// Multipart upload từng phần ~500MB lên S3
 async function multipartUpload(
   filePath,
   bucket,
@@ -84,6 +82,7 @@ async function multipartUpload(
 ) {
   const stat = await fs.stat(filePath);
   const totalSize = stat.size;
+
   const createRes = await s3.send(
     new CreateMultipartUploadCommand({
       Bucket: bucket,
@@ -91,74 +90,79 @@ async function multipartUpload(
       ContentType: "video/mp4",
     })
   );
+
   const uploadId = createRes.UploadId;
   const parts = [];
+  const fd = await fs.open(filePath, "r");
   let partNumber = 1;
   let start = 0;
-  const fd = await fs.open(filePath, "r");
 
-  while (start < totalSize) {
-    const end = Math.min(start + partSize, totalSize);
-    const buffer = Buffer.alloc(end - start);
-    await fd.read(buffer, 0, end - start, start);
+  try {
+    while (start < totalSize) {
+      const end = Math.min(start + partSize, totalSize);
+      const buffer = Buffer.alloc(end - start);
+      await fd.read(buffer, 0, end - start, start);
 
-    const uploadRes = await s3.send(
-      new UploadPartCommand({
+      const uploadRes = await s3.send(
+        new UploadPartCommand({
+          Bucket: bucket,
+          Key: key,
+          PartNumber: partNumber,
+          UploadId: uploadId,
+          Body: buffer,
+        })
+      );
+
+      parts.push({ ETag: uploadRes.ETag, PartNumber: partNumber });
+      start = end;
+      partNumber += 1;
+    }
+
+    await s3.send(
+      new CompleteMultipartUploadCommand({
         Bucket: bucket,
         Key: key,
-        PartNumber: partNumber,
         UploadId: uploadId,
-        Body: buffer,
+        MultipartUpload: { Parts: parts },
       })
     );
-    parts.push({ ETag: uploadRes.ETag, PartNumber: partNumber });
-
-    start = end;
-    partNumber += 1;
+  } finally {
+    await fd.close();
   }
-  await fd.close();
-
-  await s3.send(
-    new CompleteMultipartUploadCommand({
-      Bucket: bucket,
-      Key: key,
-      UploadId: uploadId,
-      MultipartUpload: { Parts: parts },
-    })
-  );
 }
 
 export async function POST(req) {
+  let assPath = null;
+  let tempMp4 = null;
+
   try {
     const { subtitle, customize, cloudUrl, videoId, userId, endpoints } =
       await req.json();
 
-    const now = Date.now();
-    const Key = `generated_videos/video_${now}.mp4`;
+    const id = uuidv4();
 
-    // Tạo file ASS tạm
+    const Key = `generated_videos/${videoId}/${id}`;
+
     const adjustedSubtitles = adjustSubtitleTimestamps(subtitle, endpoints[0]);
     const assContent = generateASS(adjustedSubtitles, customize);
-    const assPath = path.join(os.tmpdir(), `sub_${now}.ass`);
-    await fs.writeFile(assPath, assContent, { encoding: "utf8" });
+    assPath = path.join(os.tmpdir(), `sub_${uuidv4()}.ass`);
+    await fs.writeFile(assPath, assContent, "utf8");
 
-    // Tạo file mp4 tạm
-    const tempMp4 = path.join(os.tmpdir(), `video_${now}.mp4`);
+    tempMp4 = path.join(os.tmpdir(), `video_${uuidv4()}.mp4`);
     await generateTempMp4(cloudUrl, assPath, tempMp4, endpoints);
 
-    // Multipart upload lên S3
     await multipartUpload(tempMp4, process.env.AWS_S3_BUCKET, Key);
 
-    // Xóa file tạm
-    await fs.unlink(assPath);
-    await fs.unlink(tempMp4);
-
     const videoUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${Key}`;
-
     const db = await connectDB();
     const collection = db.collection("videos");
     const date = new Date();
-    const newEntry = { id: now, url: videoUrl, createdAt: date.toISOString() };
+    const newEntry = {
+      id: id,
+      url: videoUrl,
+      createdAt: date.toISOString(),
+      key: Key,
+    };
 
     await collection.updateOne(
       { _id: new ObjectId(videoId), userId: new ObjectId(userId) },
@@ -175,6 +179,9 @@ export async function POST(req) {
       { error: error.message || "Internal Server Error. Try again later." },
       { status: 500 }
     );
+  } finally {
+    if (assPath) await fs.unlink(assPath).catch(() => {});
+    if (tempMp4) await fs.unlink(tempMp4).catch(() => {});
   }
 }
 

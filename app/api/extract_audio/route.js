@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { spawn } from "child_process";
+import { v4 as uuidv4 } from "uuid";
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -24,8 +25,8 @@ export async function POST(req) {
       return NextResponse.json({ error: "Missing fileUrl" }, { status: 400 });
     }
 
-    tempVideoPath = path.join(os.tmpdir(), `video_${Date.now()}.mp4`);
-    tempAudioPath = path.join(os.tmpdir(), `audio_${Date.now()}.mp3`);
+    tempVideoPath = path.join(os.tmpdir(), `video_${uuidv4()}.mp4`);
+    tempAudioPath = path.join(os.tmpdir(), `audio_${uuidv4()}.mp3`);
 
     await new Promise((resolve, reject) => {
       const file = fs.createWriteStream(tempVideoPath);
@@ -73,7 +74,7 @@ export async function POST(req) {
     });
 
     const audioBuffer = fs.readFileSync(tempAudioPath);
-    const audioKey = `audio/${Date.now()}`;
+    const audioKey = `audios/${uuidv4()}`;
 
     const uploadAudio = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET,
@@ -86,7 +87,7 @@ export async function POST(req) {
 
     const audioUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${audioKey}`;
 
-    return NextResponse.json({ ok: true, audioUrl });
+    return NextResponse.json({ ok: true, audioUrl, audioKey: audioKey });
   } catch (err) {
     console.error("Error extracting audio:", err);
     return NextResponse.json(

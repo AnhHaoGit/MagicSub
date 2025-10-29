@@ -26,7 +26,7 @@ const Page = () => {
   const [customize, setCustomize] = useState({});
   const [originalCustomize, setOriginalCustomize] = useState({});
   const [currentSubtitle, setCurrentSubtitle] = useState(null);
-  const [isTranscript, setIsTranscript] = useState(false);
+  const [isTranscript, setIsTranscript] = useState(true);
   const videoRef = useRef(null);
   const animationFrameId = useRef(null);
   const [isLoading, setIsLoading] = useState(false);

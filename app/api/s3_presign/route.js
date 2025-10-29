@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { v4 as uuidv4 } from "uuid";
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -22,7 +23,7 @@ export async function POST(req) {
       );
     }
 
-    const key = `uploads/${Date.now()}`;
+    const key = `uploads/${uuidv4()}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET,
@@ -38,7 +39,7 @@ export async function POST(req) {
       ok: true,
       uploadUrl,
       fileUrl,
-      key,
+      uploadKey: key
     });
   } catch (err) {
     console.error("Error creating presigned URL:", err);

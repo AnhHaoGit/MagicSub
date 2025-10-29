@@ -83,7 +83,7 @@ const MainPage = () => {
           return;
         }
 
-        const { uploadUrl, fileUrl } = await presignRes.json();
+        const { uploadUrl, fileUrl, uploadKey } = await presignRes.json();
         if (!uploadUrl || !fileUrl) {
           toast.error("Invalid presign response!");
           setStatusStep("Presign response invalid");
@@ -126,6 +126,7 @@ const MainPage = () => {
           // API extract audio
           setStatusStep("Extracting audio...");
           let audioUrl = null;
+          let audioKey = null;
 
           const extractRes = await fetch("/api/extract_audio", {
             method: "POST",
@@ -141,7 +142,7 @@ const MainPage = () => {
           }
 
           const data = await extractRes.json();
-          if (!data.audioUrl) {
+          if (!data.audioUrl || !data.audioKey) {
             toast.error("Audio extraction response invalid!");
             setStatusStep("Audio extraction failed");
             setLoading(false);
@@ -149,6 +150,7 @@ const MainPage = () => {
           }
 
           audioUrl = data.audioUrl;
+          audioKey = data.audioKey;
 
           // Save data to DB
           setStatusStep("Saving data to database...");
@@ -164,6 +166,8 @@ const MainPage = () => {
               duration,
               createdAt: date.toISOString(),
               style: session.user.style,
+              audioKey,
+              uploadKey,
             }),
           });
 

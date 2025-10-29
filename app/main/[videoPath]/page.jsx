@@ -6,7 +6,6 @@ import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import SubtitleOption from "@/components/OptionBox/SubtitleOption";
 import SummaryOption from "@/components/OptionBox/SummaryOption";
-import QuizzesOption from "@/components/OptionBox/QuizzesOption";
 import SubbedOption from "@/components/OptionBox/SubbedOption";
 import { useRouter } from "next/navigation";
 import VideoTrimmer from "@/components/VideoTrimmer";
@@ -132,38 +131,6 @@ export default function VideoPage() {
 
               <button
                 disabled={loading}
-                onClick={() => setOption("quizzes")}
-                className={`w-24 sm:w-28 md:w-32 lg:w-36 flex gap-2 justify-center items-center hover:bg-zinc-200 rounded-3xl py-1 sm:py-2 md:py-3 ${
-                  option === "quizzes"
-                    ? "font-semibold text-black"
-                    : "text-gray-700"
-                }`}
-              >
-                {option === "quizzes" ? (
-                  <div className="h-[10px] w-[10px] rounded-full bg-iris"></div>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="size-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
-                    />
-                  </svg>
-                )}
-                <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs">
-                  Quizzes
-                </span>
-              </button>
-
-              <button
-                disabled={loading}
                 onClick={() => setOption("subbed")}
                 className={`w-24 sm:w-28 md:w-32 lg:w-36 flex gap-2 justify-center items-center hover:bg-zinc-200 rounded-3xl py-1 sm:py-2 md:py-3 ${
                   option === "subbed"
@@ -208,13 +175,6 @@ export default function VideoPage() {
               <SummaryOption
                 videoData={videoData}
                 setVideoData={setVideoData}
-                session={session}
-                setLoading={setLoading}
-              />
-            )}
-            {option === "quizzes" && (
-              <QuizzesOption
-                videoData={videoData}
                 session={session}
                 setLoading={setLoading}
               />

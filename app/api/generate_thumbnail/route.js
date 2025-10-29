@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { MongoClient, ObjectId } from "mongodb";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import ffmpeg from "fluent-ffmpeg";
-
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
@@ -33,7 +32,7 @@ async function generateThumbnail(videoUrl) {
 
   return new Promise((resolve, reject) => {
     ffmpeg(videoUrl)
-      .on("end", () => resolve(thumbPath))
+      .on("end", () => resolve({ thumbPath, tempDir }))
       .on("error", (err) => reject(err))
       .screenshots({
         timestamps: ["5%"],
@@ -45,8 +44,12 @@ async function generateThumbnail(videoUrl) {
 }
 
 export async function POST(req) {
+  let thumbPath = null;
+  let tempDir = null;
+
   try {
     const { videoId, cloudUrl } = await req.json();
+
     if (!videoId || !cloudUrl) {
       return NextResponse.json(
         { error: "Missing videoId or cloudUrl" },
@@ -54,8 +57,11 @@ export async function POST(req) {
       );
     }
 
-    const thumbPath = await generateThumbnail(cloudUrl);
-    const thumbKey = `thumbnails/${Date.now()}_${path.basename(thumbPath)}`;
+    const generated = await generateThumbnail(cloudUrl);
+    thumbPath = generated.thumbPath;
+    tempDir = generated.tempDir;
+
+    const thumbKey = `thumbnails/${uuidv4()}.jpg`;
     const fileBuffer = await fs.readFile(thumbPath);
 
     await s3.send(
@@ -70,16 +76,29 @@ export async function POST(req) {
     const thumbnailUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${thumbKey}`;
 
     const db = await connectDB();
-    await db
-      .collection("videos")
-      .updateOne({ _id: new ObjectId(videoId) }, { $set: { thumbnailUrl } });
+    await db.collection("videos").updateOne(
+      { _id: new ObjectId(videoId) },
+      {
+        $set: {
+          thumbnailUrl,
+          thumbnailKey: thumbKey,
+        },
+      }
+    );
 
-    return NextResponse.json({ thumbnailUrl });
+    return NextResponse.json({ thumbnailUrl, thumbnailKey: thumbKey });
   } catch (err) {
-    console.error("❌ Thumbnail generation error:", err);
+    console.error("Thumbnail generation error:", err);
     return NextResponse.json(
       { error: "Failed to generate thumbnail" },
       { status: 500 }
     );
+  } finally {
+    if (thumbPath) {
+      await fs.unlink(thumbPath).catch(() => {});
+    }
+    if (tempDir) {
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    }
   }
 }
