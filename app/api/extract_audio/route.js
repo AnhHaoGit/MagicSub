@@ -87,7 +87,7 @@ export async function POST(req) {
 
     const audioUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${audioKey}`;
 
-    return NextResponse.json({ ok: true, audioUrl, audioKey: audioKey });
+    return NextResponse.json({ audioUrl, audioKey });
   } catch (err) {
     console.error("Error extracting audio:", err);
     return NextResponse.json(

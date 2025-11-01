@@ -37,11 +37,11 @@ const LandingPageNavbar = () => {
                 {/* <Link href="/pricing" className="hover:text-gray-600">
                   Pricing
                 </Link> */}
-                {session.user.subscription && (
+                {/* {session.user.subscription && (
                   <Link href="/subscription" className="hover:text-gray-600">
                     Subscription
                   </Link>
-                )}
+                )} */}
                 <button onClick={handleSignout} className="hover:text-gray-600">
                   Logout
                 </button>
@@ -130,11 +130,11 @@ const LandingPageNavbar = () => {
               >
                 Logout
               </button>
-              {session.user.subscription && (
+              {/* {session.user.subscription && (
                 <Link href="/subscription" className="hover:text-gray-600">
                   Subscription
                 </Link>
-              )}
+              )} */}
               <Link
                 href="/main"
                 className="bg-black px-5 py-2 text-white rounded-3xl hover:bg-gray-800 transition-colors cursor-pointer text-center"

@@ -22,6 +22,8 @@ const MainPage = () => {
   const [canCancel, setCanCancel] = useState(false);
   const xhrRef = useRef(null);
   const [statusStep, setStatusStep] = useState("");
+  const [youtubeLoading, setYoutubeLoading] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -66,7 +68,7 @@ const MainPage = () => {
         const duration = videoElement.duration;
 
         // API presigned URL
-        setStatusStep("Requesting presigned URL...");
+        setStatusStep("Requesting cloud URL...");
         const presignRes = await fetch("/api/s3_presign", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -77,16 +79,14 @@ const MainPage = () => {
         });
 
         if (!presignRes.ok) {
-          toast.error("Failed to get presigned URL!");
-          setStatusStep("Presign failed");
+          toast.error("Failed to get cloud URL!");
           setLoading(false);
           return;
         }
 
         const { uploadUrl, fileUrl, uploadKey } = await presignRes.json();
         if (!uploadUrl || !fileUrl) {
-          toast.error("Invalid presign response!");
-          setStatusStep("Presign response invalid");
+          toast.error("Error! Try again later.");
           setLoading(false);
           return;
         }
@@ -125,8 +125,6 @@ const MainPage = () => {
 
           // API extract audio
           setStatusStep("Extracting audio...");
-          let audioUrl = null;
-          let audioKey = null;
 
           const extractRes = await fetch("/api/extract_audio", {
             method: "POST",
@@ -141,16 +139,14 @@ const MainPage = () => {
             return;
           }
 
-          const data = await extractRes.json();
-          if (!data.audioUrl || !data.audioKey) {
-            toast.error("Audio extraction response invalid!");
+          const { audioUrl, audioKey } = await extractRes.json();
+
+          if (!audioUrl || !audioKey) {
+            toast.error("Audio extraction failed");
             setStatusStep("Audio extraction failed");
             setLoading(false);
             return;
           }
-
-          audioUrl = data.audioUrl;
-          audioKey = data.audioKey;
 
           // Save data to DB
           setStatusStep("Saving data to database...");
@@ -239,6 +235,99 @@ const MainPage = () => {
     }
   };
 
+  const handleYoutubeUpload = async () => {
+    const date = new Date();
+
+    if (!youtubeUrl.trim()) {
+      toast.info("Please paste a YouTube video URL first!");
+      return;
+    }
+
+    try {
+      // Upload video to cloud
+      setYoutubeLoading(true);
+      setStatusStep("Uploading video to cloud...");
+      const res = await fetch("/api/upload_youtube", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ youtubeUrl: youtubeUrl.trim() }),
+      });
+
+      const uploadData = await res.json();
+      const { fileUrl, uploadKey, audioUrl, audioKey, title, size, duration } =
+        uploadData;
+
+      if (!res.ok) {
+        toast.error("Upload video failed! Try again later.");
+        setStatusStep("Upload video failed! Try again later.");
+        setYoutubeLoading(false);
+        throw new Error(uploadData.error || "Upload failed");
+      }
+
+      // Save data to DB
+      setStatusStep("Saving data to database...");
+      const saveRes = await fetch("/api/save_video_to_db", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: session.user.id,
+          cloudUrl: fileUrl,
+          audioUrl,
+          title,
+          size,
+          duration,
+          createdAt: date.toISOString(),
+          style: session.user.style,
+          audioKey,
+          uploadKey,
+        }),
+      });
+
+      const newVideo = await saveRes.json();
+
+      if (!saveRes.ok) {
+        toast.error("Failed to save video to database! Try again later.");
+        setStatusStep("Database save failed! Try again later.");
+        setLoading(false);
+        throw new Error(newVideo.error || "Saving data failed");
+      }
+
+      add_video_to_local_storage(newVideo);
+
+      // Generate thumbnail
+      setStatusStep("Generating thumbnail...");
+      const thumbRes = await fetch("/api/generate_thumbnail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoId: newVideo._id,
+          cloudUrl: newVideo.cloudUrl,
+        }),
+      });
+
+      const thumbData = await thumbRes.json();
+      const { thumbnailUrl } = thumbData;
+
+      if (!thumbRes.ok) {
+        toast.error("Failed to generate thumbnail! Try again later.");
+        setStatusStep("Generate thumbnail failed! Try again later.");
+        setYoutubeLoading(false);
+        throw new Error(newVideo.error || "Generate thumbnail failed!");
+      }
+      update_video_in_local_storage(newVideo._id, thumbnailUrl);
+
+      setStatusStep("Upload complete!");
+      router.push(`/main/${newVideo._id}`);
+      toast.success("Upload successful!");
+
+      setYoutubeLoading(false);
+    } catch (err) {
+      toast.error(err);
+    } finally {
+      setYoutubeLoading(false);
+    }
+  };
+
   return (
     <>
       <MainNavbar />
@@ -258,29 +347,85 @@ const MainPage = () => {
           </div>
 
           {session && status === "authenticated" ? (
-            <label className="flex items-center gap-2 bg-iris text-white rounded-full py-3 sm:py-4 px-8 sm:px-16 md:px-20 shadow-2xl mt-6 sm:mt-10 font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm sm:text-base">
-              <input
-                type="file"
-                accept="video/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="size-5 sm:size-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+            <>
+              <div className="flex bg-white p-2 rounded-4xl w-9/10 mt-10 gap-2">
+                <input
+                  type="text"
+                  className="bg-white w-full text-xs py-2 pl-5 rounded-4xl border-none focus:outline-none"
+                  placeholder="Paste Youtube video URL"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
                 />
-              </svg>
-              Upload your Video
-            </label>
+                <button
+                  onClick={handleYoutubeUpload}
+                  disabled={youtubeLoading}
+                  className={`bg-iris rounded-full flex items-center justify-center p-3 ${
+                    youtubeLoading ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {youtubeLoading ? (
+                    <svg
+                      className="animate-spin h-6 w-6 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      ></path>
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-6 text-white"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <label className="flex items-center gap-2 bg-iris text-white rounded-full py-3 sm:py-4 px-8 sm:px-16 md:px-20 shadow-2xl mt-6 sm:mt-10 font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm sm:text-base">
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="size-5 sm:size-6"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+                  />
+                </svg>
+                Upload your Video
+              </label>
+            </>
           ) : (
             <Link
               href="/login"
@@ -289,12 +434,6 @@ const MainPage = () => {
               Login to continue
             </Link>
           )}
-
-          <div>
-            <p className="text-xs sm:text-sm gray text-center px-2">
-              Download Youtube, Instagram, Tiktok videos before uploading.
-            </p>
-          </div>
 
           {loading && (
             <div className="mt-6 w-full gap-5 flex items-start max-w-xs sm:max-w-lg">
@@ -326,6 +465,12 @@ const MainPage = () => {
                 </button>
               )}
             </div>
+          )}
+
+          {youtubeLoading && statusStep && (
+            <p className="mt-10 text-xs text-iris font-medium animate-pulse">
+              {statusStep}
+            </p>
           )}
         </div>
 

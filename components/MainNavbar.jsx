@@ -37,11 +37,11 @@ const MainNavbar = () => {
             <Link href="/history" className="hover:text-gray-600">
               History
             </Link>
-            {user?.subscription && (
+            {/* {user?.subscription && (
               <Link href="/subscription" className="hover:text-gray-600">
                 Subscription
               </Link>
-            )}
+            )} */}
           </div>
         </div>
 
@@ -104,11 +104,11 @@ const MainNavbar = () => {
           <Link href="/history" className="hover:text-gray-600">
             History
           </Link>
-          {user?.subscription && (
+          {/* {user?.subscription && (
             <Link href="/subscription" className="hover:text-gray-600">
               Subscription
             </Link>
-          )}
+          )} */}
           <Link
             href="/main"
             className="px-5 py-2 bg-black text-white rounded-full hover:bg-gray-800 transition-colors cursor-pointer text-center"
