@@ -291,9 +291,9 @@ const LandingPage = () => {
           <Image
             src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1033287&theme=neutral&t=1762004069400"
             alt="MagicSub - Wave&#0032;goodbye&#0032;to&#0032;&#0034;can&#0032;someone&#0032;explain&#0034;&#0032;comments&#0046; | Product Hunt"
-            style="width: 250px; height: 54px;"
-            width="250"
-            height="54"
+            style="width: 200px; height: 27px;"
+            width="200"
+            height="27"
           />
         </a>
 
