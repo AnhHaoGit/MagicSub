@@ -13,6 +13,7 @@ import Link from "next/link";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import fetch_data from "@/lib/fetch_data";
 import DemoBox from "@/components/DemoBox";
+import Image from "next/image";
 
 const demoVideos = [
   {
@@ -281,6 +282,20 @@ const LandingPage = () => {
           <span className="font-semibold">viewers</span> finally understand
           what’s going on.
         </p>
+
+        <a
+          href="https://www.producthunt.com/products/magicsub?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-magicsub"
+          target="_blank"
+          className="mt-6"
+        >
+          <Image
+            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1033287&theme=neutral&t=1762004069400"
+            alt="MagicSub - Wave&#0032;goodbye&#0032;to&#0032;&#0034;can&#0032;someone&#0032;explain&#0034;&#0032;comments&#0046; | Product Hunt"
+            style="width: 250px; height: 54px;"
+            width="250"
+            height="54"
+          />
+        </a>
 
         {/* Upload Section */}
         {session && status === "authenticated" ? (
