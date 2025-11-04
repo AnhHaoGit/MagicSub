@@ -1,14 +1,8 @@
 "use client";
 
 import LandingPageNavbar from "@/components/LandingPageNavbar";
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { toast } from "react-toastify";
-import {
-  add_video_to_local_storage,
-  update_video_in_local_storage,
-} from "@/lib/local_storage_handlers";
 import Link from "next/link";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import fetch_data from "@/lib/fetch_data";
@@ -77,7 +71,7 @@ const LandingPage = () => {
         ) : (
           <Link
             href="/login"
-            className="flex gap-3 items-center bg-iris text-white rounded-full py-3 px-6 sm:py-4 sm:px-12 lg:px-20 shadow-2xl mt-6 font-bold justify-center hover:bg-violet transition-colors text-sm sm:text-base"
+            className="flex gap-3 items-center bg-black text-white rounded-full py-3 px-6 sm:py-4 sm:px-12 lg:px-20 shadow-2xl mt-6 font-bold justify-center hover:bg-gray transition-colors text-sm sm:text-base"
           >
             Login to continue
           </Link>

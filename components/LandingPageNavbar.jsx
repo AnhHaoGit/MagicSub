@@ -69,7 +69,7 @@ const LandingPageNavbar = () => {
           {session && (
             <Link
               href="/main"
-              className="bg-black px-5 py-2 text-white rounded-3xl hover:bg-gray-800 transition-colors cursor-pointer"
+              className="bg-black px-5 py-2 text-white rounded-3xl hover:bg-gray transition-colors cursor-pointer"
             >
               Go to App
             </Link>
