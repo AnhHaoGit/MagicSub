@@ -12,15 +12,10 @@ import {
 } from "@/lib/local_storage_handlers";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import fetch_data from "@/lib/fetch_data";
-import { useRef } from "react";
 
 const MainPage = () => {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [eta, setEta] = useState(null);
-  const [canCancel, setCanCancel] = useState(false);
-  const xhrRef = useRef(null);
   const [statusStep, setStatusStep] = useState("");
   const [youtubeLoading, setYoutubeLoading] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -40,198 +35,36 @@ const MainPage = () => {
   }, [status, router]);
 
   const handleFileUpload = async (e) => {
-    const date = new Date();
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!session) {
-      toast.error("Please login to upload videos");
-      return;
-    }
-
     setLoading(true);
-    setProgress(0);
-    setEta(null);
-    setStatusStep("Initializing upload...");
 
     try {
-      const size = file.size;
-      const title = file.name;
+      const formData = new FormData();
+      formData.append("file", file);
 
-      const videoElement = document.createElement("video");
-      videoElement.preload = "metadata";
-      const videoURL = URL.createObjectURL(file);
-      videoElement.src = videoURL;
-      window.lastVideoURL = videoURL;
-
-      videoElement.onloadedmetadata = async () => {
-        const duration = videoElement.duration;
-
-        // API presigned URL
-        setStatusStep("Requesting cloud URL...");
-        const presignRes = await fetch("/api/s3_presign", {
+      const res = await fetch(
+        process.env.NEXT_PUBLIC_RAILWAY_SERVER + "/upload-video",
+        {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fileName: file.name,
-            fileType: file.type,
-          }),
-        });
-
-        if (!presignRes.ok) {
-          toast.error("Failed to get cloud URL!");
-          setLoading(false);
-          return;
+          body: formData,
         }
+      );
 
-        const { uploadUrl, fileUrl, uploadKey } = await presignRes.json();
-        if (!uploadUrl || !fileUrl) {
-          toast.error("Error! Try again later.");
-          setLoading(false);
-          return;
-        }
+      const data = await res.json();
+      console.log(data)
 
-        // Upload file
-        setStatusStep("Uploading video to cloud...");
-        setCanCancel(true);
+      if (!res.ok) {
+        throw new Error(data.error || "Upload failed");
+      } else {
+        toast.success("File uploaded successfully!");
+      }
 
-        const xhr = new XMLHttpRequest();
-        xhrRef.current = xhr;
-        xhr.open("PUT", uploadUrl, true);
-        xhr.setRequestHeader("Content-Type", file.type);
-
-        const startTime = Date.now();
-
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 100);
-            const elapsed = (Date.now() - startTime) / 1000;
-            const speed = event.loaded / elapsed;
-            const remaining = (event.total - event.loaded) / speed;
-            setProgress(percent);
-            setEta(remaining.toFixed(1));
-          }
-        };
-
-        xhr.onload = async () => {
-          setCanCancel(false);
-
-          if (xhr.status !== 200) {
-            toast.error("Upload failed!");
-            setStatusStep("Upload failed!");
-            setLoading(false);
-            return;
-          }
-
-          // API extract audio
-          setStatusStep("Extracting audio...");
-
-          const extractRes = await fetch("/api/extract_audio", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ fileUrl }),
-          });
-
-          if (!extractRes.ok) {
-            toast.error("Failed to extract audio!");
-            setStatusStep("Audio extraction failed");
-            setLoading(false);
-            return;
-          }
-
-          const { audioUrl, audioKey } = await extractRes.json();
-
-          if (!audioUrl || !audioKey) {
-            toast.error("Audio extraction failed");
-            setStatusStep("Audio extraction failed");
-            setLoading(false);
-            return;
-          }
-
-          // Save data to DB
-          setStatusStep("Saving data to database...");
-          const saveRes = await fetch("/api/save_video_to_db", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: session.user.id,
-              cloudUrl: fileUrl,
-              audioUrl,
-              title,
-              size,
-              duration,
-              createdAt: date.toISOString(),
-              style: session.user.style,
-              audioKey,
-              uploadKey,
-            }),
-          });
-
-          if (!saveRes.ok) {
-            toast.error("Failed to save video to database!");
-            setStatusStep("Database save failed");
-            setLoading(false);
-            return;
-          }
-
-          const newVideo = await saveRes.json();
-          add_video_to_local_storage(newVideo);
-
-          // Generate thumbnail
-          setStatusStep("Generating thumbnail...");
-          try {
-            const thumbRes = await fetch("/api/generate_thumbnail", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                videoId: newVideo._id,
-                cloudUrl: newVideo.cloudUrl,
-              }),
-            });
-
-            if (thumbRes.ok) {
-              const { thumbnailUrl } = await thumbRes.json();
-              update_video_in_local_storage(newVideo._id, thumbnailUrl);
-            } else {
-              console.warn("Failed to generate thumbnail");
-            }
-          } catch (e) {
-            console.error("Thumbnail API error:", e);
-          }
-
-          setStatusStep("Upload complete!");
-          router.push(`/main/${newVideo._id}`);
-          toast.success("Upload successful!");
-          setLoading(false);
-        };
-
-        xhr.onerror = () => {
-          toast.error("Upload failed (network error)!");
-          setStatusStep("Upload failed (network error)");
-          setCanCancel(false);
-          setLoading(false);
-        };
-
-        xhr.send(file);
-      };
     } catch (err) {
-      console.error("Upload error:", err);
-      toast.error("Upload failed!");
-      setStatusStep("Unexpected error");
-      setCanCancel(false);
+      console.error(err);
+    } finally {
       setLoading(false);
-    }
-  };
-
-  const handleCancelUpload = () => {
-    if (xhrRef.current) {
-      xhrRef.current.abort();
-      xhrRef.current = null;
-      setCanCancel(false);
-      setLoading(false);
-      setProgress(0);
-      setEta(null);
-      toast.info("Upload canceled");
     }
   };
 
@@ -433,38 +266,6 @@ const MainPage = () => {
             >
               Login to continue
             </Link>
-          )}
-
-          {loading && (
-            <div className="mt-6 w-full gap-5 flex items-start max-w-xs sm:max-w-lg">
-              <div className="flex flex-col items-center gap-5 w-full">
-                <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4">
-                  <div
-                    className="bg-iris h-3 sm:h-4 rounded-full transition-all"
-                    style={{ width: `${progress}%` }}
-                  ></div>
-                </div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-center text-xs sm:text-sm">
-                    {progress}% {eta && `(~${eta}s left)`}
-                  </p>
-                  {statusStep && (
-                    <p className="text-xs text-iris font-medium animate-pulse">
-                      {statusStep}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {canCancel && (
-                <button
-                  onClick={handleCancelUpload}
-                  className="black text-white text-xs sm:text-sm hover:iris rounded-full transition-colors"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
           )}
 
           {youtubeLoading && statusStep && (
