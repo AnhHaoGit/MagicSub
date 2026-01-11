@@ -44,7 +44,7 @@ const MainPage = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch(
+      const uploadRes = await fetch(
         process.env.NEXT_PUBLIC_RAILWAY_SERVER + "/upload-video",
         {
           method: "POST",
@@ -52,17 +52,41 @@ const MainPage = () => {
         }
       );
 
-      const data = await res.json();
-      console.log(data)
+      const uploadData = await uploadRes.json();
+      console.log("Upload result:", uploadData);
 
-      if (!res.ok) {
-        throw new Error(data.error || "Upload failed");
-      } else {
-        toast.success("File uploaded successfully!");
+      if (!uploadRes.ok) {
+        throw new Error(uploadData.error || "Upload failed");
       }
 
+      toast.success("Upload thành công!");
+
+      const processRes = await fetch(
+        process.env.NEXT_PUBLIC_RAILWAY_SERVER + "/process-video",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            videoUrl: uploadData.fileUrl,
+          }),
+        }
+      );
+
+      const processData = await processRes.json();
+      console.log("Process result:", processData);
+
+      if (!processRes.ok) {
+        throw new Error(processData.error || "Process failed");
+      }
+
+      toast.success("Xử lý video hoàn tất!");
+
+      console.log("Subtitle:", processData.subtitle);
     } catch (err) {
       console.error(err);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
