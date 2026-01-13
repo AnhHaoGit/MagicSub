@@ -41,6 +41,22 @@ const MainPage = () => {
     setLoading(true);
 
     try {
+      const videoURL = URL.createObjectURL(file);
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.src = videoURL;
+
+      const duration = await new Promise((resolve, reject) => {
+        video.onloadedmetadata = () => {
+          resolve(video.duration);
+          URL.revokeObjectURL(videoURL);
+        };
+        video.onerror = reject;
+      });
+
+      const title = file.name;
+      const size = file.size;
+
       const formData = new FormData();
       formData.append("file", file);
 
@@ -53,37 +69,38 @@ const MainPage = () => {
       );
 
       const uploadData = await uploadRes.json();
-      console.log("Upload result:", uploadData);
 
       if (!uploadRes.ok) {
         throw new Error(uploadData.error || "Upload failed");
       }
 
-      toast.success("Upload thành công!");
+      toast.success("Successfully uploaded video to cloud!");
 
       const processRes = await fetch(
         process.env.NEXT_PUBLIC_RAILWAY_SERVER + "/process-video",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            videoUrl: uploadData.fileUrl,
+            userId: session.user.id,
+            cloudUrl: uploadData.cloudUrl,
+            uploadKey: uploadData.key,
+            title,
+            size,
+            duration,
+            customize: session.user.style,
           }),
         }
       );
 
       const processData = await processRes.json();
-      console.log("Process result:", processData);
+      console.log("Process Data:", processData);
 
       if (!processRes.ok) {
         throw new Error(processData.error || "Process failed");
       }
 
-      toast.success("Xử lý video hoàn tất!");
-
-      console.log("Subtitle:", processData.subtitle);
+      toast.success("Successfully processed video!");
     } catch (err) {
       console.error(err);
       toast.error(err.message);
