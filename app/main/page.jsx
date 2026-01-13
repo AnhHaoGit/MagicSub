@@ -16,6 +16,7 @@ import fetch_data from "@/lib/fetch_data";
 const MainPage = () => {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState("");
   const [statusStep, setStatusStep] = useState("");
   const [youtubeLoading, setYoutubeLoading] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -39,6 +40,7 @@ const MainPage = () => {
     if (!file) return;
 
     setLoading(true);
+    setLoadingStatus("Uploading video to cloud...");
 
     try {
       const videoURL = URL.createObjectURL(file);
@@ -71,10 +73,12 @@ const MainPage = () => {
       const uploadData = await uploadRes.json();
 
       if (!uploadRes.ok) {
-        throw new Error(uploadData.error || "Upload failed");
+        throw new Error("Problem uploading video. Please try again later.");
       }
 
       toast.success("Successfully uploaded video to cloud!");
+
+      setLoadingStatus("Generating transcript...");
 
       const processRes = await fetch(
         process.env.NEXT_PUBLIC_RAILWAY_SERVER + "/process-video",
@@ -94,7 +98,6 @@ const MainPage = () => {
       );
 
       const processData = await processRes.json();
-      console.log("Process Data:", processData);
 
       if (!processRes.ok) {
         throw new Error(processData.error || "Process failed");
@@ -102,10 +105,12 @@ const MainPage = () => {
 
       toast.success("Successfully processed video!");
     } catch (err) {
-      console.error(err);
-      toast.error(err.message);
+      setLoading(false);
+      setLoadingStatus("");
+      toast.error("Problem uploading video. Please try again later.");
     } finally {
       setLoading(false);
+      setLoadingStatus("");
     }
   };
 
@@ -276,12 +281,18 @@ const MainPage = () => {
                   )}
                 </button>
               </div>
-              <label className="flex items-center gap-2 bg-iris text-white rounded-full py-3 sm:py-4 px-8 sm:px-16 md:px-20 shadow-2xl mt-6 sm:mt-10 font-bold justify-center hover:bg-violet transition-colors cursor-pointer text-sm sm:text-base">
+              <label
+                className={`flex items-center gap-2 bg-iris text-white rounded-full py-3 sm:py-4 px-8 sm:px-16 md:px-20 shadow-2xl mt-6 sm:mt-10 font-bold justify-center transition-colors cursor-pointer text-sm sm:text-base
+                ${
+                  loading ? "opacity-50 cursor-not-allowed" : "hover:bg-violet"
+                }`}
+              >
                 <input
                   type="file"
                   accept="video/*"
                   onChange={handleFileUpload}
                   className="hidden"
+                  disabled={loading}
                 />
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -297,8 +308,35 @@ const MainPage = () => {
                     d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
                   />
                 </svg>
-                Upload your Video
+                {loading ? "Processing..." : "Upload your Video"}
               </label>
+              {loading && (
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-6 w-6 text-iris"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    />
+                  </svg>
+                  <p className="text-xs text-iris font-medium animate-pulse">
+                    {loadingStatus}
+                  </p>
+                </div>
+              )}
             </>
           ) : (
             <Link
