@@ -104,6 +104,19 @@ const MainPage = () => {
       }
 
       toast.success("Successfully processed video!");
+
+      const newVideo = {
+        ...processData,
+        title,
+        size,
+        duration,
+        uploadKey: uploadData.key,
+        cloudUrl: uploadData.cloudUrl,
+        userId: session.user.id,
+        customize: session.user.style,
+      };
+      add_video_to_local_storage(newVideo);
+      router.push(`/main/${processData._id}`);
     } catch (err) {
       setLoading(false);
       setLoadingStatus("");
