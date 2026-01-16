@@ -59,7 +59,6 @@ const SubtitleOption = ({
           _id: videoData._id,
           targetLanguage,
           userId: session.user.id,
-          duration: videoData.duration,
           cost: videoCost,
           transcript: videoData.transcript,
         }),

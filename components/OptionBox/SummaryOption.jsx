@@ -68,14 +68,12 @@ const SummaryOption = ({ videoData, setVideoData, session, setLoading }) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        audioUrl: videoData.audioUrl,
         _id: videoData._id,
-        style: session.user.style,
         userId: session.user.id,
-        duration: videoData.duration,
         cost: videoCost,
         option: summaryOption,
         targetLanguage,
+        transcript: videoData.transcript,
       }),
     });
 

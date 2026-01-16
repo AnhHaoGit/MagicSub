@@ -2,61 +2,22 @@
 
 import { NextResponse } from "next/server";
 import axios from "axios";
-import fs from "fs";
-import path from "path";
-import { spawn } from "child_process";
-import FormData from "form-data";
 import { ObjectId } from "mongodb";
-import { v4 as uuidv4 } from "uuid";
 import { connectDB } from "@/lib/connect_db";
 import { formatLanguage } from "@/lib/format_language";
 
-const WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-async function extractAudioSegment(inputPath, start, duration) {
-  const outputPath = path.join("/tmp", `segment_${start}_${uuidv4()}.mp3`);
-
-  return new Promise((resolve, reject) => {
-    const ffmpeg = spawn("ffmpeg", [
-      "-ss",
-      start.toString(),
-      "-t",
-      duration.toString(),
-      "-i",
-      inputPath,
-      "-acodec",
-      "libmp3lame",
-      "-b:a",
-      "128k",
-      "-ar",
-      "44100",
-      "-f",
-      "mp3",
-      outputPath,
-    ]);
-
-    ffmpeg.stderr.on("data", (d) => console.log("ffmpeg:", d.toString()));
-    ffmpeg.on("error", reject);
-    ffmpeg.on("close", (code) => {
-      if (code === 0) resolve(outputPath);
-      else reject(new Error(`ffmpeg exited with code ${code}`));
-    });
-  });
-}
 
 export async function POST(req) {
   const client = await connectDB();
   const session = client.client.startSession();
-  const tempFiles = [];
 
   try {
-    const { audioUrl, _id, userId, duration, cost, option, targetLanguage } =
+    const { _id, userId, cost, option, targetLanguage, transcript } =
       await req.json();
 
     const db = client;
     const users = db.collection("users");
-    const videos = db.collection("videos");
     const summaries = db.collection("summary");
 
     const user = await users.findOne({ _id: new ObjectId(userId) });
@@ -69,75 +30,8 @@ export async function POST(req) {
         { status: 400 }
       );
 
-    const videoDoc = await videos.findOne({ _id: new ObjectId(_id) });
-    let segmentsAll = [];
-
-    if (videoDoc && videoDoc.transcript && videoDoc.transcript.length > 0) {
-      segmentsAll = videoDoc.transcript;
-    } else {
-
-      const response = await axios.get(audioUrl, {
-        responseType: "arraybuffer",
-      });
-      const audioBuffer = Buffer.from(response.data);
-
-      const tempInputPath = path.join("/tmp", `input_${uuidv4()}.mp3`);
-      fs.writeFileSync(tempInputPath, audioBuffer);
-      tempFiles.push(tempInputPath);
-
-      const segmentDuration = 240;
-      const totalDuration = duration;
-
-      for (let start = 0; start < totalDuration; start += segmentDuration) {
-        const segmentLength = Math.min(segmentDuration, totalDuration - start);
-
-        const segmentPath = await extractAudioSegment(
-          tempInputPath,
-          start,
-          segmentLength
-        );
-        tempFiles.push(segmentPath);
-
-        const chunkBuffer = fs.readFileSync(segmentPath);
-        const form = new FormData();
-        form.append("file", chunkBuffer, {
-          filename: `chunk_${start}.mp3`,
-          contentType: "audio/mp3",
-        });
-        form.append("model", "whisper-1");
-        form.append("response_format", "verbose_json");
-
-        const whisperRes = await axios.post(WHISPER_API_URL, form, {
-          headers: {
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-            ...form.getHeaders(),
-          },
-        });
-
-        const parsed =
-          typeof whisperRes.data === "string"
-            ? JSON.parse(whisperRes.data)
-            : whisperRes.data;
-
-        if (parsed.segments && Array.isArray(parsed.segments)) {
-          parsed.segments.forEach((seg) => {
-            segmentsAll.push({
-              start: seg.start + start,
-              end: seg.end + start,
-              text: seg.text.trim(),
-            });
-          });
-        }
-      }
-
-      await videos.updateOne(
-        { _id: new ObjectId(_id) },
-        { $set: { transcript: segmentsAll } }
-      );
-    }
-
     const summaryText = await summarizeTranscript(
-      segmentsAll,
+      transcript,
       option,
       targetLanguage
     );
@@ -175,9 +69,6 @@ export async function POST(req) {
     );
   } finally {
     await session.endSession();
-    for (const filePath of tempFiles) {
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    }
   }
 }
 
