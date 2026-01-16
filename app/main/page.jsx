@@ -12,6 +12,8 @@ import {
 } from "@/lib/local_storage_handlers";
 import SuggestAFeature from "@/components/SuggestAFeature";
 import fetch_data from "@/lib/fetch_data";
+import { source_languages } from "@/lib/source_languages";
+import SelectBox from "@/components/SelectBox";
 
 const MainPage = () => {
   const { data: session, status } = useSession();
@@ -20,6 +22,8 @@ const MainPage = () => {
   const [statusStep, setStatusStep] = useState("");
   const [youtubeLoading, setYoutubeLoading] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [file, setFile] = useState(null);
+  const [sourceLanguage, setSourceLanguage] = useState("auto");
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -36,8 +40,7 @@ const MainPage = () => {
   }, [status, router]);
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    e.preventDefault();
 
     setLoading(true);
     setLoadingStatus("Uploading video to cloud...");
@@ -93,6 +96,7 @@ const MainPage = () => {
             size,
             duration,
             customize: session.user.style,
+            sourceLanguage,
           }),
         }
       );
@@ -114,6 +118,7 @@ const MainPage = () => {
         cloudUrl: uploadData.cloudUrl,
         userId: session.user.id,
         customize: session.user.style,
+        sourceLanguage,
       };
       add_video_to_local_storage(newVideo);
       router.push(`/main/${processData._id}`);
@@ -294,35 +299,74 @@ const MainPage = () => {
                   )}
                 </button>
               </div>
-              <label
-                className={`flex items-center gap-2 bg-iris text-white rounded-full py-3 sm:py-4 px-8 sm:px-16 md:px-20 shadow-2xl mt-6 sm:mt-10 font-bold justify-center transition-colors cursor-pointer text-sm sm:text-base
-                ${
-                  loading ? "opacity-50 cursor-not-allowed" : "hover:bg-violet"
-                }`}
+              <form
+                onSubmit={handleFileUpload}
+                className="flex flex-col md:flex-row items-stretch sm:items-center gap-4 sm:gap-6 mt-6 sm:mt-10 bg-white/5 p-4 sm:p-6 rounded-2xl shadow-xl max-w-full"
               >
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  disabled={loading}
-                />
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="size-5 sm:size-6"
+                {/* File picker */}
+                <label
+                  className={`flex items-center justify-center gap-2 hover:white gray rounded-full h-12 sm:h-14 px-4 sm:px-8 shadow-xl transition-colors cursor-pointer text-xs sm:text-base whitespace-nowrap w-full sm:w-auto
+      ${loading ? "opacity-50 cursor-not-allowed" : "hover:bg-gray"}
+    `}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => setFile(e.target.files[0])}
+                    className="hidden"
+                    disabled={loading}
+                    required
                   />
-                </svg>
-                {loading ? "Processing..." : "Upload your Video"}
-              </label>
+
+                  {file ? (
+                    <span className="truncate max-w-full sm:max-w-[240px]">
+                      {file.name}
+                    </span>
+                  ) : (
+                    "Choose video"
+                  )}
+                </label>
+
+                {/* Language select */}
+                <div className="flex flex-col justify-center w-full sm:min-w-[220px]">
+                  <SelectBox
+                    options={source_languages}
+                    label="Source Language"
+                    value={sourceLanguage}
+                    onValueChange={setSourceLanguage}
+                    placeholder="Select Source Language"
+                  />
+                  <p className="gray text-[10px] mt-1">
+                    Choose source language for more accurate transcription
+                  </p>
+                </div>
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`flex items-center justify-center h-12 sm:h-14 px-6 sm:px-10 gap-2 rounded-full bg-iris text-white shadow-lg font-bold transition-colors text-sm sm:text-base whitespace-nowrap w-full sm:w-auto
+      ${loading || !file ? "opacity-50 cursor-not-allowed" : "hover:bg-violet"}
+    `}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-4 sm:size-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
+                    />
+                  </svg>
+                  {loading ? "Processing..." : "Upload Video"}
+                </button>
+              </form>
+
               {loading && (
                 <div className="flex items-center gap-2">
                   <svg

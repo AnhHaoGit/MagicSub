@@ -59,6 +59,10 @@ body {
   background-color: #836fff;
 }
 
+.hover\:white:hover {
+  color: #ffffff;
+}
+
 .hover\:iris:hover {
   color: #4C3BCF;
 }
