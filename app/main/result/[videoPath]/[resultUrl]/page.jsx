@@ -52,7 +52,6 @@ const Page = () => {
       toast.error("Cannot find video data!");
     }
   }, [videoPath, resultUrl]);
-  console.log(cloudUrl);
 
   return (
     <>

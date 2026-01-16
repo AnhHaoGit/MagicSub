@@ -10,7 +10,6 @@ import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import SubtitleStylingBox from "@/components/SubtitleStylingBox";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import Link from "next/link";
-import { formatTime } from "@/lib/format_time";
 import fetch_data from "@/lib/fetch_data";
 import { update_cloud_urls_to_local_storage_by_video_id } from "@/lib/local_storage_handlers";
 import { useSession } from "next-auth/react";
@@ -259,7 +258,6 @@ const Page = () => {
         (sub) => sub._id === subtitleId
       );
       setSubtitle(clonedSubtitle.subtitle);
-      setEndpoints(clonedSubtitle.endpoints);
       setCustomize(found.customize);
       setOriginalSubtitle(clonedSubtitle.subtitle);
       setOriginalCustomize(found.customize);
@@ -305,20 +303,22 @@ bg-[${customize.background_color}] ${
   const handleGenerateVideo = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/generate_video", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subtitle,
-          customize,
-          cloudUrl: videoData.cloudUrl,
-          videoId: videoData._id,
-          userId: videoData.userId,
-          endpoints,
-        }),
-      });
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_RAILWAY_SERVER + "/generate-video",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            subtitle,
+            customize,
+            cloudUrl: videoData.cloudUrl,
+            videoId: videoData._id,
+            userId: videoData.userId,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -330,10 +330,10 @@ bg-[${customize.background_color}] ${
       const data = await response.json();
       update_cloud_urls_to_local_storage_by_video_id(
         videoData._id,
-        data.cloudUrl
+        data
       );
       toast.success("ASS video generated successfully!");
-      router.push(`/main/result/${videoData._id}/${data.cloudUrl.id}`);
+      router.push(`/main/result/${videoData._id}/${data.id}`);
     } catch (error) {
       toast.error("Error:", error);
     }

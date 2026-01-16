@@ -5,8 +5,6 @@ import Link from "next/link";
 const SubbedOption = ({ videoData, session }) => {
   const cloudUrls = videoData?.cloudUrls || [];
 
-  console.log(cloudUrls);
-
   function timeAgo(dateString) {
     const now = new Date();
     const created = new Date(dateString);
