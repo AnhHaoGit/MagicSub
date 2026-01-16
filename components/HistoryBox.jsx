@@ -57,11 +57,11 @@ const HistoryBox = ({ video, onDelete }) => {
       >
         {/* Thumbnail */}
         <div className="flex items-center justify-center w-full max-h-[200px] aspect-video">
-          <img
-            src={video.thumbnailUrl}
-            alt={video.title}
+          <video
+            src={video.cloudUrl}
             className="max-w-full max-h-full object-cover rounded-2xl"
-          />
+            alt={video.title}
+          ></video>
         </div>
 
         {/* Nội dung */}
