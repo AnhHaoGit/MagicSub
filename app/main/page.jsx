@@ -25,6 +25,10 @@ const MainPage = () => {
   const [file, setFile] = useState(null);
   const [sourceLanguage, setSourceLanguage] = useState("auto");
 
+  const handleSourceLanguageChange = (value) => {
+    setSourceLanguage(value);
+  };
+
   useEffect(() => {
     if (session && status === "authenticated") {
       fetch_data(session);
@@ -333,7 +337,7 @@ const MainPage = () => {
                     options={source_languages}
                     label="Source Language"
                     value={sourceLanguage}
-                    onValueChange={setSourceLanguage}
+                    onValueChange={handleSourceLanguageChange}
                     placeholder="Select Source Language"
                   />
                   <p className="gray text-[10px] mt-1">

@@ -2,7 +2,6 @@
 
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { languages } from "@/lib/languages";
-import { source_languages } from "@/lib/source_languages";
 import { toast } from "react-toastify";
 import { useState } from "react";
 import calculateCost from "@/lib/calculateCost";
@@ -23,16 +22,12 @@ const SubtitleOption = ({
   setLoading,
   endpoints,
 }) => {
-  const [sourceLanguage, setSourceLanguage] = useState("auto");
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isProcessing, setIsProcessing] = useState(false);
   const router = useRouter();
   const videoCost = videoData
     ? calculateCost(videoData.size, videoData.duration)
     : 0;
-  const handleSourceLanguageChange = (value) => {
-    setSourceLanguage(value);
-  };
 
   const handleTargetLanguageChange = (value) => {
     setTargetLanguage(value);
@@ -61,14 +56,12 @@ const SubtitleOption = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          audioUrl: videoData.audioUrl,
           _id: videoData._id,
-          sourceLanguage,
           targetLanguage,
           userId: session.user.id,
           duration: videoData.duration,
           cost: videoCost,
-          endpoints,
+          transcript: videoData.transcript,
         }),
       });
 
@@ -82,7 +75,6 @@ const SubtitleOption = ({
           data.subtitle,
           data.subtitleId,
           data.language,
-          endpoints
         );
         update_gems(videoCost);
         toast.success("Subtitle successfully generated!");
@@ -91,7 +83,7 @@ const SubtitleOption = ({
         );
       }
     } catch (err) {
-      toast.error("An unexpected error occurred.");
+      toast.error("An unexpected error occurred. Please try again later.");
       console.error(err);
     } finally {
       setIsProcessing(false);
@@ -191,20 +183,6 @@ const SubtitleOption = ({
         </div>
       </div>
 
-      <div className="w-full flex flex-col items-center gap-3">
-        <div className="flex flex-col items-center gap-1 w-full">
-          <SelectBox
-            options={source_languages}
-            label="Source Language"
-            value={sourceLanguage}
-            onValueChange={handleSourceLanguageChange}
-            placeholder="Select Source Language"
-          />
-          <p className="gray text-[10px]">
-            Choose source language for more accurate transcription
-          </p>
-        </div>
-
         <SelectBox
           options={languages}
           label="Target Language"
@@ -212,7 +190,6 @@ const SubtitleOption = ({
           onValueChange={handleTargetLanguageChange}
           placeholder="Select Target Language"
         />
-      </div>
 
       <div className="flex flex-col justify-between items-center gap-3 mt-6">
         <button

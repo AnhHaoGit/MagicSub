@@ -3,7 +3,6 @@ import format_duration from "@/lib/format_duration";
 import Link from "next/link";
 
 const HistoryBox = ({ video, onDelete }) => {
-  console.log("Rendering HistoryBox for video:", video);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDeleteClick = (e) => {

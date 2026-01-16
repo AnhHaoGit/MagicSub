@@ -185,7 +185,7 @@ export default function VideoPage() {
           </div>
         </div>
 
-        <div className="w-full bg-smoke p-5 flex flex-col gap-4 rounded-3xl shadow-lg">
+        {/* <div className="w-full bg-smoke p-5 flex flex-col gap-4 rounded-3xl shadow-lg">
           <div className="flex items-center gap-1">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -212,7 +212,7 @@ export default function VideoPage() {
             setEndpoints={setEndpoints}
             videoRef={videoRef}
           />
-        </div>
+        </div> */}
       </main>
     </>
   );

@@ -592,14 +592,14 @@ bg-[${customize.background_color}] ${
             </button>
           </div>
 
-          {endpoints ? (
+          {/* {endpoints ? (
             <p className="gray text-xs">
               Trimmed from {formatTime(endpoints[0])} to{" "}
               {formatTime(endpoints[1])}
             </p>
           ) : (
             <p>loading...</p>
-          )}
+          )} */}
 
           {isTranscript ? (
             <>
