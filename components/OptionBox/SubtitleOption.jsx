@@ -74,6 +74,7 @@ const SubtitleOption = ({
           data.subtitle,
           data.subtitleId,
           data.language,
+          data.locked
         );
         update_gems(videoCost);
         toast.success("Subtitle successfully generated!");
@@ -182,13 +183,13 @@ const SubtitleOption = ({
         </div>
       </div>
 
-        <SelectBox
-          options={languages}
-          label="Target Language"
-          value={targetLanguage}
-          onValueChange={handleTargetLanguageChange}
-          placeholder="Select Target Language"
-        />
+      <SelectBox
+        options={languages}
+        label="Target Language"
+        value={targetLanguage}
+        onValueChange={handleTargetLanguageChange}
+        placeholder="Select Target Language"
+      />
 
       <div className="flex flex-col justify-between items-center gap-3 mt-6">
         <button

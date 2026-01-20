@@ -12,29 +12,21 @@ async function connectDB() {
   return db;
 }
 
-export async function PUT(req) {
+export async function POST(req) {
   try {
-    const { videoId, customize } = await req.json();
-
-
-    if (!videoId || !customize) {
-      return NextResponse.json(
-        { message: "Missing parameters" },
-        { status: 400 }
-      );
-    }
+    const { subtitleId, locked } = await req.json();
 
     const db = await connectDB();
-    const collection = db.collection("videos");
+    const subtitle = db.collection("subtitle");
 
-    await collection.updateOne(
-      { _id: new ObjectId(videoId) },
-      { $set: { customize: customize } },
-      { upsert: true } // If not exist, create new
+    await subtitle.updateOne(
+      { _id: new ObjectId(subtitleId) },
+      { $set: { locked } },
+      { upsert: false }
     );
 
     return NextResponse.json(
-      { message: "Customization updated successfully." },
+      { ok: true, message: "Source updated successfully." },
       { status: 200 }
     );
   } catch (error) {

@@ -100,7 +100,7 @@ const HistoryBox = ({ video, onDelete }) => {
 
       {/* Modal xác nhận xoá */}
       {showConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-80 text-center">
             <h3 className="text-lg font-semibold mb-3">
               Are you sure you want to delete this video?

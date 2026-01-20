@@ -16,9 +16,6 @@ export async function POST(req) {
   try {
     const { userId, source } = await req.json();
 
-    console.log("Received userId:", userId);
-    console.log("Received source:", source);
-
     if (!userId || !source) {
       return NextResponse.json(
         { message: "Missing parameters" },
@@ -40,7 +37,6 @@ export async function POST(req) {
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error updating source:", error);
     return NextResponse.json(
       { message: "Internal Server Error" },
       { status: 500 }

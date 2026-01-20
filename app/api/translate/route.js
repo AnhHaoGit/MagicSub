@@ -110,6 +110,7 @@ export async function POST(req) {
           userId: new ObjectId(userId),
           videoId: new ObjectId(_id),
           subtitle: translatedSegments,
+          locked: true,
         },
         { session }
       );
