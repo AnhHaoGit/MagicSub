@@ -14,19 +14,19 @@ async function connectDB() {
 
 export async function POST(req) {
   try {
-    const { subtitleId, locked } = await req.json();
+    const { videoId, mode } = await req.json();
 
     const db = await connectDB();
-    const subtitle = db.collection("subtitle");
+    const videos = db.collection("videos");
 
-    await subtitle.updateOne(
-      { _id: new ObjectId(subtitleId) },
-      { $set: { locked } },
+    await videos.updateOne(
+      { _id: new ObjectId(videoId) },
+      { $set: { mode } },
       { upsert: false }
     );
 
     return NextResponse.json(
-      { ok: true, message: "Stream sharing mode updated successfully." },
+      { ok: true, message: "Upload sharing mode updated successfully." },
       { status: 200 }
     );
   } catch (error) {

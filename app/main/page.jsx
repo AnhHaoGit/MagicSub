@@ -123,6 +123,7 @@ const MainPage = () => {
         userId: session.user.id,
         customize: session.user.style,
         sourceLanguage,
+        mode: "private",
       };
       add_video_to_local_storage(newVideo);
       router.push(`/main/${processData._id}`);

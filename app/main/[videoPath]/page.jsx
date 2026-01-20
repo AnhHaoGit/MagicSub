@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import SubtitleOption from "@/components/OptionBox/SubtitleOption";
 import SummaryOption from "@/components/OptionBox/SummaryOption";
 import SubbedOption from "@/components/OptionBox/SubbedOption";
+import SharingOption from "@/components/OptionBox/SharingOption";
 import { useRouter } from "next/navigation";
 import VideoTrimmer from "@/components/VideoTrimmer";
 import fetch_data from "@/lib/fetch_data";
@@ -17,7 +18,7 @@ export default function VideoPage() {
   const { videoPath } = useParams();
   const { data: session, status } = useSession();
   const [videoData, setVideoData] = useState(null);
-  const [option, setOption] = useState("subtitle");
+  const [option, setOption] = useState("sharing");
   const [loading, setLoading] = useState(false);
   const [endpoints, setEndpoints] = useState([0, 0]);
   const videoRef = useRef(null);
@@ -39,12 +40,11 @@ export default function VideoPage() {
     const video = JSON.parse(localStorage.getItem("videos")) || [];
     const found = video.find((v) => v._id === videoPath);
     if (found) {
-    setVideoData(found);
-    setEndpoints([0, found.duration]);
+      setVideoData(found);
+      setEndpoints([0, found.duration]);
     } else {
-      toast.error('Cannot find this video!')
+      toast.error("Cannot find this video!");
     }
-
   }, [videoPath]);
 
   return (
@@ -63,7 +63,7 @@ export default function VideoPage() {
           </div>
 
           {/* Sidebar settings */}
-          <div className="w-full md:w-1/3 h-auto md:h-[70vh] flex flex-col items-center gap-7 justify-between p-5 bg-smoke rounded-4xl shadow-lg">
+          <div className="w-full md:w-1/3 h-auto md:h-[70vh] flex flex-col items-center gap-7 p-5 bg-smoke rounded-4xl shadow-lg">
             <div className="flex w-full items-center justify-center top-3 shadow-lg gap-3 sm:gap-5 bg-white p-1 rounded-4xl">
               <button
                 disabled={loading}
@@ -160,6 +160,37 @@ export default function VideoPage() {
                   Subbed
                 </span>
               </button>
+              <button
+                disabled={loading}
+                onClick={() => setOption("sharing")}
+                className={`w-24 sm:w-28 md:w-32 lg:w-36 flex gap-2 justify-center items-center hover:bg-zinc-200 rounded-3xl py-1 sm:py-2 md:py-3 ${
+                  option === "sharing"
+                    ? "font-semibold text-black"
+                    : "text-gray-700"
+                }`}
+              >
+                {option === "sharing" ? (
+                  <div className="h-[10px] w-[10px] rounded-full bg-iris"></div>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-4"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
+                    />
+                  </svg>
+                )}
+                <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs">
+                  Sharing
+                </span>
+              </button>
             </div>
 
             {option === "subtitle" && (
@@ -181,6 +212,10 @@ export default function VideoPage() {
             )}
             {option === "subbed" && (
               <SubbedOption videoData={videoData} session={session} />
+            )}
+
+            {option === "sharing" && (
+              <SharingOption videoData={videoData} session={session} />
             )}
           </div>
         </div>
