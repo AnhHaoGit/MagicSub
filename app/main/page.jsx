@@ -74,7 +74,7 @@ const MainPage = () => {
         {
           method: "POST",
           body: formData,
-        }
+        },
       );
 
       const uploadData = await uploadRes.json();
@@ -102,7 +102,7 @@ const MainPage = () => {
             customize: session.user.style,
             sourceLanguage,
           }),
-        }
+        },
       );
 
       const processData = await processRes.json();
@@ -124,6 +124,7 @@ const MainPage = () => {
         customize: session.user.style,
         sourceLanguage,
         mode: "private",
+        allowedUsers: [],
       };
       add_video_to_local_storage(newVideo);
       router.push(`/main/${processData._id}`);

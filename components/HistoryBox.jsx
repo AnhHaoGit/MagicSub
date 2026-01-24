@@ -52,7 +52,7 @@ const HistoryBox = ({ video, onDelete }) => {
       <Link
         key={video._id}
         href={`/main/${video._id}`}
-        className="w-full bg-white rounded-2xl shadow-md overflow-hidden flex flex-col hover:shadow-lg transition-shadow relative"
+        className="flex-shrink-0 basis-[calc(25%-20px)] snap-center bg-white rounded-2xl shadow-md flex flex-col hover:shadow-lg transition-shadow relative"
       >
         {/* Thumbnail */}
         <div className="flex items-center justify-center w-full max-h-[200px] aspect-video">

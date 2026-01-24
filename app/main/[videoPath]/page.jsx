@@ -12,16 +12,18 @@ import { useRouter } from "next/navigation";
 import VideoTrimmer from "@/components/VideoTrimmer";
 import fetch_data from "@/lib/fetch_data";
 import { toast } from "react-toastify";
+import findData from "@/lib/find_data";
 
 export default function VideoPage() {
   const router = useRouter();
   const { videoPath } = useParams();
   const { data: session, status } = useSession();
   const [videoData, setVideoData] = useState(null);
-  const [option, setOption] = useState("sharing");
+  const [option, setOption] = useState("subtitle");
   const [loading, setLoading] = useState(false);
   const [endpoints, setEndpoints] = useState([0, 0]);
   const videoRef = useRef(null);
+  const [isAccessible, setIsAccessible] = useState(true);
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -43,9 +45,29 @@ export default function VideoPage() {
       setVideoData(found);
       setEndpoints([0, found.duration]);
     } else {
-      toast.error("Cannot find this video!");
+      findData(videoPath, setVideoData, setIsAccessible);
     }
-  }, [videoPath]);
+  }, [videoPath, session]);
+
+  if (!isAccessible) {
+    return (
+      <>
+        <main className="flex items-center justify-center h-screen">
+          <p className="text-lg text-gray-600">
+            You cannot access this content.
+          </p>
+        </main>
+      </>
+    );
+  }
+
+  if (videoData === null) {
+    return (
+      <main className="flex flex-col items-center justify-center w-full min-h-screen pt-4 px-4 sm:pt-6 sm:px-6 md:pt-8 gap-6 md:px-8">
+        <p className="text-gray-500 text-lg mt-20">Loading...</p>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -160,37 +182,39 @@ export default function VideoPage() {
                   Subbed
                 </span>
               </button>
-              <button
-                disabled={loading}
-                onClick={() => setOption("sharing")}
-                className={`w-24 sm:w-28 md:w-32 lg:w-36 flex gap-2 justify-center items-center hover:bg-zinc-200 rounded-3xl py-1 sm:py-2 md:py-3 ${
-                  option === "sharing"
-                    ? "font-semibold text-black"
-                    : "text-gray-700"
-                }`}
-              >
-                {option === "sharing" ? (
-                  <div className="h-[10px] w-[10px] rounded-full bg-iris"></div>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="size-4"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
-                    />
-                  </svg>
-                )}
-                <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs">
-                  Sharing
-                </span>
-              </button>
+              {videoData.allowedUsers && (
+                <button
+                  disabled={loading}
+                  onClick={() => setOption("sharing")}
+                  className={`w-24 sm:w-28 md:w-32 lg:w-36 flex gap-2 justify-center items-center hover:bg-zinc-200 rounded-3xl py-1 sm:py-2 md:py-3 ${
+                    option === "sharing"
+                      ? "font-semibold text-black"
+                      : "text-gray-700"
+                  }`}
+                >
+                  {option === "sharing" ? (
+                    <div className="h-[10px] w-[10px] rounded-full bg-iris"></div>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-4"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
+                      />
+                    </svg>
+                  )}
+                  <span className="text-[10px] xs:text-[9px] sm:text-xs md:text-xs">
+                    Sharing
+                  </span>
+                </button>
+              )}
             </div>
 
             {option === "subtitle" && (

@@ -22,17 +22,17 @@ export async function POST(req) {
     await videos.updateOne(
       { _id: new ObjectId(videoId) },
       { $set: { mode } },
-      { upsert: false }
+      { upsert: false },
     );
 
     return NextResponse.json(
       { ok: true, message: "Upload sharing mode updated successfully." },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     return NextResponse.json(
       { message: "Internal Server Error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

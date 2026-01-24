@@ -77,7 +77,7 @@ const LandingPage = () => {
           </Link>
         )}
 
-        <a
+        {/* <a
           href="https://www.producthunt.com/products/magicsub?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-magicsub"
           target="_blank"
           className="mt-10"
@@ -89,7 +89,7 @@ const LandingPage = () => {
             width="250"
             height="54"
           />
-        </a>
+        </a> */}
 
         {/* Suggest Feature */}
         <div className="mt-12">
@@ -97,8 +97,7 @@ const LandingPage = () => {
         </div>
       </main>
 
-      {/* ===== Preview Section ===== */}
-      <section className="flex flex-col w-full lg:flex-row items-center justify-center gap-14 px-6 py-20 text-black">
+      {/* <section className="flex flex-col w-full lg:flex-row items-center justify-center gap-14 px-6 py-20 text-black">
         <div className="max-w-xl w-1/3 lg:ml-20">
           <h2 className="text-3xl sm:text-4xl w-full block font-extrabold black mb-6 text-center">
             🎥 See MagicSub in Action
@@ -126,7 +125,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="w-full py-20 bg-violet">
         <div className="max-w-6xl mx-auto px-6 text-center">
           <h2 className="text-3xl sm:text-4xl font-extrabold white text-gray-900 mb-12">
@@ -134,7 +132,6 @@ const LandingPage = () => {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* 1️⃣ Fast and accurate subtitle creation */}
             <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
               <div className="bg-smoke p-2 rounded-lg">
                 <svg
@@ -162,7 +159,6 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* 2️⃣ Multilingual Transcription & Translation */}
             <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
               <div className="bg-smoke p-2 rounded-lg">
                 <svg
@@ -189,7 +185,6 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* 3️⃣ Subtitle customization & styling */}
             <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
               <div className="bg-smoke p-2 rounded-lg">
                 <svg
@@ -216,7 +211,6 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* 4️⃣ Hardcode subtitles */}
             <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
               <div className="bg-smoke p-2 rounded-lg">
                 <svg
@@ -243,7 +237,6 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* 5️⃣ Easy video sharing */}
             <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
               <div className="bg-smoke p-2 rounded-lg">
                 <svg
@@ -271,7 +264,6 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* 6️⃣ Video content summarization */}
             <div className="bg-white rounded-3xl shadow-lg p-8 flex flex-col items-start gap-6 hover:-translate-y-1 hover:shadow-xl transition-all">
               <div className="bg-smoke p-2 rounded-lg">
                 <svg
@@ -298,7 +290,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* ===== Demo Section ===== */}
       <section className="mt-20 flex flex-col items-center justify-center gap-5 px-6 text-center text-black">
         <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900">
           Try the Interactive Demo
@@ -310,7 +301,6 @@ const LandingPage = () => {
       </section>
 
       <section className="w-full flex flex-col items-center justify-between mt-20 gap-20 pb-20">
-        {/* === 1️⃣ Video Trimmer === */}
         <div className="flex flex-col md:flex-row bg-violet rounded-3xl p-6 sm:p-10 w-[90%] md:w-2/3 items-center gap-8 md:gap-10 md:self-start md:ml-40">
           <div className="w-full md:w-1/3 flex flex-col text-left">
             <p className="font-semibold text-2xl sm:text-3xl text-white mb-3">
@@ -333,7 +323,6 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* === 2️⃣ Unlimited Storage === */}
         <div className="flex flex-col-reverse md:flex-row bg-violet rounded-3xl p-6 sm:p-10 w-[90%] md:w-2/3 items-center gap-8 md:gap-10 md:self-end md:mr-40">
           <div className="w-full md:w-2/3">
             <img
@@ -353,7 +342,6 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* === 3️⃣ AI-powered language detection === */}
         <div className="flex flex-col md:flex-row bg-violet rounded-3xl p-6 sm:p-10 w-[90%] md:w-2/3 items-center gap-8 md:gap-10 md:self-start md:ml-40">
           <div className="w-full md:w-1/3 flex flex-col text-left">
             <p className="font-semibold text-2xl sm:text-3xl text-white mb-3">
@@ -377,15 +365,12 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* === Demo Videos Carousel === */}
       <section className="flex flex-col items-center justify-center w-full py-20 bg-gradient-to-b from-white to-violet/10">
         <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-10">
           🎬 Hard-Subbed Videos
         </h2>
 
-        {/* === Carousel Container === */}
         <div className="w-full flex items-center justify-center gap-5">
-          {/* === Left Button === */}
           <button
             onClick={() =>
               setCurrentVideo((prev) =>
@@ -410,7 +395,6 @@ const LandingPage = () => {
             </svg>
           </button>
 
-          {/* === Video Display === */}
           <div className="overflow-hidden rounded-3xl h-[700px] bg-black border border-gray-200 w-[85%] shadow-[0_0_25px_5px_rgba(131,111,255,0.6)]">
             <video
               key={demoVideos[currentVideo].src}
@@ -420,7 +404,6 @@ const LandingPage = () => {
             ></video>
           </div>
 
-          {/* === Right Button === */}
           <button
             onClick={() =>
               setCurrentVideo((prev) =>
@@ -445,7 +428,7 @@ const LandingPage = () => {
             </svg>
           </button>
         </div>
-      </section>
+      </section> */}
     </>
   );
 };

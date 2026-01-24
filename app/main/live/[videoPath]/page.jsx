@@ -21,7 +21,6 @@ const LivePage = () => {
   const [currentSubtitle, setCurrentSubtitle] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isLocked, setIsLocked] = useState(null);
-  const [copied, setCopied] = useState(false);
   const [isAccessible, setIsAccessible] = useState(true);
   const router = useRouter();
   const [isOwner, setIsOwner] = useState(false);
@@ -194,9 +193,7 @@ bg-[${customize.background_color}] ${
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
     toast.success("Link copied to clipboard!");
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleModal = (e) => {
