@@ -74,7 +74,6 @@ const SharingOption = ({ videoData }) => {
       const data = await res.json();
 
       if (data.success) {
-        // Cập nhật lại UI sau khi xóa thành công trong DB
         setAllowedUsers((prev) => prev.filter((u) => u._id !== userId));
         toast.success("User removed from access list");
       } else {

@@ -7,14 +7,17 @@ import SuggestAFeature from "@/components/SuggestAFeature";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import fetch_data from "@/lib/fetch_data";
+import findData from "@/lib/find_data";
 
 const Page = () => {
   const [cloudUrl, setCloudUrl] = useState(null);
   const { videoPath, resultUrl } = useParams();
   const [copied, setCopied] = useState(false);
   const router = useRouter();
-
   const { data: session, status } = useSession();
+  const [isAccessible, setIsAccessible] = useState(true);
+  const [videoNotFound, setVideoNotFound] = useState(false);
+  const [subbedNotFound, setSubbedNotFound] = useState(false);
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -49,9 +52,62 @@ const Page = () => {
         }
       }
     } else {
-      toast.error("Cannot find video data!");
+      findData(
+        videoPath,
+        null,
+        setIsAccessible,
+        setVideoNotFound,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        setCloudUrl,
+        resultUrl,
+        setSubbedNotFound,
+        true,
+      );
     }
   }, [videoPath, resultUrl]);
+
+  if (!isAccessible) {
+    return (
+      <>
+        <main className="flex items-center justify-center h-screen">
+          <p className="text-lg text-gray-600">
+            You cannot access this content.
+          </p>
+        </main>
+      </>
+    );
+  }
+  if (videoNotFound) {
+    return (
+      <>
+        <main className="flex items-center justify-center h-screen">
+          <p className="text-lg text-gray-600">Video not found.</p>
+        </main>
+      </>
+    );
+  }
+
+  if (subbedNotFound) {
+    return (
+      <>
+        <main className="flex items-center justify-center h-screen">
+          <p className="text-lg text-gray-600">Video not found.</p>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>

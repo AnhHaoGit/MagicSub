@@ -9,17 +9,21 @@ import SuggestAFeature from "@/components/SuggestAFeature";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import fetch_data from "@/lib/fetch_data";
+import findData from "@/lib/find_data";
 
 const SummaryPage = () => {
-  const { videoId } = useParams();
+  const { videoPath } = useParams();
   const searchParams = useSearchParams();
   const summaryId = searchParams.get("summaryId");
   const [summaryData, setSummaryData] = useState(null);
   const [videoUrl, setVideoUrl] = useState(null);
   const [option, setOption] = useState(null);
   const videoRef = useRef(null);
-  const router = useRouter()
+  const router = useRouter();
   const { data: session, status } = useSession();
+  const [summaryNotFound, setSummaryNotFound] = useState(false);
+  const [isAccessible, setIsAccessible] = useState(true);
+  const [videoNotFound, setVideoNotFound] = useState(false);
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -35,32 +39,59 @@ const SummaryPage = () => {
   }, [status, router]);
 
   useEffect(() => {
-    if (!videoId || !summaryId) return;
+    if (!videoPath || !summaryId) return;
 
     const videosJSON = localStorage.getItem("videos");
     if (!videosJSON) return;
 
     const videos = JSON.parse(videosJSON);
-    const video = videos.find((v) => v._id === videoId);
-    if (!video) return;
+    const video = videos.find((v) => v._id === videoPath);
+    console.log(video);
+    if (video) {
+      setVideoUrl(video.cloudUrl);
 
-    setVideoUrl(video.cloudUrl);
-
-    const foundSummary = video.summaries?.find((s) => s._id === summaryId);
-    if (foundSummary) {
-      setSummaryData(foundSummary.summary);
-      setOption(foundSummary.option || "summary");
+      const foundSummary = video.summaries?.find((s) => s._id === summaryId);
+      console.log(foundSummary);
+      if (foundSummary) {
+        setSummaryData(foundSummary.summary);
+        setOption(foundSummary.option || "summary");
+      }
+    } else {
+      findData(
+        videoPath,
+        null,
+        setIsAccessible,
+        setVideoNotFound,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        setVideoUrl,
+        setSummaryData,
+        setOption,
+        summaryId,
+        setSummaryNotFound,
+        true,
+        null,
+        null,
+        null,
+        false,
+      );
     }
-  }, [videoId, summaryId]);
+  }, [videoPath, summaryId]);
 
-  if (!summaryData)
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-gray-500">
-        <p>Summary not found.</p>
-      </div>
-    );
+  let title;
+  let sections;
+  let conclusion;
 
-  const { title, sections, conclusion } = summaryData;
+  if (summaryData) {
+    title = summaryData.title;
+    sections = summaryData.sections;
+    conclusion = summaryData.conclusion;
+  }
 
   const formatOption = (opt) => {
     if (!opt) return "";
@@ -77,6 +108,7 @@ const SummaryPage = () => {
       videoRef.current.play();
     }
   };
+
   const formatTimestamp = (seconds) => {
     if (typeof seconds !== "number" || isNaN(seconds)) return "00:00";
 
@@ -93,6 +125,36 @@ const SummaryPage = () => {
     }
   };
 
+  if (!isAccessible) {
+    return (
+      <>
+        <main className="flex items-center justify-center h-screen">
+          <p className="text-lg text-gray-600">
+            You cannot access this content.
+          </p>
+        </main>
+      </>
+    );
+  }
+  if (videoNotFound) {
+    return (
+      <>
+        <main className="flex items-center justify-center h-screen">
+          <p className="text-lg text-gray-600">Video not found.</p>
+        </main>
+      </>
+    );
+  }
+
+  if (!summaryData || summaryNotFound) {
+    return (
+      <>
+        <main className="flex items-center justify-center h-screen">
+          <p className="text-lg text-gray-600">Summary not found.</p>
+        </main>
+      </>
+    );
+  }
   return (
     <div className="min-h-screen bg-gray-50">
       <MainNavbar />

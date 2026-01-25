@@ -10,9 +10,10 @@ import { srtToSecondsTimestamp } from "@/lib/srt_to_second";
 import SubtitleStylingBox from "@/components/SubtitleStylingBox";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import Link from "next/link";
-import fetch_data from "@/lib/fetch_data";
 import { update_cloud_urls_to_local_storage_by_video_id } from "@/lib/local_storage_handlers";
 import { useSession } from "next-auth/react";
+import findData from "@/lib/find_data";
+import fetch_data from "@/lib/fetch_data";
 
 const Page = () => {
   const { videoPath } = useParams();
@@ -34,6 +35,9 @@ const Page = () => {
   const [isDownloadingTxt, setIsDownloadingTxt] = useState(false);
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [isAccessible, setIsAccessible] = useState(true);
+  const [videoNotFound, setVideoNotFound] = useState(false);
+  const [subtitleNotFound, setSubtitleNotFound] = useState(false);
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -86,7 +90,7 @@ const Page = () => {
       const active = subtitle.find(
         (item) =>
           srtToSecondsTimestamp(item.start) <= time &&
-          srtToSecondsTimestamp(item.end) >= time
+          srtToSecondsTimestamp(item.end) >= time,
       );
 
       setCurrentSubtitle(active);
@@ -150,7 +154,7 @@ const Page = () => {
           toast.error(
             `Subtitle #${i + 1} starts after Subtitle #${
               i + 2
-            }. Please reorder the subtitles.`
+            }. Please reorder the subtitles.`,
           );
           return false;
         }
@@ -159,7 +163,7 @@ const Page = () => {
           toast.error(
             `Subtitle #${i + 1} overlaps with Subtitle #${
               i + 2
-            }. Please fix the timings.`
+            }. Please fix the timings.`,
           );
           return false;
         }
@@ -248,6 +252,7 @@ const Page = () => {
     setIsTranscript(false);
   };
 
+  //Find video
   useEffect(() => {
     const video = JSON.parse(localStorage.getItem("videos")) || [];
     const found = video.find((v) => v._id === videoPath);
@@ -255,14 +260,36 @@ const Page = () => {
       setVideoData(found);
       const clonedSubtitles = JSON.parse(JSON.stringify(found.subtitles));
       const clonedSubtitle = clonedSubtitles.find(
-        (sub) => sub._id === subtitleId
+        (sub) => sub._id === subtitleId,
       );
       setSubtitle(clonedSubtitle.subtitle);
       setCustomize(found.customize);
       setOriginalSubtitle(clonedSubtitle.subtitle);
       setOriginalCustomize(found.customize);
     } else {
-      toast.error("Cannot find video data!");
+      findData(
+        videoPath,
+        setVideoData,
+        setIsAccessible,
+        setVideoNotFound,
+        setSubtitle,
+        setCustomize,
+        setOriginalSubtitle,
+        setOriginalCustomize,
+        subtitleId,
+        setSubtitleNotFound,
+        true,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        null,
+        null,
+        false,
+      );
     }
   }, [videoPath]);
 
@@ -317,7 +344,7 @@ bg-[${customize.background_color}] ${
             videoId: videoData._id,
             userId: videoData.userId,
           }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -328,10 +355,7 @@ bg-[${customize.background_color}] ${
       }
 
       const data = await response.json();
-      update_cloud_urls_to_local_storage_by_video_id(
-        videoData._id,
-        data
-      );
+      update_cloud_urls_to_local_storage_by_video_id(videoData._id, data);
       toast.success("ASS video generated successfully!");
       router.push(`/main/result/${videoData._id}/${data.id}`);
     } catch (error) {
@@ -419,14 +443,39 @@ bg-[${customize.background_color}] ${
     setIsDownloadingTxt(false);
   };
 
-  if (!videoData) {
+  if (!isAccessible) {
     return (
       <>
-        <MainNavbar />
         <main className="flex items-center justify-center h-screen">
-          <p className="text-lg text-gray-600">Loading video data...</p>
+          <p className="text-lg text-gray-600">
+            You cannot access this content.
+          </p>
         </main>
       </>
+    );
+  }
+
+  if (videoData === null) {
+    return (
+      <main className="flex flex-col items-center justify-center w-full min-h-screen pt-4 px-4 sm:pt-6 sm:px-6 md:pt-8 gap-6 md:px-8">
+        <p className="text-gray-500 text-lg mt-20">Loading...</p>
+      </main>
+    );
+  }
+
+  if (videoNotFound) {
+    return (
+      <main className="flex flex-col items-center justify-center w-full min-h-screen pt-4 px-4 sm:pt-6 sm:px-6 md:pt-8 gap-6 md:px-8">
+        <p className="text-gray-500 text-lg mt-20">Video not found.</p>
+      </main>
+    );
+  }
+
+  if (subtitleNotFound) {
+    return (
+      <main className="flex flex-col items-center justify-center w-full min-h-screen pt-4 px-4 sm:pt-6 sm:px-6 md:pt-8 gap-6 md:px-8">
+        <p className="text-gray-500 text-lg mt-20">Subtitle not found.</p>
+      </main>
     );
   }
 
@@ -454,7 +503,7 @@ bg-[${customize.background_color}] ${
                       ? "transparent"
                       : hexToRGBA(
                           customize.background_color,
-                          customize.background_opacity
+                          customize.background_opacity,
                         )
                   }`,
                   textShadow: `${

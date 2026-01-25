@@ -24,6 +24,7 @@ export default function VideoPage() {
   const [endpoints, setEndpoints] = useState([0, 0]);
   const videoRef = useRef(null);
   const [isAccessible, setIsAccessible] = useState(true);
+  const [videoNotFound, setVideoNotFound] = useState(false);
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -45,7 +46,29 @@ export default function VideoPage() {
       setVideoData(found);
       setEndpoints([0, found.duration]);
     } else {
-      findData(videoPath, setVideoData, setIsAccessible);
+      findData(
+        videoPath,
+        setVideoData,
+        setIsAccessible,
+        setVideoNotFound,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        null,
+        null,
+        null,
+        null,
+        false,
+        null,
+        null,
+        null,
+        false,
+      );
     }
   }, [videoPath, session]);
 
@@ -65,6 +88,14 @@ export default function VideoPage() {
     return (
       <main className="flex flex-col items-center justify-center w-full min-h-screen pt-4 px-4 sm:pt-6 sm:px-6 md:pt-8 gap-6 md:px-8">
         <p className="text-gray-500 text-lg mt-20">Loading...</p>
+      </main>
+    );
+  }
+
+  if (videoNotFound) {
+    return (
+      <main className="flex flex-col items-center justify-center w-full min-h-screen pt-4 px-4 sm:pt-6 sm:px-6 md:pt-8 gap-6 md:px-8">
+        <p className="text-gray-500 text-lg mt-20">Video not found.</p>
       </main>
     );
   }
