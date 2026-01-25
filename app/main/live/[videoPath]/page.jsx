@@ -36,7 +36,7 @@ const LivePage = () => {
       const active = subtitle.subtitle.find(
         (item) =>
           srtToSecondsTimestamp(item.start) <= time &&
-          srtToSecondsTimestamp(item.end) >= time
+          srtToSecondsTimestamp(item.end) >= time,
       );
 
       setCurrentSubtitle(active);
@@ -52,20 +52,7 @@ const LivePage = () => {
       router.push("/login");
       return;
     }
-    if (!subtitle || !subtitle.userId || isLocked === null) return;
-
-    const owner = session.user.id.toString() === subtitle.userId.toString();
-
-    // luôn set owner
-    setIsOwner(owner);
-
-    // access control
-    if (isLocked === false) {
-      setIsAccessible(true);
-    } else {
-      setIsAccessible(owner);
-    }
-  }, [status, session, subtitle, isLocked]);
+  }, [status, session]);
 
   // useEffect(() => {
   //   const video = videoRef.current;
@@ -136,18 +123,25 @@ const LivePage = () => {
         body: JSON.stringify({ videoId, subtitleId }),
       });
 
+      if (res.status === 403) {
+        setIsAccessible(false);
+        return;
+      }
+
       if (!res.ok) {
         throw new Error("Failed to fetch stream data");
       }
 
       const data = await res.json();
+
       setVideoData(data.video);
       setSubtitle(data.subtitle);
-      // setEndpoints(data.subtitle.endpoints);
       setCustomize(data.video.customize);
       setIsLocked(data.subtitle.locked);
+      setIsOwner(data.isOwner);
+      setIsAccessible(true);
     } catch (error) {
-      toast.error("Error occured! Check your Internet connection.");
+      toast.error("Error occurred! Check your Internet connection.");
     }
   };
 
@@ -219,7 +213,7 @@ bg-[${customize.background_color}] ${
         toast.success(
           `Sharing mode updated successfully to ${
             value ? "private" : "public"
-          }.`
+          }.`,
         );
       } else {
         toast.error("Failed to update sharing mode.");
@@ -275,7 +269,7 @@ bg-[${customize.background_color}] ${
                     ? "transparent"
                     : hexToRGBA(
                         customize.background_color,
-                        customize.background_opacity
+                        customize.background_opacity,
                       ),
                 textShadow:
                   customize.border_style === "text_outline"
