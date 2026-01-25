@@ -67,44 +67,99 @@ const Page = () => {
   return (
     <>
       <MainNavbar />
-      <main className="w-full px-4 lg:px-10 py-10 flex flex-col lg:flex-row gap-10 justify-between items-start pt-25">
-        {videoData && videoData.length > 0 ? (
-          <div className="flex flex-col justify-between items-start py-2 gap-4">
-            <p className="text-gray-500 text-center text-lg">Your uploads</p>
-            <div className="flex gap-x-6 overflow-x-auto snap-x snap-mandatory pb-1 hide-scrollbar">
-              {videoData.map((video) => (
-                <HistoryBox
-                  key={video._id}
-                  video={video}
-                  onDelete={handleDeleteClick}
-                />
-              ))}
+      <main className="w-full px-6 lg:px-16 py-10 flex flex-col gap-8 items-start pt-28">
+        <section className="w-full flex flex-col gap-4 min-h-[250px]">
+          <h2 className="text-gray-500 font-medium text-lg">Your uploads</h2>
+
+          {videoData && videoData.length > 0 ? (
+            <div className="w-full">
+              <div className="flex gap-x-6 overflow-x-auto snap-x snap-mandatory pb-4 hide-scrollbar">
+                {videoData.map((video) => (
+                  <HistoryBox
+                    key={video._id}
+                    video={video}
+                    onDelete={handleDeleteClick}
+                  />
+                ))}
+              </div>
+
+              {videoData.length > 5 && (
+                <div className="w-full flex justify-center items-center gap-1 mt-2 animate-pulse">
+                  <p className="text-gray-400 text-xs">Swipe to view more</p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-3 text-gray-400"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+                    />
+                  </svg>
+                </div>
+              )}
             </div>
-            <div className="w-full flex justify-center items-center gap-1 mt-5">
-              <p className="text-gray-500 text-center text-xs">
-                Swipe to view all
+          ) : (
+            <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-gray-100 rounded-2xl">
+              <p className="text-gray-400 text-sm">No files uploaded yet</p>
+            </div>
+          )}
+        </section>
+
+        <section className="w-full flex flex-col gap-4 min-h-[250px]">
+          <h2 className="text-gray-500 font-medium text-lg">Shared with you</h2>
+
+          {session?.user?.sharings && session.user.sharings.length > 0 ? (
+            <div className="w-full">
+              <div className="flex gap-x-6 overflow-x-auto snap-x snap-mandatory pb-4 hide-scrollbar">
+                {[...session.user.sharings]
+                  .sort(
+                    (a, b) =>
+                      new Date(b.sharedAt || b.createdAt) -
+                      new Date(a.sharedAt || a.createdAt),
+                  )
+                  .map((video) => (
+                    <HistoryBox
+                      key={video._id}
+                      video={video}
+                      isShared={true}
+                      onDelete={() => {}}
+                    />
+                  ))}
+              </div>
+
+              {session.user.sharings.length > 5 && (
+                <div className="w-full flex justify-center items-center gap-1 mt-2 animate-pulse">
+                  <p className="text-gray-400 text-xs">Swipe to view more</p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="size-3 text-gray-400"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="w-full h-48 flex items-center justify-center border-2 border-dashed border-gray-100 rounded-2xl">
+              <p className="text-gray-400 text-sm">
+                No videos shared with you yet
               </p>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="size-3 text-gray-500"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-                />
-              </svg>
             </div>
-          </div>
-        ) : (
-          <p className="text-gray-500 text-center text-lg">
-            No files uploaded yet
-          </p>
-        )}
+          )}
+        </section>
 
         <SuggestAFeature />
       </main>

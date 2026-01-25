@@ -2,7 +2,7 @@ import { useState } from "react";
 import format_duration from "@/lib/format_duration";
 import Link from "next/link";
 
-const HistoryBox = ({ video, onDelete }) => {
+const HistoryBox = ({ video, onDelete, isShared = false }) => {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDeleteClick = (e) => {
@@ -50,34 +50,29 @@ const HistoryBox = ({ video, onDelete }) => {
   return (
     <>
       <Link
-        key={video._id}
-        href={`/main/${video._id}`}
-        className="flex-shrink-0 basis-[calc(25%-20px)] snap-center bg-white rounded-2xl shadow-md flex flex-col hover:shadow-lg transition-shadow relative"
+        href={isShared ? `/live/${video._id}` : `/main/${video._id}`}
+        className="flex-shrink-0 w-full sm:w-[calc(50%-12px)] md:w-[calc(33.33%-16px)] lg:w-[calc(25%-18px)] snap-center bg-white rounded-2xl shadow-md flex flex-col hover:shadow-lg transition-shadow relative"
       >
-        {/* Thumbnail */}
-        <div className="flex items-center justify-center w-full max-h-[200px] aspect-video">
-          <video
-            src={video.cloudUrl}
-            className="max-w-full max-h-full object-cover rounded-2xl"
-            alt={video.title}
-          ></video>
+        <div className="flex items-center justify-center w-full aspect-video bg-black rounded-t-2xl overflow-hidden">
+          <video src={video.cloudUrl} className="w-full h-full object-cover" />
         </div>
 
-        {/* Nội dung */}
-        <div className="p-3 flex max-h-3/5 flex-col gap-2">
-          <p className="font-semibold text-sm line-clamp-2">{video.title}</p>
-
-          <p className="text-xs text-gray-500">
-            Uploaded {timeAgo(video.createdAt)}
+        <div className="p-3 flex flex-col gap-2">
+          <p className="font-semibold text-sm line-clamp-2 h-10">
+            {video.title}
           </p>
-          <p className="text-xs text-gray-500">
-            Duration: {format_duration(video.duration)}
+          <p className="text-[10px] text-gray-500 uppercase tracking-tight">
+            {isShared
+              ? `Shared ${timeAgo(video.sharedAt)}`
+              : `Uploaded ${timeAgo(video.createdAt)}`}
           </p>
-
-          <div className="text-xs flex justify-end items-center text-gray-500">
+          <div className="flex justify-between items-center mt-1">
+            <span className="text-xs font-medium text-iris bg-iris/10 px-2 py-0.5 rounded">
+              {format_duration(video.duration)}
+            </span>
             <button
               onClick={handleDeleteClick}
-              className="p-1 rounded-full hover:bg-gray-100"
+              className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-red-500 transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -98,7 +93,6 @@ const HistoryBox = ({ video, onDelete }) => {
         </div>
       </Link>
 
-      {/* Modal xác nhận xoá */}
       {showConfirm && (
         <div className="fixed inset-0 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-80 text-center">

@@ -45,11 +45,33 @@ export async function POST(req) {
         (userObj) => userObj._id.toString() === currentUserId,
       );
       if (!isAllowed && !isOwner) {
-        return NextResponse.json(
-          { error: "You don't have permission to view this video" },
-          { status: 403 },
-        );
+        return NextResponse.json({ error: "No permission" }, { status: 403 });
       }
+    }
+
+    const date = new Date();
+
+    if (currentUserId && !isOwner) {
+      const sharingVideoInfo = {
+        _id: videoData._id,
+        cloudUrl: videoData.cloudUrl,
+        title: videoData.title,
+        duration: videoData.duration,
+        createdAt: videoData.createdAt,
+        sharedAt: date.toISOString()
+      };
+
+      await db.collection("users").updateOne(
+        {
+          _id: new ObjectId(currentUserId),
+          "sharings._id": { $ne: videoData._id },
+        },
+        {
+          $push: {
+            sharings: sharingVideoInfo,
+          },
+        },
+      );
     }
 
     const video = await db.collection("videos").findOne(
@@ -79,7 +101,7 @@ export async function POST(req) {
   } catch (error) {
     console.error("Error fetching stream data:", error);
     return NextResponse.json(
-      { error: "Failed to fetch stream data!" },
+      { error: "Internal Server Error" },
       { status: 500 },
     );
   }

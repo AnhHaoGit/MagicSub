@@ -32,6 +32,7 @@ const MainPage = () => {
   useEffect(() => {
     if (session && status === "authenticated") {
       fetch_data(session);
+      console.log(session.user);
     }
   }, [session, status]);
   const router = useRouter();

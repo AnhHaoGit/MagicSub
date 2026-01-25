@@ -113,7 +113,7 @@ const SharingOption = ({ videoData }) => {
   }, [videoData]);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href + "?sharing=true");
+    navigator.clipboard.writeText(window.location.href);
     toast.success("Link copied to clipboard!");
   };
 

@@ -33,7 +33,7 @@ export const authOptions = {
 
         const isValid = await bcrypt.compare(
           credentials.password,
-          user.password
+          user.password,
         );
 
         if (!isValid) throw new Error("Invalid password");
@@ -79,7 +79,7 @@ export const authOptions = {
               border_style: "opaque_box",
               background_color: "#000000",
               background_opacity: 55,
-              position: 'bottom'
+              position: "bottom",
             },
             gems: 1000000,
             subscription: null,
@@ -122,6 +122,7 @@ export const authOptions = {
 
       session.user.gems = user.gems;
       session.user.subscription = user.subscription;
+      session.user.sharings = user.sharings || [];
 
       if (user?.style) {
         session.user.style = user.style;
@@ -138,7 +139,7 @@ export const authOptions = {
           border_style: "opaque_box",
           background_color: "#000000",
           background_opacity: 55,
-          margin_bottom: 'bottom',
+          margin_bottom: "bottom",
         };
       }
 
