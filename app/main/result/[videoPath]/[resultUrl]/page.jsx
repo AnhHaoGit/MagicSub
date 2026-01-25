@@ -18,6 +18,7 @@ const Page = () => {
   const [isAccessible, setIsAccessible] = useState(true);
   const [videoNotFound, setVideoNotFound] = useState(false);
   const [subbedNotFound, setSubbedNotFound] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -53,6 +54,7 @@ const Page = () => {
       }
     } else {
       findData(
+        setIsOwner,
         videoPath,
         null,
         setIsAccessible,

@@ -17,7 +17,7 @@ async function translateSegments(segments, targetLanguage) {
     const texts = batch.map((s) => s.text);
 
     const systemPrompt = `You are a professional translator. Your task is to translate an array of subtitles into ${formatLanguage(
-      targetLanguage
+      targetLanguage,
     )}.
 - Keep the number of elements exactly the same as the input.
 - Each element in the output must correspond to the same element in the input.
@@ -42,13 +42,13 @@ async function translateSegments(segments, targetLanguage) {
           Authorization: `Bearer ${OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     let translatedArray;
     try {
       translatedArray = JSON.parse(
-        res.data.choices[0].message.content.trim().replace(/```json|```/g, "")
+        res.data.choices[0].message.content.trim().replace(/```json|```/g, ""),
       );
     } catch {
       throw new Error("Failed to parse translation response");
@@ -81,6 +81,9 @@ export async function POST(req) {
     const db = client;
     const users = db.collection("users");
     const subtitles = db.collection("subtitle");
+    const videos = db.collection("videos");
+
+    const video = await videos.findOne({ _id: new ObjectId(_id) });
 
     const user = await users.findOne({ _id: new ObjectId(userId) });
     if (!user)
@@ -88,12 +91,12 @@ export async function POST(req) {
     if ((user.gems || 0) < cost)
       return NextResponse.json(
         { message: "Not enough gems to process request!" },
-        { status: 400 }
+        { status: 400 },
       );
 
     const translatedSegments = await translateSegments(
       transcript,
-      targetLanguage
+      targetLanguage,
     );
 
     let result;
@@ -101,18 +104,18 @@ export async function POST(req) {
       await users.updateOne(
         { _id: new ObjectId(userId) },
         { $inc: { gems: -cost } },
-        { session }
+        { session },
       );
 
       result = await subtitles.insertOne(
         {
           language: targetLanguage,
-          userId: new ObjectId(userId),
+          userId: new ObjectId(video.userId),
           videoId: new ObjectId(_id),
           subtitle: translatedSegments,
           locked: true,
         },
-        { session }
+        { session },
       );
     });
 
@@ -125,7 +128,7 @@ export async function POST(req) {
   } catch {
     return NextResponse.json(
       { message: "Check your Internet connection. Try again later." },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await session.endSession();

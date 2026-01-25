@@ -21,6 +21,7 @@ const SubtitleOption = ({
   session,
   setLoading,
   endpoints,
+  isOwner,
 }) => {
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -43,7 +44,7 @@ const SubtitleOption = ({
       videoData.subtitles.find((sub) => sub.language === targetLanguage)
     ) {
       toast.error(
-        `Subtitle in ${targetLanguage} already exists! Please choose another language or edit the existing subtitle in the history page.`
+        `Subtitle in ${targetLanguage} already exists! Please choose another language or edit the existing subtitle in the history page.`,
       );
       return;
     }
@@ -69,17 +70,20 @@ const SubtitleOption = ({
       if (!res.ok) {
         toast.error(data.message || "Error during translation.");
       } else {
-        add_subtitle_to_local_storage_by_video_id(
-          videoData._id,
-          data.subtitle,
-          data.subtitleId,
-          data.language,
-          data.locked
-        );
+        if (isOwner) {
+          add_subtitle_to_local_storage_by_video_id(
+            videoData._id,
+            data.subtitle,
+            data.subtitleId,
+            data.language,
+            data.locked,
+          );
+        }
+
         update_gems(videoCost);
         toast.success("Subtitle successfully generated!");
         router.push(
-          `/main/custom_subtitle/${videoData._id}?subtitleId=${data.subtitleId}`
+          `/main/custom_subtitle/${videoData._id}?subtitleId=${data.subtitleId}`,
         );
       }
     } catch (err) {
@@ -94,7 +98,7 @@ const SubtitleOption = ({
   function getLanguageNameByCode(value) {
     if (!value) return "Unknown";
     const lang = languages.find(
-      (l) => l.value.toLowerCase() === value.toLowerCase()
+      (l) => l.value.toLowerCase() === value.toLowerCase(),
     );
     return lang ? lang.label : "Unknown";
   }

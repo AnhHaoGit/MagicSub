@@ -8,7 +8,8 @@ import ColorPickerBox from "./ColorPickerBox";
 import GenericSlider from "@/components/GenericSlider";
 import { toast } from "react-toastify";
 
-const SubtitleStylingBox = ({ customize, setCustomize, demo }) => {
+const SubtitleStylingBox = ({ customize, setCustomize, isOwner, demo }) => {
+  console.log(isOwner)
   const updateCustomizeObject = (change) => {
     setCustomize((prev) => ({ ...prev, ...change }));
   };
@@ -322,7 +323,7 @@ const SubtitleStylingBox = ({ customize, setCustomize, demo }) => {
         </div>
       </div>
 
-      {!demo && (
+      {!demo && isOwner && (
         <div className="flex items-center justify-center w-full gap-5 mt-5">
           <button
             className="px-5 py-1 rounded-4xl text-xs transition-colors bg-black white hover:bg-gray"

@@ -12,7 +12,7 @@ import fetch_data from "@/lib/fetch_data";
 import findData from "@/lib/find_data";
 
 const SummaryPage = () => {
-  const { videoPath } = useParams();
+  const { videoId } = useParams();
   const searchParams = useSearchParams();
   const summaryId = searchParams.get("summaryId");
   const [summaryData, setSummaryData] = useState(null);
@@ -24,6 +24,7 @@ const SummaryPage = () => {
   const [summaryNotFound, setSummaryNotFound] = useState(false);
   const [isAccessible, setIsAccessible] = useState(true);
   const [videoNotFound, setVideoNotFound] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -39,26 +40,25 @@ const SummaryPage = () => {
   }, [status, router]);
 
   useEffect(() => {
-    if (!videoPath || !summaryId) return;
+    if (!videoId || !summaryId) return;
 
     const videosJSON = localStorage.getItem("videos");
     if (!videosJSON) return;
 
     const videos = JSON.parse(videosJSON);
-    const video = videos.find((v) => v._id === videoPath);
-    console.log(video);
+    const video = videos.find((v) => v._id === videoId);
     if (video) {
       setVideoUrl(video.cloudUrl);
 
       const foundSummary = video.summaries?.find((s) => s._id === summaryId);
-      console.log(foundSummary);
       if (foundSummary) {
         setSummaryData(foundSummary.summary);
         setOption(foundSummary.option || "summary");
       }
     } else {
       findData(
-        videoPath,
+        setIsOwner,
+        videoId,
         null,
         setIsAccessible,
         setVideoNotFound,
@@ -81,7 +81,7 @@ const SummaryPage = () => {
         false,
       );
     }
-  }, [videoPath, summaryId]);
+  }, [videoId, summaryId]);
 
   let title;
   let sections;

@@ -13,6 +13,7 @@ import VideoTrimmer from "@/components/VideoTrimmer";
 import fetch_data from "@/lib/fetch_data";
 import { toast } from "react-toastify";
 import findData from "@/lib/find_data";
+import SuggestAFeature from "@/components/SuggestAFeature";
 
 export default function VideoPage() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function VideoPage() {
   const videoRef = useRef(null);
   const [isAccessible, setIsAccessible] = useState(true);
   const [videoNotFound, setVideoNotFound] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -45,8 +47,10 @@ export default function VideoPage() {
     if (found) {
       setVideoData(found);
       setEndpoints([0, found.duration]);
+      setIsOwner(true);
     } else {
       findData(
+        setIsOwner,
         videoPath,
         setVideoData,
         setIsAccessible,
@@ -255,6 +259,7 @@ export default function VideoPage() {
                 session={session}
                 setLoading={setLoading}
                 endpoints={endpoints}
+                isOwner={isOwner}
               />
             )}
             {option === "summary" && (
@@ -303,6 +308,7 @@ export default function VideoPage() {
             videoRef={videoRef}
           />
         </div> */}
+        <SuggestAFeature />
       </main>
     </>
   );

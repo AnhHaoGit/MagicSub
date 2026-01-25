@@ -19,6 +19,8 @@ export async function POST(req) {
     const db = client;
     const users = db.collection("users");
     const summaries = db.collection("summary");
+    const videos = db.collection("videos");
+    const video = await videos.findOne({ _id: new ObjectId(_id) });
 
     const user = await users.findOne({ _id: new ObjectId(userId) });
     if (!user)
@@ -27,13 +29,13 @@ export async function POST(req) {
     if ((user.gems || 0) < cost)
       return NextResponse.json(
         { message: "Not enough gems to process request!" },
-        { status: 400 }
+        { status: 400 },
       );
 
     const summaryText = await summarizeTranscript(
       transcript,
       option,
-      targetLanguage
+      targetLanguage,
     );
 
     let result;
@@ -41,19 +43,19 @@ export async function POST(req) {
       await users.updateOne(
         { _id: new ObjectId(userId) },
         { $inc: { gems: -cost } },
-        { session }
+        { session },
       );
 
       result = await summaries.insertOne(
         {
-          userId: new ObjectId(userId),
+          userId: new ObjectId(video.userId),
           videoId: new ObjectId(_id),
           summary: summaryText,
           option: option,
           language: targetLanguage,
           createdAt: new Date(),
         },
-        { session }
+        { session },
       );
     });
 
@@ -65,7 +67,7 @@ export async function POST(req) {
   } catch (err) {
     return NextResponse.json(
       { message: "Check your Internet connection" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     await session.endSession();
@@ -163,7 +165,7 @@ Rules:
         Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   let jsonData;

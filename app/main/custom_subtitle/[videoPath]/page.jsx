@@ -38,6 +38,7 @@ const Page = () => {
   const [isAccessible, setIsAccessible] = useState(true);
   const [videoNotFound, setVideoNotFound] = useState(false);
   const [subtitleNotFound, setSubtitleNotFound] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     if (session && status === "authenticated") {
@@ -175,38 +176,30 @@ const Page = () => {
 
   const saveCustomizeHandler = async () => {
     if (!videoData || !isCustomizeChanged) return;
-    const updatedVideos = JSON.parse(localStorage.getItem("videos")) || [];
-    const index = updatedVideos.findIndex((v) => v._id === videoPath);
+    try {
+      const response = await fetch(`/api/save_customization`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          videoId: videoData._id,
+          customize,
+        }),
+      });
 
-    if (index !== -1) {
-      try {
-        const response = await fetch(`/api/save_customization`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            videoId: updatedVideos[index]._id,
-            customize,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          toast.error(`Failed to save customization: ${errorData.message}`);
-          return;
-        }
-      } catch (error) {
-        toast.error("An error occurred while saving to database.");
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(`Failed to save customization: ${errorData.message}`);
         return;
       }
-
-      updatedVideos[index].customize = customize;
-      localStorage.setItem("videos", JSON.stringify(updatedVideos));
-      setVideoData(updatedVideos[index]);
-      setOriginalCustomize(JSON.parse(JSON.stringify(customize)));
-      toast.success("Customization saved to database!");
+    } catch (error) {
+      toast.error("An error occurred while saving to database.");
+      return;
     }
+
+    setOriginalCustomize(customize);
+    toast.success("Customization saved to database!");
   };
 
   const saveSubtitleHandler = async () => {
@@ -215,33 +208,26 @@ const Page = () => {
     const isValid = validateSubtitles();
     if (!isValid) return;
 
-    const updatedVideos = JSON.parse(localStorage.getItem("videos")) || [];
-    const index = updatedVideos.findIndex((v) => v._id === videoPath);
-    if (index !== -1) {
-      try {
-        const response = await fetch(`/api/save_subtitle`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ subtitleId, subtitle }),
-        });
+    try {
+      const response = await fetch(`/api/save_subtitle`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ subtitleId, subtitle }),
+      });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          toast.error(`Failed to save subtitle: ${errorData.message}`);
-        }
-      } catch (error) {
-        toast.error("An error occurred while saving to database.");
-        return;
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(`Failed to save subtitle: ${errorData.message}`);
       }
-
-      updatedVideos[index].subtitle = subtitle;
-      localStorage.setItem("videos", JSON.stringify(updatedVideos));
-      setVideoData(updatedVideos[index]);
-      setOriginalSubtitle(JSON.parse(JSON.stringify(subtitle)));
-      toast.success("Subtitle saved to database!");
+    } catch (error) {
+      toast.error("An error occurred while saving to database.");
+      return;
     }
+
+    setOriginalSubtitle(subtitle);
+    toast.success("Subtitle saved to database!");
   };
 
   const handleTranscriptButton = () => {
@@ -266,8 +252,10 @@ const Page = () => {
       setCustomize(found.customize);
       setOriginalSubtitle(clonedSubtitle.subtitle);
       setOriginalCustomize(found.customize);
+      setIsOwner(true);
     } else {
       findData(
+        setIsOwner,
         videoPath,
         setVideoData,
         setIsAccessible,
@@ -342,7 +330,6 @@ bg-[${customize.background_color}] ${
             customize,
             cloudUrl: videoData.cloudUrl,
             videoId: videoData._id,
-            userId: videoData.userId,
           }),
         },
       );
@@ -355,7 +342,9 @@ bg-[${customize.background_color}] ${
       }
 
       const data = await response.json();
-      update_cloud_urls_to_local_storage_by_video_id(videoData._id, data);
+      if (isOwner) {
+        update_cloud_urls_to_local_storage_by_video_id(videoData._id, data);
+      }
       toast.success("ASS video generated successfully!");
       router.push(`/main/result/${videoData._id}/${data.id}`);
     } catch (error) {
@@ -678,6 +667,7 @@ bg-[${customize.background_color}] ${
               <SubtitleStylingBox
                 customize={customize}
                 setCustomize={setCustomize}
+                isOwner={isOwner}
               />
 
               <button
