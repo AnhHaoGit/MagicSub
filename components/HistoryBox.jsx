@@ -50,7 +50,7 @@ const HistoryBox = ({ video, onDelete, isShared = false }) => {
   return (
     <>
       <Link
-        href={isShared ? `/live/${video._id}` : `/main/${video._id}`}
+        href={`/main/${video._id}`}
         className="flex-shrink-0 w-full sm:w-[calc(50%-12px)] md:w-[calc(33.33%-16px)] lg:w-[calc(25%-18px)] snap-center bg-white rounded-2xl shadow-md flex flex-col hover:shadow-lg transition-shadow relative"
       >
         <div className="flex items-center justify-center w-full aspect-video bg-black rounded-t-2xl overflow-hidden">
