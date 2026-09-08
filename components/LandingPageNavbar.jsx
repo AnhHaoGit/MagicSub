@@ -18,7 +18,6 @@ const LandingPageNavbar = () => {
   return (
     <nav className="fixed top-0 left-0 w-full bg-white shadow-md z-50">
       <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8 py-4">
-        {/* Left side: Logo + links */}
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center">
             <Image src={logo} alt="MagicSub" width={30} />
@@ -27,7 +26,6 @@ const LandingPageNavbar = () => {
             </p>
           </Link>
 
-          {/* Desktop links */}
           <div className="hidden md:flex items-center gap-6">
             {session ? (
               <>
@@ -59,7 +57,6 @@ const LandingPageNavbar = () => {
           </div>
         </div>
 
-        {/* Right side: welcome + button */}
         <div className="hidden md:flex items-center gap-5">
           {session && (
             <p className="font-semibold hidden lg:block text-gray-700">
@@ -76,7 +73,6 @@ const LandingPageNavbar = () => {
           )}
         </div>
 
-        {/* Mobile hamburger */}
         <div className="md:hidden">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -109,7 +105,6 @@ const LandingPageNavbar = () => {
         </div>
       </div>
 
-      {/* Dropdown mobile menu */}
       <div
         className={`md:hidden bg-white shadow-lg rounded-b-xl overflow-hidden transition-all duration-300 ease-in-out ${
           menuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"

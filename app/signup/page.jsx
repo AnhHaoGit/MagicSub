@@ -86,7 +86,6 @@ const SignupPage = () => {
 
   return (
     <main className="flex items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8">
-      {/* Nút back */}
       <div className="flex justify-between items-center p-4 fixed top-0 left-0">
         <Link href="/" className="flex items-center">
           <svg
@@ -107,7 +106,6 @@ const SignupPage = () => {
         </Link>
       </div>
 
-      {/* Form signup */}
       <div className="flex flex-col items-center justify-center w-full sm:w-11/12 md:w-8/12 lg:w-5/12 py-12 sm:py-16 lg:py-20 px-6 sm:px-10 shadow-2xl rounded-2xl bg-smoke">
         <div className="flex flex-col sm:flex-row items-center justify-center text-[clamp(1.25rem,3vw,2.5rem)] text-center sm:text-left">
           <h1 className="font-bold">Get Started Now</h1>
@@ -116,7 +114,6 @@ const SignupPage = () => {
           Create an account to explore our amazing features
         </p>
 
-        {/* Form nhập email/password */}
         <form
           className="flex flex-col items-center justify-center gap-4 mt-10 sm:mt-12 w-full sm:w-4/5"
           onSubmit={handleSignup}
@@ -224,14 +221,12 @@ const SignupPage = () => {
           </button>
         </form>
 
-        {/* or */}
         <div className="flex items-center justify-center gap-4 mt-4 w-full sm:w-2/3">
           <div className="w-full h-0.5 bg-gray opacity-20"></div>
           <p className="text-sm text-center gray opacity-50">or</p>
           <div className="w-full h-0.5 bg-gray opacity-20"></div>
         </div>
 
-        {/* Google signup */}
         <button
           className="bg-white rounded-full py-3 sm:py-4 w-full sm:w-4/5 shadow-md flex items-center justify-center hover:bg-light-gray transition-colors mt-3 cursor-pointer text-sm sm:text-base"
           onClick={handleGoogleSignup}
@@ -243,7 +238,6 @@ const SignupPage = () => {
           </p>
         </button>
 
-        {/* Login link */}
         <p className="text-sm text-center mt-4">
           Already have an account?{" "}
           <Link href="/login" className="iris underline">

@@ -39,9 +39,13 @@ export async function POST(req) {
       currentUserId && subtitle.userId.toString() === currentUserId;
 
     const isVideoPublic = video.mode === "public";
-    const isUserInVideoAllowedList = video.allowedUsers?.some(
-      (userObj) => userObj._id.toString() === currentUserId,
-    );
+    console.log("is video public", isVideoPublic);
+    const isUserInVideoAllowedList =
+      video.mode === "restricted" &&
+      video.allowedUsers?.some(
+        (userObj) => userObj._id.toString() === currentUserId,
+      );
+
     const isVideoOwner =
       currentUserId && video.userId?.toString() === currentUserId;
 

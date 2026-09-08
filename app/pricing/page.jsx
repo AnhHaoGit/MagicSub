@@ -86,7 +86,6 @@ export default function Page() {
           </p>
         </section>
 
-        {/* Features list */}
         <div className="max-w-6xl mx-auto grid md:grid-cols-4 gap-6 mt-10">
           {[
             "Automatic language detection",
@@ -133,7 +132,6 @@ export default function Page() {
           </div>
         )}
 
-        {/* Pricing cards */}
         {productsData.length > 0 && !error && (
           <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 mt-20">
             {productsData.map((product) => (
@@ -154,7 +152,6 @@ export default function Page() {
   );
 }
 
-/* --- Reusable Plan Card --- */
 function PlanCard({ product, status }) {
   const popular = product.name === "Plus Plan";
   const gems =

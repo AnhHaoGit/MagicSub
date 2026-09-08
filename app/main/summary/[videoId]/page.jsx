@@ -101,7 +101,6 @@ const SummaryPage = () => {
       .join(" ");
   };
 
-  // Hàm tua video
   const handleSeek = (timestamp) => {
     if (videoRef.current) {
       videoRef.current.currentTime = timestamp;
@@ -159,9 +158,7 @@ const SummaryPage = () => {
     <div className="min-h-screen bg-gray-50">
       <MainNavbar />
 
-      {/* Grid 2/3 - 1/3 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-25 p-6">
-        {/* Video Preview */}
         <div className="md:col-span-2 flex flex-col items-center justify-center rounded-3xl bg-black">
           {videoUrl ? (
             <video
@@ -177,7 +174,6 @@ const SummaryPage = () => {
           )}
         </div>
 
-        {/* Summary Content */}
         <Card className="overflow-y-auto max-h-[80vh] bg-white shadow-lg border border-gray-200">
           <CardHeader className="text-center space-y-2">
             <p className="text-xs iris uppercase tracking-wide font-medium">

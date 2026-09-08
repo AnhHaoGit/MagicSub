@@ -25,13 +25,16 @@ export async function POST(req) {
     const videoData = await db
       .collection("videos")
       .findOne({ _id: new ObjectId(videoId) });
+    const ownerId = videoData.userId?.toString();
+    const isOwner = currentUserId && ownerId === currentUserId;
+
+    const owner = await db
+      .collection("users")
+      .findOne({ _id: new ObjectId(ownerId) });
 
     if (!videoData) {
       return NextResponse.json({ error: "Video not found!" }, { status: 404 });
     }
-
-    const ownerId = videoData.userId?.toString();
-    const isOwner = currentUserId && ownerId === currentUserId;
 
     if (videoData.mode === "private") {
       if (!isOwner) {
@@ -58,7 +61,10 @@ export async function POST(req) {
         title: videoData.title,
         duration: videoData.duration,
         createdAt: videoData.createdAt,
-        sharedAt: date.toISOString()
+        sharedAt: date.toISOString(),
+        userId: owner._id,
+        email: owner.email,
+        name: owner.name,
       };
 
       await db.collection("users").updateOne(

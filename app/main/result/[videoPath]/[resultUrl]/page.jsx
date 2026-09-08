@@ -36,7 +36,7 @@ const Page = () => {
   const handleCopyLink = (url) => {
     navigator.clipboard.writeText(url);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000); // tự tắt sau 2s
+    setTimeout(() => setCopied(false), 2000);
   };
 
   useEffect(() => {
@@ -115,7 +115,6 @@ const Page = () => {
     <>
       <MainNavbar />
       <main className="flex flex-col items-center justify-center h-screen w-full p-30">
-        {/* Video box */}
         <div className="w-full max-w-5xl h-9/10 flex bg-black justify-center rounded-2xl shadow-xl">
           <video
             src={cloudUrl}
@@ -124,7 +123,6 @@ const Page = () => {
           />
         </div>
 
-        {/* Copy button */}
         <button
           className="flex items-center justify-center gap-2 py-2 px-6 sm:px-10 rounded-4xl text-xs sm:text-sm transition-colors bg-iris font-semibold white hover:bg-violet mt-6 sm:mt-10"
           onClick={() => handleCopyLink(cloudUrl)}
@@ -146,7 +144,6 @@ const Page = () => {
           <span>{copied ? "Copied!" : "Copy Link"}</span>
         </button>
 
-        {/* Suggest feature */}
         <div className="w-full max-w-3xl mt-6 sm:mt-10">
           <SuggestAFeature />
         </div>

@@ -298,7 +298,7 @@ bg-[${customize.background_color}] ${
 
   for (let i = 0; i < steps; i++) {
     const angle = (i * 360) / steps;
-    const rad = (angle * Math.PI) / 180; // Đổi sang radian
+    const rad = (angle * Math.PI) / 180; // Convert to radian
 
     const x = (Math.cos(rad) * radius).toFixed(2);
     const y = (Math.sin(rad) * radius).toFixed(2);
@@ -508,7 +508,6 @@ bg-[${customize.background_color}] ${
             )}
           </div>
 
-          {/* Buttons row */}
           <div className="py-5 w-9/10 bg-white rounded-2xl flex flex-wrap sm:flex-nowrap items-center justify-center">
             <div className="flex justify-center items-end gap-3">
               <button
@@ -577,7 +576,6 @@ bg-[${customize.background_color}] ${
           </div>
         </div>
 
-        {/* Right section */}
         <div className="w-full lg:w-2/5 flex flex-col justify-evenly items-center h-auto lg:h-full gap-2 bg-smoke rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-center shadow-lg gap-3 sm:gap-5 bg-white p-2 rounded-4xl">
             <button

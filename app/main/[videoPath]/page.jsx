@@ -119,7 +119,6 @@ export default function VideoPage() {
             />
           </div>
 
-          {/* Sidebar settings */}
           <div className="w-full md:w-1/3 h-auto md:h-[70vh] flex flex-col items-center gap-7 p-5 bg-smoke rounded-4xl shadow-lg">
             <div className="flex w-full items-center justify-center top-3 shadow-lg gap-3 sm:gap-5 bg-white p-1 rounded-4xl">
               <button

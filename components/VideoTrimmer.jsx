@@ -15,9 +15,8 @@ const parseTimeToSeconds = (timeStr) => {
   }
 };
 
-// ✅ Thêm hàm kiểm tra input
 const validateTimeInput = (timeStr) => {
-  // Cho phép định dạng: hh:mm:ss, mm:ss, hoặc hh:mm:ss.xx
+  // Allow format; hh:mm:ss, mm:ss, or hh:mm:ss.xx
   const regex = /^(\d{1,2}:)?\d{1,2}:\d{1,2}(\.\d{1,2})?$/;
   return regex.test(timeStr);
 };
@@ -34,7 +33,6 @@ const VideoTrimmer = ({
   const [startInput, setStartInput] = useState("00:00:00.00");
   const [endInput, setEndInput] = useState("00:00:00.00");
 
-  // Đồng bộ input khi endpoints thay đổi
   useEffect(() => {
     if (Array.isArray(endpoints) && endpoints.length === 2) {
       setStartInput(formatTime(endpoints[0]));
@@ -77,9 +75,7 @@ const VideoTrimmer = ({
     const inputValue = index === 0 ? startInput : endInput;
     const videoDuration = videoData?.duration || 0;
 
-    // ✅ Kiểm tra định dạng
     if (!validateTimeInput(inputValue)) {
-      // Reset về giá trị cũ (endpoints)
       if (index === 0) {
         setStartInput(formatTime(endpoints[0]));
       } else {
@@ -91,17 +87,14 @@ const VideoTrimmer = ({
     let parsedStart = parseTimeToSeconds(startInput);
     let parsedEnd = parseTimeToSeconds(endInput);
 
-    // ✅ Nếu quá thời lượng video → set lại bằng max hợp lệ
     parsedStart = Math.min(Math.max(parsedStart, 0), videoDuration);
     parsedEnd = Math.min(Math.max(parsedEnd, 0), videoDuration);
 
-    // Nếu end < start thì fix lại
     if (parsedEnd < parsedStart) parsedEnd = parsedStart;
 
     const newEndpoints = [parsedStart, parsedEnd];
     setEndpoints(newEndpoints);
 
-    // Cập nhật lại input hiển thị
     setStartInput(formatTime(parsedStart));
     setEndInput(formatTime(parsedEnd));
 
@@ -110,7 +103,6 @@ const VideoTrimmer = ({
     if (video) video.currentTime = newEndpoints[index];
   };
 
-  // Giới hạn phát video trong khoảng được chọn
   useEffect(() => {
     const video = videoRef?.current;
     if (!video) return;

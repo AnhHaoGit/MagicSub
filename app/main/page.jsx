@@ -64,6 +64,13 @@ const MainPage = () => {
         video.onerror = reject;
       });
 
+      if (duration > 900) {
+        toast.error("Video duration exceeds 15 minutes. Please upload a shorter video.");
+        setLoading(false);
+        setLoadingStatus("");
+        return;
+      }
+
       const title = file.name;
       const size = file.size;
 
@@ -132,6 +139,7 @@ const MainPage = () => {
     } catch (err) {
       setLoading(false);
       setLoadingStatus("");
+      console.error(err);
       toast.error("Problem uploading video. Please try again later.");
     } finally {
       setLoading(false);
@@ -139,98 +147,95 @@ const MainPage = () => {
     }
   };
 
-  const handleYoutubeUpload = async () => {
-    const date = new Date();
+  // const handleYoutubeUpload = async () => {
+  //   const date = new Date();
 
-    if (!youtubeUrl.trim()) {
-      toast.info("Please paste a YouTube video URL first!");
-      return;
-    }
+  //   if (!youtubeUrl.trim()) {
+  //     toast.info("Please paste a YouTube video URL first!");
+  //     return;
+  //   }
 
-    try {
-      // Upload video to cloud
-      setYoutubeLoading(true);
-      setStatusStep("Uploading video to cloud...");
-      const res = await fetch("/api/upload_youtube", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ youtubeUrl: youtubeUrl.trim() }),
-      });
+  //   try {
+  //     setYoutubeLoading(true);
+  //     setStatusStep("Uploading video to cloud...");
+  //     const res = await fetch("/api/upload_youtube", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ youtubeUrl: youtubeUrl.trim() }),
+  //     });
 
-      const uploadData = await res.json();
-      const { fileUrl, uploadKey, audioUrl, audioKey, title, size, duration } =
-        uploadData;
+  //     const uploadData = await res.json();
+  //     const { fileUrl, uploadKey, audioUrl, audioKey, title, size, duration } =
+  //       uploadData;
 
-      if (!res.ok) {
-        toast.error("Upload video failed! Try again later.");
-        setStatusStep("Upload video failed! Try again later.");
-        setYoutubeLoading(false);
-        throw new Error(uploadData.error || "Upload failed");
-      }
+  //     if (!res.ok) {
+  //       toast.error("Upload video failed! Try again later.");
+  //       setStatusStep("Upload video failed! Try again later.");
+  //       setYoutubeLoading(false);
+  //       throw new Error(uploadData.error || "Upload failed");
+  //     }
 
-      // Save data to DB
-      setStatusStep("Saving data to database...");
-      const saveRes = await fetch("/api/save_video_to_db", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: session.user.id,
-          cloudUrl: fileUrl,
-          audioUrl,
-          title,
-          size,
-          duration,
-          createdAt: date.toISOString(),
-          style: session.user.style,
-          audioKey,
-          uploadKey,
-        }),
-      });
+  //     setStatusStep("Saving data to database...");
+  //     const saveRes = await fetch("/api/save_video_to_db", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         userId: session.user.id,
+  //         cloudUrl: fileUrl,
+  //         audioUrl,
+  //         title,
+  //         size,
+  //         duration,
+  //         createdAt: date.toISOString(),
+  //         style: session.user.style,
+  //         audioKey,
+  //         uploadKey,
+  //       }),
+  //     });
 
-      const newVideo = await saveRes.json();
+  //     const newVideo = await saveRes.json();
 
-      if (!saveRes.ok) {
-        toast.error("Failed to save video to database! Try again later.");
-        setStatusStep("Database save failed! Try again later.");
-        setLoading(false);
-        throw new Error(newVideo.error || "Saving data failed");
-      }
+  //     if (!saveRes.ok) {
+  //       toast.error("Failed to save video to database! Try again later.");
+  //       setStatusStep("Database save failed! Try again later.");
+  //       setLoading(false);
+  //       throw new Error(newVideo.error || "Saving data failed");
+  //     }
 
-      add_video_to_local_storage(newVideo);
+  //     add_video_to_local_storage(newVideo);
 
-      // Generate thumbnail
-      setStatusStep("Generating thumbnail...");
-      const thumbRes = await fetch("/api/generate_thumbnail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          videoId: newVideo._id,
-          cloudUrl: newVideo.cloudUrl,
-        }),
-      });
+  //     setStatusStep("Generating thumbnail...");
+  //     const thumbRes = await fetch("/api/generate_thumbnail", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         videoId: newVideo._id,
+  //         cloudUrl: newVideo.cloudUrl,
+  //       }),
+  //     });
 
-      const thumbData = await thumbRes.json();
-      const { thumbnailUrl } = thumbData;
+  //     const thumbData = await thumbRes.json();
+  //     const { thumbnailUrl } = thumbData;
 
-      if (!thumbRes.ok) {
-        toast.error("Failed to generate thumbnail! Try again later.");
-        setStatusStep("Generate thumbnail failed! Try again later.");
-        setYoutubeLoading(false);
-        throw new Error(newVideo.error || "Generate thumbnail failed!");
-      }
-      update_video_in_local_storage(newVideo._id, thumbnailUrl);
+  //     if (!thumbRes.ok) {
+  //       toast.error("Failed to generate thumbnail! Try again later.");
+  //       setStatusStep("Generate thumbnail failed! Try again later.");
+  //       setYoutubeLoading(false);
+  //       throw new Error(newVideo.error || "Generate thumbnail failed!");
+  //     }
+  //     update_video_in_local_storage(newVideo._id, thumbnailUrl);
 
-      setStatusStep("Upload complete!");
-      router.push(`/main/${newVideo._id}`);
-      toast.success("Upload successful!");
+  //     setStatusStep("Upload complete!");
+  //     router.push(`/main/${newVideo._id}`);
+  //     toast.success("Upload successful!");
 
-      setYoutubeLoading(false);
-    } catch (err) {
-      toast.error(err);
-    } finally {
-      setYoutubeLoading(false);
-    }
-  };
+  //     setYoutubeLoading(false);
+  //   } catch (err) {
+  //     toast.error(err);
+  //   } finally {
+  //     setYoutubeLoading(false);
+  //   }
+  // };
 
   return (
     <>
@@ -248,11 +253,14 @@ const MainPage = () => {
               </Link>{" "}
               to see your uploaded videos)
             </p>
+            <p className="text-sm sm:text-base mt-2">
+              Max duration: 15 minutes
+            </p>
           </div>
 
           {session && status === "authenticated" ? (
             <>
-              <div className="flex bg-white p-2 rounded-4xl w-9/10 mt-10 gap-2">
+              {/* <div className="flex bg-white p-2 rounded-4xl w-9/10 mt-10 gap-2">
                 <input
                   type="text"
                   className="bg-white w-full text-xs py-2 pl-5 rounded-4xl border-none focus:outline-none"
@@ -305,12 +313,11 @@ const MainPage = () => {
                     </svg>
                   )}
                 </button>
-              </div>
+              </div> */}
               <form
                 onSubmit={handleFileUpload}
                 className="flex flex-col md:flex-row items-stretch sm:items-center gap-4 sm:gap-6 mt-6 sm:mt-10 bg-white/5 p-4 sm:p-6 rounded-2xl shadow-xl max-w-full"
               >
-                {/* File picker */}
                 <label
                   className={`flex items-center justify-center gap-2 hover:white gray rounded-full h-12 sm:h-14 px-4 sm:px-8 shadow-xl transition-colors cursor-pointer text-xs sm:text-base whitespace-nowrap w-full sm:w-auto
       ${loading ? "opacity-50 cursor-not-allowed" : "hover:bg-gray"}
@@ -334,7 +341,6 @@ const MainPage = () => {
                   )}
                 </label>
 
-                {/* Language select */}
                 <div className="flex flex-col justify-center w-full sm:min-w-[220px]">
                   <SelectBox
                     options={source_languages}
@@ -348,7 +354,6 @@ const MainPage = () => {
                   </p>
                 </div>
 
-                {/* Submit */}
                 <button
                   type="submit"
                   disabled={loading}

@@ -74,19 +74,16 @@ const Subscription = () => {
 
         {sub ? (
           <div className="flex flex-col gap-8 border rounded-3xl p-10 shadow-2xl w-[480px] bg-white relative">
-            {/* Badge popular */}
             {popular && (
               <span className="absolute top-4 right-4 bg-iris text-white text-xs font-semibold px-3 py-1 rounded-full">
                 Popular
               </span>
             )}
 
-            {/* Plan name */}
             <p className="text-3xl font-bold text-gray-900 text-center">
               {sub.product_name}
             </p>
 
-            {/* Features */}
             <div className="space-y-3 text-sm text-gray-700">
               <div className="flex items-center gap-2">
                 <CheckIcon /> Get {gems} 💎 per month
@@ -98,7 +95,6 @@ const Subscription = () => {
               )}
             </div>
 
-            {/* Status & next payment */}
             <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-2">
               <p>
                 <span className="text-gray-600">Status:</span>{" "}
@@ -122,7 +118,6 @@ const Subscription = () => {
               </p>
             </div>
 
-            {/* Actions */}
             <div className="flex flex-col gap-3">
               <Link
                 href="/pricing"
